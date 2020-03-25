@@ -141,23 +141,9 @@ export default {
 
 <style scoped>
 @import '~yfiles/yfiles.css';
-.toolbar {
-  position: absolute;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-  top: 60px;
-  left: 0;
-  right: 0;
-  height: 40px;
-  line-height: 40px;
-  padding: 0 5px;
-  box-sizing: border-box;
-  user-select: none;
-  background-color: #f7f7f7;
-  z-index: 10;
-}
 .graph-component-container {
   position: absolute;
-  top: 100px;
+  top: 0;
   left: 0;
   right: 0;
   bottom: 0;

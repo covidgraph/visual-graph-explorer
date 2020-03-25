@@ -4,7 +4,7 @@
       app
       left
       clipped
-      width="350px"
+      width="350"
     >
       <detail-panel ref="detailsPanel">
 
