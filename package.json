@@ -1,0 +1,27 @@
+{
+  "name": "coronagraph-visual-graph-explorer",
+  "version": "0.0.1",
+  "private": true,
+  "author": "yWorks GmbH <yfileshtml@yworks.com>",
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build"
+  },
+  "dependencies": {
+    "@mdi/font": "^3.6.95",
+    "core-js": "^2.6.5",
+    "neo4j-driver": "^4.0.2",
+    "roboto-fontface": "*",
+    "vue": "^2.6.10",
+    "vuetify": "^2.2.18",
+    "yfiles": "./yfiles-22.0.3-eval.tgz"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "^3.0.1",
+    "@vue/cli-service": "^3.0.1",
+    "@yworks/optimizer": "^1.0.3",
+    "vue-cli-plugin-vuetify": "~2.0.5",
+    "vue-template-compiler": "^2.6.10"
+  },
+  "license": "MIT"
+}
