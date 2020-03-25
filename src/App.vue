@@ -33,9 +33,12 @@
       right
     >
       <demo-toolbar
-        class="toolbar"
         @search-gene="$refs.graphComponent.searchGene($event)"
       ></demo-toolbar>
+      <SearchArticle
+        @search-article="$refs.graphComponent.searchArticle($event)"
+        >
+      </SearchArticle>
     </v-navigation-drawer>
 
     <v-content>
@@ -52,11 +55,13 @@
 <script>
 import DiagramComponent from './components/DiagramComponent'
 import DemoToolbar from './components/DemoToolbar'
+import SearchArticle from './components/SearchArticle'
 import DetailPanel from './components/DetailPanel'
 
 export default {
   name: 'app',
   components: {
+    SearchArticle,
     DemoToolbar,
     DiagramComponent,
     DetailPanel

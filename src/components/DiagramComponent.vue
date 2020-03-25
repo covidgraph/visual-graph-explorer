@@ -3,20 +3,22 @@
 </template>
 
 <script>
-  import licenseData from '../../yfiles-license.json'
-  import {
-    Class,
-    GraphBuilder,
-    GraphComponent,
-    GraphViewerInputMode, LayoutExecutor,
-    License, OrganicLayout,
-    ShapeNodeStyle
-  } from 'yfiles'
-  import DemoToolbar from './DemoToolbar'
-  import query from './../util/dbconnection'
+    import licenseData from '../../yfiles-license.json'
+    import {
+        Class,
+        GraphBuilder,
+        GraphComponent,
+        GraphViewerInputMode,
+        LayoutExecutor,
+        License,
+        OrganicLayout,
+        ShapeNodeStyle
+    } from 'yfiles'
+    import DemoToolbar from './DemoToolbar'
+    import query from './../util/dbconnection'
 
 
-License.value = licenseData
+    License.value = licenseData
 
   Class.ensure(LayoutExecutor);
 
@@ -46,12 +48,20 @@ export default {
 
       let graphBuilder = new GraphBuilder(this.$graphComponent.graph)
       graphBuilder.nodesSource = papers;
-      graphBuilder.nodeLabelBinding = tag => tag.properties["paper_id"]
+      graphBuilder.nodeLabelBinding = tag => tag.properties["title"]
 
       graphBuilder.buildGraph()
-      this.$graphComponent.morphLayout(new OrganicLayout())
-      this.$graphComponent.fitGraphBounds()
+      await this.$graphComponent.morphLayout(new OrganicLayout())
+    },
+    async searchArticle(paper_id){
+      const papers = (await query("MATCH (p:Paper) WHERE p.paper_id = $id RETURN p LIMIT 1", {id:paper_id})).records.map(record => record.get('p'));;
 
+      let graphBuilder = new GraphBuilder(this.$graphComponent.graph)
+      graphBuilder.nodesSource = papers;
+      graphBuilder.nodeLabelBinding = tag => tag.properties["title"]
+
+      graphBuilder.buildGraph()
+      await this.$graphComponent.morphLayout(new OrganicLayout())
     },
     /**
      * Sets default styles for the graph.
@@ -65,13 +75,15 @@ export default {
     },
 
     async fetchGenes(geneName){
-      const geneNodes = await this.query('MATCH (g:GeneSymbol) Where g.sid = $symbolName RETURN g LIMIT 10', {symbolName:geneName})
-      return geneNodes.records.map(record => record.get('g'));
+        return (await this.query('MATCH (g:GeneSymbol) Where g.sid = $symbolName RETURN g LIMIT 10', {symbolName: geneName})).records.map(record => record.get('g'));
+    },
+
+    async fetchGenes(geneName){
+        return (await this.query('MATCH (g:GeneSymbol) Where g.sid = $symbolName RETURN g LIMIT 10', {symbolName: geneName})).records.map(record => record.get('g'));
     },
 
     async fetchPapersMentioning(sid){
-      const paperNodes = await query('MATCH (p:Paper)-[r:PAPER_HAS_ABSTRACT]->(ch:CollectionHub)-[aa:ABSTRACT_HAS_ABSTRACT]->(a:Abstract)-[m:MENTIONS]->(g:GeneSymbol) WHERE g.sid = $sid RETURN p as node LIMIT 10', {sid})
-      return paperNodes.records.map(record => record.get('node'));
+        return (await query('MATCH (p:Paper)-[r:PAPER_HAS_ABSTRACT]->(ch:CollectionHub)-[aa:ABSTRACT_HAS_ABSTRACT]->(a:Abstract)-[m:MENTIONS]->(g:GeneSymbol) WHERE g.sid = $sid RETURN p as node LIMIT 10', {sid})).records.map(record => record.get('node'));
     },
 
     /**
