@@ -1,10 +1,10 @@
 <template>
   <v-card>
     <v-card-title class="headline">
-      Find Genes
+      Search Author
     </v-card-title>
     <v-card-text>
-      Find publications that mention gene names.
+      Find publications by Authors
     </v-card-text>
     <v-card-text>
       <v-autocomplete
@@ -14,9 +14,9 @@
         :search-input.sync="search"
         hide-no-data
         hide-selected
-        item-text="Description"
+        item-text="name"
         item-value="Name"
-        label="Gene Name"
+        label="Words in title"
         placeholder="Start typing to Search"
         prepend-icon="mdi-database-search"
         return-object
@@ -38,16 +38,23 @@
     </v-expand-transition>
     <v-card-actions>
       <v-spacer></v-spacer>
-      <v-btn
+      <v-btn x-small
         :disabled="!model"
         @click="model = null"
       >
         Clear
         <v-icon right>mdi-close-circle</v-icon>
       </v-btn>
-      <v-btn
+      <v-btn x-small
         :disabled="!model"
-        @click="$emit('search-gene', model.sid)"
+        @click="$emit('search-author', model.id)"
+      >
+        Load Author
+        <v-icon right>mdi-cloud-search-outline</v-icon>
+      </v-btn>
+      <v-btn x-small
+        :disabled="!model"
+        @click="$emit('search-author-papers', model.id)"
       >
         Load Papers
         <v-icon right>mdi-cloud-search-outline</v-icon>
@@ -62,11 +69,11 @@ import Vuetify from 'vuetify'
 import query from '../util/dbconnection'
 
 export default {
-  name: "DemoToolbar",
-  vuetify: new Vuetify(),
+  name: "SearchArticle",
   data: () => ({
     descriptionLimit: 60,
     entries: [],
+    count : 0,
     isLoading: false,
     model: null,
     search: null,
@@ -77,17 +84,11 @@ export default {
       if (!this.model) return []
         return [{
           key:"Name",
-          value: this.model["Description"] || 'n/a',
+          value: this.model["name"] || 'n/a',
         }]
     },
     items() {
-      return this.entries.map(entry => {
-        const Description = entry.Description.length > this.descriptionLimit
-          ? entry.Description.slice(0, this.descriptionLimit) + '...'
-          : entry.Description
-
-        return { sid:entry.sid, Description }
-      })
+      return this.entries
     },
   },
 
@@ -99,15 +100,14 @@ export default {
       this.isLoading = true
 
       // Lazily load input items
-      query('MATCH (g:GeneSymbol) WHERE g.sid STARTS WITH $sid RETURN g LIMIT 100', {sid:val})
+      query('MATCh (a:Author) WHERE a.last CONTAINS $word RETURN a LIMIT 50', {word:val})
         .then(res => {
           this.count = res.records.length
           this.entries = res.records.map(record => {
-            let node = record.get('g')
+            let node = record.get('a')
             return ({
               id: node.identity,
-              sid:node.properties['sid'],
-              Description: node.properties['sid']
+              name: node.properties['first'] + " " + node.properties['last']
             })
           });
         })
