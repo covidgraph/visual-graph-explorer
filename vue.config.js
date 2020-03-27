@@ -26,27 +26,33 @@
  ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **
  ***************************************************************************/
-const YWorksOptimizer = require('@yworks/optimizer/webpack-plugin')
+const YWorksOptimizer = require("@yworks/optimizer/webpack-plugin");
 
 module.exports = {
   productionSourceMap: false,
   configureWebpack: {
     plugins:
-      process.env.NODE_ENV !== 'production'
+      process.env.NODE_ENV !== "production"
         ? []
-        : [new YWorksOptimizer({ logLevel: 'debug', blacklist: ['render'] })]
+        : [new YWorksOptimizer({ logLevel: "debug", blacklist: ["render"] })],
   },
-  chainWebpack: config => {
+  chainWebpack: (config) => {
     /** the yFiles library files are ES5 compatible and don't need to be babeled explicitly */
-    config.module.rule('js').exclude.add(/es-modules/)
+    config.module.rule("js").exclude.add(/es-modules/);
+    if (process.env.NODE_ENV !== "production") {
+      config.entry("app").prepend(
+        // Add yFiles debugging support for development build
+        "./yfiles-typeinfo.js"
+      );
+    }
   },
   css: {
     loaderOptions: {
       postcss: {
         config: {
-          path: './postcss.config.js' // don't search for postcss config outside this demo folder
-        }
-      }
-    }
-  }
-}
+          path: "./postcss.config.js", // don't search for postcss config outside this demo folder
+        },
+      },
+    },
+  },
+};

@@ -3,7 +3,7 @@
 ![A screenshot of this sample application](docs/screenshot.png)
 
 This repository contains a sample application that can be used as a template to browse the 
-"corona-graph". It is built using 
+"covid-graph" See [https://covidgraph.org](https://covidgraph.org) for more info.  
 
 
 ## See also
@@ -20,6 +20,7 @@ Checkout this project, then extract the yFiles for HTML package to some director
 package for playing with the demos. This will also create an `npm` package file (using `npm pack` in the `lib\es-modules` directory).
 That file needs to be placed top-level in this directory so that it can be installed via npm into the project.
 Before you do that, also copy the `license.json` file from the yFiles package as `yfiles-license.json` and also drop it into this directory.
+Finally for live debugging aids, add `yfiles-typeinfo.js` from the `ide-support` directory.
 
 
 ```
@@ -27,6 +28,7 @@ documents
  |-- visual-graph-explorer
      +-- yfiles-eval-22.0.3.tgz
      +-- yfiles-license.json
+     +-- yfiles-typeinfo.js   (for debugging)
      +-- README.md
      +-- ...
 ```
