@@ -7,16 +7,40 @@
         </v-card>
       </PopupPanel>
     </div>
-    <ContextMenu ref="contextMenu">
+    <ContextMenu
+      ref="contextMenu"
+      @populate-context-menu="currentItem = $event"
+    >
       <v-list>
-        <v-list-item @click="loadReferencedPapers()">
+        <v-list-item
+          v-if="currentItemIs('Paper')"
+          @click="loadReferencedPapersForPaper(currentItem)"
+        >
           <v-list-item-title>Load Referenced Papers</v-list-item-title>
         </v-list-item>
-        <v-list-item @click="">
+        <v-list-item
+          v-if="currentItemIs('Paper')"
+          @click="loadAuthorsForPaper(currentItem)"
+        >
           <v-list-item-title>Load Authors</v-list-item-title>
         </v-list-item>
-        <v-list-item @click="">
-          <v-list-item-title>Load Pages</v-list-item-title>
+        <v-list-item
+          v-if="currentItemIs('Paper')"
+          @click="loadGenesForPaper(currentItem)"
+        >
+          <v-list-item-title>Load Genes</v-list-item-title>
+        </v-list-item>
+        <v-list-item
+          v-if="currentItemIs('GeneSymbol')"
+          @click="loadPapersForGene(currentItem)"
+        >
+          <v-list-item-title>Load Papers</v-list-item-title>
+        </v-list-item>
+        <v-list-item
+          v-if="currentItemIs('Author')"
+          @click="loadPapersForAuthor(currentItem)"
+        >
+          <v-list-item-title>Load Papers</v-list-item-title>
         </v-list-item>
       </v-list>
     </ContextMenu>
@@ -38,13 +62,41 @@ import {
   ShapeNodeStyle,
 } from "yfiles";
 import ContextMenu from "./ContextMenu";
-import query from "./../util/dbconnection";
+import {
+  loadAuthorsForPaper,
+  loadGenesForPaper,
+  query,
+} from "./../util/queries";
 import { createGraphBuilder } from "../util/Neo4jGraphBuilder";
 import PopupPanel from "./PopupPanel";
+import { enableWorkarounds } from "./../util/Workarounds";
+import {
+  loadPapersForAuthor,
+  loadPapersForGene,
+  loadReferencedPapersForPaper,
+} from "../util/queries";
 
 License.value = licenseData;
 
+enableWorkarounds();
+
 Class.ensure(LayoutExecutor);
+
+const paperNodeStyle = new ShapeNodeStyle({
+  fill: "blue",
+  stroke: null,
+  shape: "ellipse",
+});
+const authorNodeStyle = new ShapeNodeStyle({
+  fill: "green",
+  stroke: null,
+  shape: "ellipse",
+});
+const geneNodeStyle = new ShapeNodeStyle({
+  fill: "yellow",
+  stroke: null,
+  shape: "round-rectangle",
+});
 
 export default {
   name: "DiagramComponent",
@@ -52,22 +104,34 @@ export default {
     PopupPanel,
     ContextMenu,
   },
+  data: () => ({
+    currentItem: null,
+  }),
   mounted() {
     this.$graphComponent = new GraphComponent(this.$refs.GraphComponentElement);
     let viewerInputMode = new GraphViewerInputMode();
+    viewerInputMode.contextMenuItems = GraphItemTypes.NODE;
+    viewerInputMode.contextMenuInputMode.addPopulateMenuListener(
+      (sender, evt) => {
+        evt.showMenu = true;
+      }
+    );
+    viewerInputMode.clickableItems = GraphItemTypes.NODE;
+    this.$graphComponent.inputMode = viewerInputMode;
+
     this.$graphBuilder = createGraphBuilder(
       this.$graphComponent,
       (this.$nodes = []),
       (this.$edges = [])
     );
     this.$graphBuilder.buildGraph();
+
     this.$refs.contextMenu.register(this.$graphComponent);
     this.$refs.popupPanel.register(
       this.$graphComponent,
       ExteriorLabelModel.SOUTH_WEST
     );
-    this.$graphComponent.inputMode = viewerInputMode;
-    viewerInputMode.clickableItems = GraphItemTypes.NODE;
+
     this.$graphComponent.addCurrentItemChangedListener((sender, evt) => {
       if (sender.currentItem && sender.currentItem.tag) {
         this.$emit("item-selected", sender.currentItem.tag);
@@ -77,86 +141,130 @@ export default {
       this.$refs.popupPanel.hide();
     });
     viewerInputMode.addItemClickedListener((sender, evt) => {
-      this.$refs.popupPanel.showPopup(evt.item);
+      //this.$refs.popupPanel.showPopup(evt.item);
       this.$emit("item-selected", evt.item.tag);
     });
-    this.initializeDefaultStyles();
   },
   methods: {
-    async loadReferencedPapers() {
-      this.$refs.contextMenu.currentItem;
-      let paper = this.$graphComponent.graph.nodes.first().tag;
-      const referencedPapers = (
-        await query(
-          "MATCH (n0:Paper)-[r0:PAPER_HAS_BIB_ENTRIES]->(n1:Bib_entries)-[r1:BIB_ENTRIES_HAS_BIBREF]->(n2:Bibref)" +
-            "-[r2:BIBREF_HAS_OTHER_IDS]->(n3:Other_ids)-[r3]->(n4:CollectionHub)-[r4]->" +
-            "(id)<-[r6:PAPERID_COLLECTION_HAS_PAPERID]-(n5:CollectionHub:PaperID)<-[r5:PAPER_HAS_PAPERID_COLLECTION]-(p:Paper) WHERE id(n0) in $papers AND n0 <> p  RETURN id, p LIMIT 20",
-          { papers: [paper.identiy] }
-        )
-      ).records.map((record) => record.get("p"));
-
-      this.$graphBuilder.nodesSource = this.$graphBuilder.nodesSource.concat(
-        referencedPapers
+    createPaperNode(paper) {
+      return this.$graphComponent.graph.createNode({
+        tag: paper,
+        style: paperNodeStyle,
+        labels: [paper.properties.title || "untitled"],
+      });
+    },
+    createAuthorNode(author) {
+      return this.$graphComponent.graph.createNode({
+        tag: author,
+        style: authorNodeStyle,
+        labels: [author.properties.last || "Anonymous"],
+      });
+    },
+    createGeneNode(gene) {
+      return this.$graphComponent.graph.createNode({
+        tag: gene,
+        style: geneNodeStyle,
+        labels: [gene.properties.sid || "Gene"],
+      });
+    },
+    async loadPapersForAuthor(author) {
+      await this.loadAndConnectNodes(
+        author,
+        loadPapersForAuthor,
+        this.createPaperNode.bind(this)
       );
-      this.$graphBuilder.updateGraph();
+    },
+    async loadGenesForPaper(paper) {
+      await this.loadAndConnectNodes(
+        paper,
+        loadGenesForPaper,
+        this.createGeneNode.bind(this)
+      );
+    },
+    async loadPapersForGene(gene) {
+      await this.loadAndConnectNodes(
+        gene,
+        loadPapersForGene,
+        this.createPaperNode.bind(this)
+      );
+    },
+    async loadAuthorsForPaper(paper) {
+      await this.loadAndConnectNodes(
+        paper,
+        loadAuthorsForPaper,
+        this.createAuthorNode.bind(this)
+      );
+    },
+    currentItemIs(type) {
+      return (
+        this.currentItem &&
+        this.currentItem.labels &&
+        this.currentItem.labels.indexOf(type) >= 0
+      );
+    },
+    async loadAndConnectNodes(item, loader, creator) {
+      let node = this.findNode(item);
+      (await loader(item)).map(creator).forEach((newNode) => {
+        this.$graphComponent.graph.createEdge(node, newNode);
+      });
+      await this.runLayout();
+    },
+    async runLayout() {
       await this.$graphComponent.morphLayout(new OrganicLayout());
+    },
+    findNode(tag) {
+      return this.$graphComponent.graph.nodes.first((n) => n.tag === tag);
+    },
+    async loadReferencedPapersForPaper(paper) {
+      let paperNode = this.findNode(paper);
+      const referencedPapers = await loadReferencedPapersForPaper(paper);
+      referencedPapers
+        .map((paper) => this.createPaperNode(paper))
+        .forEach((newPaperNode) => {
+          let referenceEdge = this.$graphComponent.graph.createEdge({
+            source: paperNode,
+            target: newPaperNode,
+            labels: ["References"],
+          });
+        });
+
+      await this.runLayout();
     },
     async searchGene(geneSid) {
       const papers = await this.fetchPapersMentioning(geneSid);
-      this.$graphBuilder.nodesSource = this.$graphBuilder.nodesSource.concat(
-        papers
-      );
-      this.$graphBuilder.updateGraph();
-      await this.$graphComponent.morphLayout(new OrganicLayout());
+      papers.forEach((p) => this.createPaperNode(p));
+      await this.runLayout();
     },
     async searchArticle(paper_id) {
-      const papers = (
-        await query("MATCH (p:Paper) WHERE p.paper_id = $id RETURN p LIMIT 1", {
+      const papers = await query(
+        "MATCH (p:Paper) WHERE p.paper_id = $id RETURN p as result LIMIT 1",
+        {
           id: paper_id,
-        })
-      ).records.map((record) => record.get("p"));
-      papers.forEach((value) => this.$nodes.push(value));
-      let graphBuilder = this.$graphBuilder;
-      graphBuilder.updateGraph();
-      await this.$graphComponent.morphLayout(new OrganicLayout());
-    },
-
-    /**
-     * Sets default styles for the graph.
-     */
-    initializeDefaultStyles() {
-      this.$graphComponent.graph.nodeDefaults.style = new ShapeNodeStyle({
-        fill: "orange",
-        stroke: "orange",
-        shape: "rectangle",
-      });
+        }
+      );
+      papers.forEach((p) => this.createPaperNode(p));
+      await this.runLayout();
     },
 
     async fetchGenes(geneName) {
-      return (
-        await this.query(
-          "MATCH (g:GeneSymbol) Where g.sid = $symbolName RETURN g LIMIT 10",
-          { symbolName: geneName }
-        )
-      ).records.map((record) => record.get("g"));
+      return await query(
+        "MATCH (g:GeneSymbol) Where g.sid = $symbolName RETURN g as result LIMIT 10",
+        { symbolName: geneName }
+      );
     },
 
     async fetchGenes(geneName) {
-      return (
-        await this.query(
-          "MATCH (g:GeneSymbol) Where g.sid = $symbolName RETURN g LIMIT 10",
-          { symbolName: geneName }
-        )
-      ).records.map((record) => record.get("g"));
+      return await query(
+        "MATCH (g:GeneSymbol) Where g.sid = $symbolName RETURN g as result LIMIT 10",
+        { symbolName: geneName }
+      );
     },
 
     async fetchPapersMentioning(sid) {
-      return (
-        await query(
-          "MATCH (p:Paper)-[r:PAPER_HAS_ABSTRACT]->(ch:CollectionHub)-[aa:ABSTRACT_HAS_ABSTRACT]->(a:Abstract)-[m:MENTIONS]->(g:GeneSymbol) WHERE g.sid = $sid RETURN p as node LIMIT 10",
-          { sid }
-        )
-      ).records.map((record) => record.get("node"));
+      return await query(
+        "MATCH (p:Paper)-[m:MENTIONS]->(g:GeneSymbol) WHERE g.sid = $sid RETURN p as result LIMIT 100",
+        { sid }
+      );
     },
   },
 };
