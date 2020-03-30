@@ -249,9 +249,16 @@ export default {
       await this.runLayout();
     },
     async searchGene(geneSid) {
-      const papers = await this.fetchPapersMentioning(geneSid);
-      papers.forEach((p) => this.createPaperNode(p));
-      await this.runLayout();
+      const genes = await this.fetchGenes(geneSid);
+
+      for (let i=0; i<genes.length; i++) {
+        const g = genes[i];
+        this.createGeneNode(g);
+        await this.loadPapersForGene(g);
+      }
+      // const papers = await this.fetchPapersMentioning(geneSid);
+      // papers.forEach((p) => this.createPaperNode(p));
+      // await this.runLayout();
     },
     async searchArticle(paper_id) {
       const papers = await query(
@@ -262,13 +269,6 @@ export default {
       );
       papers.forEach((p) => this.createPaperNode(p));
       await this.runLayout();
-    },
-
-    async fetchGenes(geneName) {
-      return await query(
-        "MATCH (g:GeneSymbol) Where g.sid = $symbolName RETURN g as result LIMIT 10",
-        { symbolName: geneName }
-      );
     },
 
     async fetchGenes(geneName) {
