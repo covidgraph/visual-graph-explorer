@@ -16,7 +16,7 @@
         hide-selected
         item-text="name"
         item-value="Name"
-        label="Words in title"
+        label="Words in first or last name"
         placeholder="Start typing to Search"
         prepend-icon="mdi-database-search"
         return-object
@@ -100,7 +100,7 @@ export default {
       this.isLoading = true
 
       // Lazily load input items
-      query('MATCh (a:Author) WHERE a.last CONTAINS $word RETURN a LIMIT 50', {word:val})
+      query('MATCH (a:Author) WHERE (toLower(a.last) CONTAINS $word) OR (toLower(a.first) CONTAINS $word) RETURN a LIMIT 50', {word:val.toLowerCase()})
         .then(res => {
           this.count = res.records.length
           this.entries = res.records.map(record => {

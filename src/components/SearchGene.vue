@@ -99,7 +99,7 @@ export default {
       this.isLoading = true
 
       // Lazily load input items
-      query('MATCH (g:GeneSymbol) WHERE g.sid STARTS WITH $sid RETURN g LIMIT 100', {sid:val})
+      query('MATCH (g:GeneSymbol) WHERE toLower(g.sid) STARTS WITH $sid RETURN g LIMIT 100', {sid:val.toLowerCase()})
         .then(res => {
           this.count = res.records.length
           this.entries = res.records.map(record => {
