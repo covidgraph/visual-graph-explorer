@@ -26,42 +26,49 @@
  ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **
  ***************************************************************************/
-import { GraphBuilder, ShapeNodeStyle } from 'yfiles'
+import { GraphBuilder, ShapeNodeStyle } from "yfiles";
 
 // helper method to convert the Neo4j "long" ids, to a simple string
-function getId(identity) {
-  return `${identity.low.toString()}:${identity.high.toString()}`
+export function getId(identity) {
+  return `${identity.low.toString()}:${identity.high.toString()}`;
 }
 
 // label names that are well suited to be a primary label
-const labelNameCandidates = ['name', 'title', 'firstName', 'lastName', 'email', 'content']
+const labelNameCandidates = [
+  "name",
+  "title",
+  "firstName",
+  "lastName",
+  "email",
+  "content",
+];
 // some pre-defined node styles
 const predefinedNodesStyles = [
   new ShapeNodeStyle({
-    shape: 'ellipse',
-    fill: '#00d8ff'
+    shape: "ellipse",
+    fill: "#00d8ff",
   }),
   new ShapeNodeStyle({
-    shape: 'triangle',
-    fill: '#f66a00'
+    shape: "triangle",
+    fill: "#f66a00",
   }),
   new ShapeNodeStyle({
-    shape: 'diamond',
-    fill: '#242265'
+    shape: "diamond",
+    fill: "#242265",
   }),
   new ShapeNodeStyle({
-    shape: 'rectangle',
-    fill: '#c0fc1a'
+    shape: "rectangle",
+    fill: "#c0fc1a",
   }),
   new ShapeNodeStyle({
-    shape: 'hexagon',
-    fill: '#ba85ff'
+    shape: "hexagon",
+    fill: "#ba85ff",
   }),
   new ShapeNodeStyle({
-    shape: 'octagon',
-    fill: '#fcfe1f'
-  })
-]
+    shape: "octagon",
+    fill: "#fcfe1f",
+  }),
+];
 
 /**
  * Returns a GraphBuilder that is configured to work well with Neo4J query results.
@@ -73,45 +80,53 @@ const predefinedNodesStyles = [
  */
 export function createGraphBuilder(graphComponent, nodes, edges) {
   // mapping from labels to node styles
-  const nodeStyleMapping = {}
-  let nodeStyleCounter = 0
-  const graph = graphComponent.graph
+  const nodeStyleMapping = {};
+  let nodeStyleCounter = 0;
+  const graph = graphComponent.graph;
 
   const graphBuilder = new GraphBuilder({
     graph,
     nodesSource: nodes,
     edgesSource: edges,
-    nodeIdBinding: node => getId(node.identity),
-    sourceNodeBinding: edge => getId(edge.start),
-    targetNodeBinding: edge => getId(edge.end),
-    nodeLabelBinding: node => {
+    nodeIdBinding: (node) => getId(node.identity),
+    sourceNodeBinding: (edge) => getId(edge.start),
+    targetNodeBinding: (edge) => getId(edge.end),
+    nodeLabelBinding: (node) => {
       if (node.properties) {
         for (const propertyName of Object.keys(node.properties)) {
           // try to find a suitable node label
           if (labelNameCandidates.includes(propertyName)) {
             // trim the label
-            return node.properties[propertyName].substring(0, 30)
+            return node.properties[propertyName].substring(0, 30);
           }
         }
       }
-      return node.labels && node.labels.length > 0 ? node.labels.join(' - ') : null
+      return node.labels && node.labels.length > 0
+        ? node.labels.join(" - ")
+        : null;
     },
-    edgeLabelBinding: edge => edge.type
-  })
+    edgeLabelBinding: (edge) => edge.type,
+  });
 
-  graphBuilder.addNodeCreatedListener((sender, { graph, item, sourceObject }) => {
-    // look for a mapping for any of the nodes labels and use the mapped style
-    let matchingLabel = sourceObject.labels.find(label => label in nodeStyleMapping)
-    if (!matchingLabel) {
-      matchingLabel = sourceObject.labels[0]
-      nodeStyleMapping[matchingLabel] = predefinedNodesStyles[nodeStyleCounter]
-      nodeStyleCounter = (nodeStyleCounter + 1) % predefinedNodesStyles.length
+  graphBuilder.addNodeCreatedListener(
+    (sender, { graph, item, sourceObject }) => {
+      // look for a mapping for any of the nodes labels and use the mapped style
+      let matchingLabel = sourceObject.labels.find(
+        (label) => label in nodeStyleMapping
+      );
+      if (!matchingLabel) {
+        matchingLabel = sourceObject.labels[0];
+        nodeStyleMapping[matchingLabel] =
+          predefinedNodesStyles[nodeStyleCounter];
+        nodeStyleCounter =
+          (nodeStyleCounter + 1) % predefinedNodesStyles.length;
+      }
+      const nodeStyle = nodeStyleMapping[matchingLabel];
+      graph.setStyle(item, nodeStyle);
+      // start the animation from the center of the viewport
+      graph.setNodeCenter(item, graphComponent.viewport.center);
     }
-    const nodeStyle = nodeStyleMapping[matchingLabel]
-    graph.setStyle(item, nodeStyle)
-    // start the animation from the center of the viewport
-    graph.setNodeCenter(item, graphComponent.viewport.center)
-  })
+  );
 
-  return graphBuilder
+  return graphBuilder;
 }

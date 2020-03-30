@@ -1,10 +1,10 @@
 <template>
   <v-card>
     <v-card-title class="headline">
-      Search Author
+      Search Patent
     </v-card-title>
     <v-card-text>
-      Find publications by Authors
+      Find patents by title
     </v-card-text>
     <v-card-text>
       <v-autocomplete
@@ -14,7 +14,7 @@
         :search-input.sync="search"
         hide-no-data
         hide-selected
-        item-text="name"
+        item-text="Title"
         item-value="Name"
         label="Words in title"
         placeholder="Start typing to Search"
@@ -35,24 +35,12 @@
     </v-expand-transition>
     <v-card-actions>
       <v-spacer></v-spacer>
-      <v-btn x-small :disabled="!model" @click="model = null">
+      <v-btn :disabled="!model" @click="model = null">
         Clear
         <v-icon right>mdi-close-circle</v-icon>
       </v-btn>
-      <v-btn
-        x-small
-        :disabled="!model"
-        @click="$emit('search-author', model.id)"
-      >
-        Load Author
-        <v-icon right>mdi-cloud-search-outline</v-icon>
-      </v-btn>
-      <v-btn
-        x-small
-        :disabled="!model"
-        @click="$emit('search-author-papers', model.id)"
-      >
-        Load Papers
+      <v-btn :disabled="!model" @click="$emit('search-patent', model.id)">
+        Load Patent
         <v-icon right>mdi-cloud-search-outline</v-icon>
       </v-btn>
     </v-card-actions>
@@ -65,7 +53,7 @@ import Vuetify from "vuetify";
 import query from "../util/dbconnection";
 
 export default {
-  name: "SearchAuthor",
+  name: "SearchPatent",
   data: () => ({
     descriptionLimit: 60,
     entries: [],
@@ -80,8 +68,8 @@ export default {
       if (!this.model) return [];
       return [
         {
-          key: "Name",
-          value: this.model["name"] || "n/a",
+          key: "Title",
+          value: this.model["Title"] || "n/a",
         },
       ];
     },
@@ -98,16 +86,17 @@ export default {
       this.isLoading = true;
 
       // Lazily load input items
-      query("MATCh (a:Author) WHERE a.last CONTAINS $word RETURN a LIMIT 50", {
+      query("MATCh (p:Patent) WHERE p.Title CONTAINS $word RETURN p LIMIT 50", {
         word: val,
       })
         .then((res) => {
           this.count = res.records.length;
           this.entries = res.records.map((record) => {
-            let node = record.get("a");
+            let node = record.get("p");
             return {
               id: node.identity,
-              name: node.properties["first"] + " " + node.properties["last"],
+              PublicationDate: node.properties["PublicationDate"],
+              Title: node.properties["Title"],
             };
           });
         })

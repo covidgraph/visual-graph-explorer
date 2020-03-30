@@ -19,6 +19,8 @@
         @search-article="$refs.graphComponent.searchArticle($event)"
       >
       </SearchArticle>
+      <SearchPatent @search-patent="$refs.graphComponent.searchPatent($event)">
+      </SearchPatent>
       <SearchAuthor @search-article="$refs.graphComponent.searchAuthor($event)">
       </SearchAuthor>
     </v-navigation-drawer>
@@ -40,6 +42,7 @@ import SearchArticle from "./components/SearchArticle";
 import DetailPanel from "./components/DetailPanel";
 import SearchGene from "./components/SearchGene";
 import SearchAuthor from "./components/SearchAuthor";
+import SearchPatent from "./components/SearchPatent";
 
 export default {
   name: "app",
@@ -49,6 +52,7 @@ export default {
     DiagramComponent,
     DetailPanel,
     SearchAuthor,
+    SearchPatent,
   },
 };
 </script>

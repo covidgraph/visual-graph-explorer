@@ -31,10 +31,22 @@
           <v-list-item-title>Load Genes</v-list-item-title>
         </v-list-item>
         <v-list-item
+          v-if="currentItemIs('Patent')"
+          @click="loadGenesForPatent(currentItem)"
+        >
+          <v-list-item-title>Load Genes</v-list-item-title>
+        </v-list-item>
+        <v-list-item
           v-if="currentItemIs('GeneSymbol')"
           @click="loadPapersForGene(currentItem)"
         >
           <v-list-item-title>Load Papers</v-list-item-title>
+        </v-list-item>
+        <v-list-item
+          v-if="currentItemIs('GeneSymbol')"
+          @click="loadPatentsForGene(currentItem)"
+        >
+          <v-list-item-title>Load Patents</v-list-item-title>
         </v-list-item>
         <v-list-item
           v-if="currentItemIs('Author')"
@@ -60,6 +72,11 @@ import {
   License,
   OrganicLayout,
   ShapeNodeStyle,
+  Size,
+  Rect,
+  Point,
+  ComponentArrangementStyles,
+  ComponentLayout,
 } from "yfiles";
 import ContextMenu from "./ContextMenu";
 import {
@@ -67,13 +84,15 @@ import {
   loadGenesForPaper,
   query,
 } from "./../util/queries";
-import { createGraphBuilder } from "../util/Neo4jGraphBuilder";
+import { createGraphBuilder, getId } from "../util/Neo4jGraphBuilder";
 import PopupPanel from "./PopupPanel";
 import { enableWorkarounds } from "./../util/Workarounds";
 import {
   loadPapersForAuthor,
   loadPapersForGene,
   loadReferencedPapersForPaper,
+  loadGenesForPatent,
+  loadPatentsForGene,
 } from "../util/queries";
 
 License.value = licenseData;
@@ -87,6 +106,11 @@ const paperNodeStyle = new ShapeNodeStyle({
   stroke: null,
   shape: "ellipse",
 });
+const patentNodeStyle = new ShapeNodeStyle({
+  fill: "red",
+  stroke: null,
+  shape: "rectangle",
+});
 const authorNodeStyle = new ShapeNodeStyle({
   fill: "green",
   stroke: null,
@@ -98,6 +122,20 @@ const geneNodeStyle = new ShapeNodeStyle({
   shape: "round-rectangle",
 });
 
+function createNodeCreator(style, size, labels) {
+  return function (item, location) {
+    return this.registerNode(
+      this.$graphComponent.graph.createNode({
+        tag: item,
+        layout: Rect.fromCenter(location || Point.ORIGIN, size),
+        style: style,
+        labels: labels(item),
+      }),
+      item
+    );
+  };
+}
+
 export default {
   name: "DiagramComponent",
   components: {
@@ -106,9 +144,12 @@ export default {
   },
   data: () => ({
     currentItem: null,
+    /** {@type Map} */
+    id2NodeMapping: null,
   }),
   mounted() {
     this.$graphComponent = new GraphComponent(this.$refs.GraphComponentElement);
+    this.id2NodeMapping = new Map();
     let viewerInputMode = new GraphViewerInputMode();
     viewerInputMode.contextMenuItems = GraphItemTypes.NODE;
     viewerInputMode.contextMenuInputMode.addPopulateMenuListener(
@@ -146,27 +187,33 @@ export default {
     });
   },
   methods: {
-    createPaperNode(paper) {
-      return this.$graphComponent.graph.createNode({
-        tag: paper,
-        style: paperNodeStyle,
-        labels: [paper.properties.title || "untitled"],
-      });
+    registerNode(node, item) {
+      this.id2NodeMapping.set(getId(item.identity), node);
+      return node;
     },
-    createAuthorNode(author) {
-      return this.$graphComponent.graph.createNode({
-        tag: author,
-        style: authorNodeStyle,
-        labels: [author.properties.last || "Anonymous"],
-      });
+    getLoadedNode(item) {
+      return this.id2NodeMapping.get(getId(item.identity));
     },
-    createGeneNode(gene) {
-      return this.$graphComponent.graph.createNode({
-        tag: gene,
-        style: geneNodeStyle,
-        labels: [gene.properties.sid || "Gene"],
-      });
-    },
+    createPaperNode: createNodeCreator(
+      paperNodeStyle,
+      new Size(40, 40),
+      (paper) => [paper.properties.title || "untitled"]
+    ),
+    createPatentNode: createNodeCreator(
+      patentNodeStyle,
+      new Size(30, 40),
+      (patent) => [patent.properties.Title || "untitled"]
+    ),
+    createAuthorNode: createNodeCreator(
+      authorNodeStyle,
+      new Size(35, 35),
+      (author) => [author.properties.last || "Anonymous"]
+    ),
+    createGeneNode: createNodeCreator(
+      geneNodeStyle,
+      new Size(30, 30),
+      (gene) => [gene.properties.sid || "Gene"]
+    ),
     async loadPapersForAuthor(author) {
       await this.loadAndConnectNodes(
         author,
@@ -181,11 +228,25 @@ export default {
         this.createGeneNode.bind(this)
       );
     },
+    async loadGenesForPatent(patent) {
+      await this.loadAndConnectNodes(
+        patent,
+        loadGenesForPatent,
+        this.createGeneNode.bind(this)
+      );
+    },
     async loadPapersForGene(gene) {
       await this.loadAndConnectNodes(
         gene,
         loadPapersForGene,
         this.createPaperNode.bind(this)
+      );
+    },
+    async loadPatentsForGene(gene) {
+      await this.loadAndConnectNodes(
+        gene,
+        loadPatentsForGene,
+        this.createPatentNode.bind(this)
       );
     },
     async loadAuthorsForPaper(paper) {
@@ -202,64 +263,102 @@ export default {
         this.currentItem.labels.indexOf(type) >= 0
       );
     },
-    async loadAndConnectNodes(item, loader, creator) {
-      let node = this.findNode(item);
-      (await loader(item)).map(creator).forEach((newNode) => {
-        this.$graphComponent.graph.createEdge(node, newNode);
-      });
+    async loadAndConnectNodes(item, loader, creator, labels = []) {
+      let node = this.getLoadedNode(item);
+      if (node) {
+        let location = node.layout.center.toPoint();
+        let graph = this.$graphComponent.graph;
+        let newElementCounter = 0;
+        (await loader(item))
+          .filter((item) => {
+            let existingNode = this.getLoadedNode(item);
+            if (existingNode) {
+              if (!graph.getEdge(node, existingNode)) {
+                newElementCounter++;
+                graph.createEdge({
+                  source: node,
+                  target: existingNode,
+                  labels,
+                });
+              }
+              return false;
+            } else {
+              return true;
+            }
+          })
+          .map((item) => creator(item, location))
+          .forEach((newNode) => {
+            newElementCounter++;
+            if (!graph.getEdge(node, newNode)) {
+              newElementCounter++;
+              graph.createEdge({ source: node, target: newNode, labels });
+            }
+          });
+        if (newElementCounter > 0) {
+          await this.runLayout();
+        }
+      }
+    },
+    async loadNodes(/** {@type Promise<object[]>} */ loader, creator) {
+      (await loader())
+        .filter((item) => !this.getLoadedNode(item))
+        .forEach((item) => creator(item));
       await this.runLayout();
     },
     async runLayout() {
-      await this.$graphComponent.morphLayout(new OrganicLayout());
-    },
-    findNode(tag) {
-      return this.$graphComponent.graph.nodes.first((n) => n.tag === tag);
+      let organicLayout = new OrganicLayout();
+      await this.$graphComponent.morphLayout(organicLayout);
     },
     async loadReferencedPapersForPaper(paper) {
-      let paperNode = this.findNode(paper);
-      const referencedPapers = await loadReferencedPapersForPaper(paper);
-      referencedPapers
-        .map((paper) => this.createPaperNode(paper))
-        .forEach((newPaperNode) => {
-          let referenceEdge = this.$graphComponent.graph.createEdge({
-            source: paperNode,
-            target: newPaperNode,
-            labels: ["References"],
-          });
-        });
-
-      await this.runLayout();
+      await this.loadAndConnectNodes(
+        paper,
+        loadReferencedPapersForPaper,
+        this.createPaperNode.bind(this),
+        ["References"]
+      );
     },
     async searchGene(geneSid) {
-      const papers = await this.fetchPapersMentioning(geneSid);
-      papers.forEach((p) => this.createPaperNode(p));
-      await this.runLayout();
+      await this.loadNodes(
+        this.fetchPapersMentioning.bind(this, geneSid),
+        this.createPaperNode.bind(this)
+      );
+    },
+    async searchPatent(id) {
+      this.loadNodes(
+        () =>
+          query(
+            "MATCH (p:Patent) WHERE id(p) = $id RETURN p as result LIMIT 1",
+            {
+              id,
+            }
+          ),
+        this.createPatentNode.bind(this)
+      );
     },
     async searchArticle(paper_id) {
-      const papers = await query(
-        "MATCH (p:Paper) WHERE p.paper_id = $id RETURN p as result LIMIT 1",
-        {
-          id: paper_id,
-        }
-      );
-      papers.forEach((p) => this.createPaperNode(p));
-      await this.runLayout();
-    },
-
-    async fetchGenes(geneName) {
-      return await query(
-        "MATCH (g:GeneSymbol) Where g.sid = $symbolName RETURN g as result LIMIT 10",
-        { symbolName: geneName }
+      this.loadNodes(
+        () =>
+          query(
+            "MATCH (p:Paper) WHERE p.paper_id = $id RETURN p as result LIMIT 1",
+            {
+              id: paper_id,
+            }
+          ),
+        this.createPaperNode.bind(this)
       );
     },
-
-    async fetchGenes(geneName) {
-      return await query(
-        "MATCH (g:GeneSymbol) Where g.sid = $symbolName RETURN g as result LIMIT 10",
-        { symbolName: geneName }
+    async searchAuthor(id) {
+      this.loadNodes(
+        () =>
+          query(
+            "MATCH (a:Author) WHERE id(a) = $id RETURN a as result LIMIT 1",
+            {
+              id,
+            }
+          ),
+        this.createAuthorNode.bind(this)
       );
     },
-
     async fetchPapersMentioning(sid) {
       return await query(
         "MATCH (p:Paper)-[m:MENTIONS]->(g:GeneSymbol) WHERE g.sid = $sid RETURN p as result LIMIT 100",

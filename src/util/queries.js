@@ -12,6 +12,31 @@ export async function loadGenesForPaper(paper) {
   );
 }
 
+export async function loadGenesForPatent(patent) {
+  return await query(
+    `MATCH (p:Patent) WHERE id(p) = $patentId MATCH (p)-[:HAS_DESCRIPTION]->(:PatentDescription)-[:MENTIONS]->(g:GeneSymbol) RETURN g as result`,
+    { patentId: patent.identity }
+  );
+}
+
+export async function loadPatentsForGene(gene) {
+  return await query(
+    `MATCH (g:GeneSymbol) WHERE id(g) = $geneId MATCH (p:Patent) - [:HAS_DESCRIPTION] -> (:PatentDescription) - [:MENTIONS] -> (g) 
+    RETURN p as result`,
+    { geneId: gene.identity }
+  );
+}
+
+export async function loadGenePaperRelationShips(newGenes, existingPapers) {
+  return await query(
+    `MATCH (p)-[:MENTIONS]->(g:GeneSymbol) Where id(g) in $newGeneIds AND id(p) in $existingPaperIds RETURN id(p) as result`,
+    {
+      newGeneIds: newGenes.map((ng) => ng.identity),
+      existingPaperIds: existingPapers.map((ep) => ep.identity),
+    }
+  );
+}
+
 export async function loadPapersForGene(gene) {
   return await query(
     `MATCH (g:GeneSymbol) WHERE id(g) = $geneId MATCH (p:Paper)-[:MENTIONS]->(g:GeneSymbol) 

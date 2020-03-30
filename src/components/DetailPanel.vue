@@ -8,6 +8,9 @@
   <v-card v-else-if="nodeIs('GeneSymbol')">
     <GenePanel :value="model"></GenePanel>
   </v-card>
+  <v-card v-else-if="nodeIs('Patent')">
+    <PatentPanel :value="model"></PatentPanel>
+  </v-card>
   <v-card v-else>
     <v-card-text>
       Nothing Selected
@@ -19,6 +22,7 @@
 import PaperPanel from "./PaperPanel";
 import AuthorPanel from "./AuthorPanel";
 import GenePanel from "./GenePanel";
+import PatentPanel from "./PatentPanel";
 
 export default {
   name: "DetailPanel",
@@ -26,6 +30,7 @@ export default {
     PaperPanel,
     AuthorPanel,
     GenePanel,
+    PatentPanel,
   },
   data: () => ({
     model: null,
