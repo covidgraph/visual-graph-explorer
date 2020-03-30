@@ -93,7 +93,7 @@ export default {
       this.isLoading = true
 
       // Lazily load input items
-      query('MATCh (p:Paper) WHERE p.title CONTAINS $word RETURN p LIMIT 50', {word:val})
+      query('MATCH (p:Paper) WHERE toLower(p.title) CONTAINS $word RETURN p LIMIT 50', {word:val.toLowerCase()})
         .then(res => {
           this.count = res.records.length
           this.entries = res.records.map(record => {
