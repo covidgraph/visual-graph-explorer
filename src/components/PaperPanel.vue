@@ -76,19 +76,15 @@
       </v-list-item-content>
     </v-list-item>
 
-    <v-card-actions>
-      <v-btn text color="deep-purple accent-4">
-        Read
+    <v-card-actions style="flex-flow: wrap">
+      <v-btn text color="#1976d2" @click="loadAuthors">
+        Load Authors
       </v-btn>
-      <v-btn text color="deep-purple accent-4">
-        Bookmark
+      <v-btn text color="#1976d2" @click="loadGenes">
+        Load Genes
       </v-btn>
-      <v-spacer></v-spacer>
-      <v-btn icon>
-        <v-icon>mdi-heart</v-icon>
-      </v-btn>
-      <v-btn icon>
-        <v-icon>mdi-share-variant</v-icon>
+      <v-btn text color="#1976d2" @click="loadReferencedPapers">
+        Load Referenced Papers
       </v-btn>
     </v-card-actions>
   </v-card>
@@ -156,6 +152,17 @@ export default {
       }
     },
   },
+  methods: {
+    loadReferencedPapers() {
+      this.eventBus.$emit('load-referenced-papers-for-paper',this.value);
+    },
+    loadAuthors() {
+      this.eventBus.$emit('load-authors-for-paper',this.value);
+    },
+    loadGenes() {
+      this.eventBus.$emit('load-genes-for-paper', this.value);
+    }
+  }
 };
 </script>
 

@@ -12,18 +12,8 @@
     </v-card-text>
 
     <v-card-actions>
-      <v-btn text color="deep-purple accent-4">
-        Read
-      </v-btn>
-      <v-btn text color="deep-purple accent-4">
-        Bookmark
-      </v-btn>
-      <v-spacer></v-spacer>
-      <v-btn icon>
-        <v-icon>mdi-heart</v-icon>
-      </v-btn>
-      <v-btn icon>
-        <v-icon>mdi-share-variant</v-icon>
+      <v-btn text color="deep-purple accent-4" @click="loadPapers">
+        Load Papers
       </v-btn>
     </v-card-actions>
   </v-card>
@@ -35,6 +25,12 @@ export default {
   props: {
     value: null,
   },
+
+  methods: {
+    loadPapers () {
+      this.eventBus.$emit('load-papers-for-gene', this.value)
+    }
+  }
 };
 </script>
 
