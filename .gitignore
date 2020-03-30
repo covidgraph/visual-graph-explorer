@@ -1,3 +1,6 @@
 /node_modules/
 /yfiles-*.tgz
 /yfiles-license.json
+package-lock.json
+yfiles-typeinfo.js
+.idea/
