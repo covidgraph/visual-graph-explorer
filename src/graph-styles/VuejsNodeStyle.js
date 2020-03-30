@@ -34,16 +34,16 @@ import {
   Size,
   SvgVisual,
   TextRenderSupport,
-  TextWrapping
-} from 'yfiles'
+  TextWrapping,
+} from "yfiles";
 
-import Vue from 'vue';
+import Vue from "vue";
 
 /**
  * Initializes custom components that can be used in the template. Those components can either be used directly or
  * come from a style created by 'Node Template Designer' (https://www.yworks.com/node-template-designer/).
  */
-initializeDesignerVueComponents()
+initializeDesignerVueComponents();
 
 /**
  * A context object that helps to enhance performance. There are some properties that are provided for binding
@@ -55,17 +55,17 @@ class ObservedContext {
    * @param {IRenderContext} renderContext
    */
   constructor(node, renderContext) {
-    this.node = node
-    this.graphComponent = renderContext.canvasComponent
-    this.defsSupport = renderContext.svgDefsManager
-    this.reset()
+    this.node = node;
+    this.graphComponent = renderContext.canvasComponent;
+    this.defsSupport = renderContext.svgDefsManager;
+    this.reset();
   }
 
   /**
    * @param {IRenderContext} renderContext
    */
   update(renderContext) {
-    this.defsSupport = renderContext.svgDefsManager
+    this.defsSupport = renderContext.svgDefsManager;
   }
 
   /**
@@ -73,17 +73,22 @@ class ObservedContext {
    * @return {Object|null}
    */
   reset() {
-    const oldState = this.observed
-    this.observed = {}
+    const oldState = this.observed;
+    this.observed = {};
     if (
       oldState &&
-      ['tag', 'layout', 'zoom', 'selected', 'highlighted', 'focused'].some(name =>
-        oldState.hasOwnProperty(name)
-      )
+      [
+        "tag",
+        "layout",
+        "zoom",
+        "selected",
+        "highlighted",
+        "focused",
+      ].some((name) => oldState.hasOwnProperty(name))
     ) {
-      return oldState
+      return oldState;
     }
-    return null
+    return null;
   }
 
   /**
@@ -92,67 +97,70 @@ class ObservedContext {
    * @return {{change: boolean, delta: {}}}
    */
   checkModification(oldState) {
-    const delta = {}
-    let change = false
-    if (oldState.hasOwnProperty('layout')) {
-      const layout = this.node.layout
+    const delta = {};
+    let change = false;
+    if (oldState.hasOwnProperty("layout")) {
+      const layout = this.node.layout;
       const newValue = {
         x: layout.x,
         y: layout.y,
         width: layout.width,
-        height: layout.height
-      }
+        height: layout.height,
+      };
       if (
         newValue.x !== oldState.layout.x ||
         newValue.y !== oldState.layout.y ||
         newValue.width !== oldState.layout.width ||
         newValue.height !== oldState.layout.height
       ) {
-        delta.layout = newValue
-        change = true
+        delta.layout = newValue;
+        change = true;
       }
     }
-    if (oldState.hasOwnProperty('zoom')) {
-      const newValue = this.graphComponent.zoom
+    if (oldState.hasOwnProperty("zoom")) {
+      const newValue = this.graphComponent.zoom;
       if (newValue !== oldState.zoom) {
-        delta.zoom = newValue
-        change = true
+        delta.zoom = newValue;
+        change = true;
       }
     }
-    if (oldState.hasOwnProperty('tag')) {
-      const newValue = this.node.tag
+    if (oldState.hasOwnProperty("tag")) {
+      const newValue = this.node.tag;
       if (newValue !== oldState.tag) {
-        delta.tag = newValue
-        change = true
+        delta.tag = newValue;
+        change = true;
       }
     }
-    if (oldState.hasOwnProperty('selected')) {
-      const newValue = this.graphComponent.selection.selectedNodes.isSelected(this.node)
+    if (oldState.hasOwnProperty("selected")) {
+      const newValue = this.graphComponent.selection.selectedNodes.isSelected(
+        this.node
+      );
       if (newValue !== oldState.selected) {
-        delta.selected = newValue
-        change = true
+        delta.selected = newValue;
+        change = true;
       }
     }
-    if (oldState.hasOwnProperty('highlighted')) {
+    if (oldState.hasOwnProperty("highlighted")) {
       const newValue = this.graphComponent.highlightIndicatorManager.selectionModel.isSelected(
         this.node
-      )
+      );
       if (newValue !== oldState.highlighted) {
-        delta.highlighted = newValue
-        change = true
+        delta.highlighted = newValue;
+        change = true;
       }
     }
-    if (oldState.hasOwnProperty('focused')) {
-      const newValue = this.graphComponent.focusIndicatorManager.focusedItem === this.node
+    if (oldState.hasOwnProperty("focused")) {
+      const newValue =
+        this.graphComponent.focusIndicatorManager.focusedItem === this.node;
       if (newValue !== oldState.focused) {
-        delta.focused = newValue
-        change = true
+        delta.focused = newValue;
+        change = true;
       }
     }
     return {
       change,
-      delta
-    }
+      delta,
+    };
   }
 
   /**
@@ -160,17 +168,17 @@ class ObservedContext {
    * @return {{x, y, height, width:}}
    */
   get layout() {
-    if (this.observed.hasOwnProperty('layout')) {
-      return this.observed.layout
+    if (this.observed.hasOwnProperty("layout")) {
+      return this.observed.layout;
     }
-    const layout = this.node.layout
+    const layout = this.node.layout;
     const val = {
       x: layout.x,
       y: layout.y,
       height: layout.height,
-      width: layout.width
-    }
-    return (this.observed.layout = val)
+      width: layout.width,
+    };
+    return (this.observed.layout = val);
   }
 
   /**
@@ -178,10 +186,10 @@ class ObservedContext {
    * @return {number}
    */
   get zoom() {
-    if (this.observed.hasOwnProperty('zoom')) {
-      return this.observed.zoom
+    if (this.observed.hasOwnProperty("zoom")) {
+      return this.observed.zoom;
     }
-    return (this.observed.zoom = this.graphComponent.zoom)
+    return (this.observed.zoom = this.graphComponent.zoom);
   }
 
   /**
@@ -189,10 +197,10 @@ class ObservedContext {
    * @return {Object}
    */
   get tag() {
-    if (this.observed.hasOwnProperty('tag')) {
-      return this.observed.tag
+    if (this.observed.hasOwnProperty("tag")) {
+      return this.observed.tag;
     }
-    return (this.observed.tag = this.node.tag)
+    return (this.observed.tag = this.node.tag);
   }
 
   /**
@@ -200,12 +208,12 @@ class ObservedContext {
    * @return {boolean}
    */
   get selected() {
-    if (this.observed.hasOwnProperty('selected')) {
-      return this.observed.selected
+    if (this.observed.hasOwnProperty("selected")) {
+      return this.observed.selected;
     }
     return (this.observed.selected = this.graphComponent.selection.selectedNodes.isSelected(
       this.node
-    ))
+    ));
   }
 
   /**
@@ -213,12 +221,12 @@ class ObservedContext {
    * @return {boolean}
    */
   get highlighted() {
-    if (this.observed.hasOwnProperty('highlighted')) {
-      return this.observed.highlighted
+    if (this.observed.hasOwnProperty("highlighted")) {
+      return this.observed.highlighted;
     }
     return (this.observed.highlighted = this.graphComponent.highlightIndicatorManager.selectionModel.isSelected(
       this.node
-    ))
+    ));
   }
 
   /**
@@ -226,18 +234,18 @@ class ObservedContext {
    * @return {boolean}
    */
   get focused() {
-    if (this.observed.hasOwnProperty('focused')) {
-      return this.observed.focused
+    if (this.observed.hasOwnProperty("focused")) {
+      return this.observed.focused;
     }
     return (this.observed.focused =
-      this.graphComponent.focusIndicatorManager.focusedItem === this.node)
+      this.graphComponent.focusIndicatorManager.focusedItem === this.node);
   }
 
   /**
    * Generates an id for use in SVG defs elements that is unique for the current rendering context.
    */
   generateDefsId() {
-    return this.defsSupport.generateUniqueDefsId()
+    return this.defsSupport.generateUniqueDefsId();
   }
 }
 
@@ -249,8 +257,8 @@ export default class VuejsNodeStyle extends NodeStyleBase {
    * @param {string} template
    */
   constructor(template) {
-    super()
-    this.template = template
+    super();
+    this.template = template;
   }
 
   /**
@@ -258,7 +266,7 @@ export default class VuejsNodeStyle extends NodeStyleBase {
    * @return {string}
    */
   get template() {
-    return this.$template
+    return this.$template;
   }
 
   /**
@@ -267,92 +275,92 @@ export default class VuejsNodeStyle extends NodeStyleBase {
    */
   set template(value) {
     if (value !== this.$template) {
-      this.$template = value
+      this.$template = value;
       this.constructorFunction = Vue.extend({
         template: value,
         data() {
           return {
             yFilesContext: null,
             idMap: {},
-            urlMap: {}
-          }
+            urlMap: {},
+          };
         },
         methods: {
           localId(id) {
-            let localId = this.idMap[id]
-            if (typeof localId === 'undefined') {
-              localId = this.yFilesContext.observedContext.generateDefsId()
-              this.idMap[id] = localId
+            let localId = this.idMap[id];
+            if (typeof localId === "undefined") {
+              localId = this.yFilesContext.observedContext.generateDefsId();
+              this.idMap[id] = localId;
             }
-            return localId
+            return localId;
           },
           localUrl(id) {
-            let localUrl = this.urlMap[id]
-            if (typeof localUrl === 'undefined') {
-              const localId = this.localId(id)
-              localUrl = `url(#${localId})`
-              this.urlMap[id] = localUrl
+            let localUrl = this.urlMap[id];
+            if (typeof localUrl === "undefined") {
+              const localId = this.localId(id);
+              localUrl = `url(#${localId})`;
+              this.urlMap[id] = localUrl;
             }
-            return localUrl
-          }
+            return localUrl;
+          },
         },
         computed: {
           layout() {
-            const yFilesContext = this.yFilesContext
-            if (yFilesContext.hasOwnProperty('layout')) {
-              return yFilesContext.layout
+            const yFilesContext = this.yFilesContext;
+            if (yFilesContext.hasOwnProperty("layout")) {
+              return yFilesContext.layout;
             }
-            const layout = yFilesContext.observedContext.layout
+            const layout = yFilesContext.observedContext.layout;
             return {
               width: layout.width,
               height: layout.height,
               x: layout.x,
-              y: layout.y
-            }
+              y: layout.y,
+            };
           },
           tag() {
-            const yFilesContext = this.yFilesContext
-            if (yFilesContext.hasOwnProperty('tag')) {
-              return yFilesContext.tag || {}
+            const yFilesContext = this.yFilesContext;
+            if (yFilesContext.hasOwnProperty("tag")) {
+              return yFilesContext.tag || {};
             }
-            return yFilesContext.observedContext.tag || {}
+            return yFilesContext.observedContext.tag || {};
           },
           selected() {
-            const yFilesContext = this.yFilesContext
-            if (yFilesContext.hasOwnProperty('selected')) {
-              return yFilesContext.selected
+            const yFilesContext = this.yFilesContext;
+            if (yFilesContext.hasOwnProperty("selected")) {
+              return yFilesContext.selected;
             }
-            return yFilesContext.observedContext.selected
+            return yFilesContext.observedContext.selected;
           },
           zoom() {
-            const yFilesContext = this.yFilesContext
-            if (yFilesContext.hasOwnProperty('zoom')) {
-              return yFilesContext.selected
+            const yFilesContext = this.yFilesContext;
+            if (yFilesContext.hasOwnProperty("zoom")) {
+              return yFilesContext.selected;
             }
-            return yFilesContext.observedContext.zoom
+            return yFilesContext.observedContext.zoom;
           },
           focused() {
-            const yFilesContext = this.yFilesContext
-            if (yFilesContext.hasOwnProperty('focused')) {
-              return yFilesContext.focused
+            const yFilesContext = this.yFilesContext;
+            if (yFilesContext.hasOwnProperty("focused")) {
+              return yFilesContext.focused;
             }
-            return yFilesContext.observedContext.focused
+            return yFilesContext.observedContext.focused;
           },
           highlighted() {
-            const yFilesContext = this.yFilesContext
-            if (yFilesContext.hasOwnProperty('highlighted')) {
-              return yFilesContext.highlighted
+            const yFilesContext = this.yFilesContext;
+            if (yFilesContext.hasOwnProperty("highlighted")) {
+              return yFilesContext.highlighted;
             }
-            return yFilesContext.observedContext.highlighted
+            return yFilesContext.observedContext.highlighted;
           },
           fill() {
-            return this.tag.fill
+            return this.tag.fill;
           },
           scale() {
-            return this.tag.scale
-          }
-        }
-      })
+            return this.tag.scale;
+          },
+        },
+      });
     }
   }
 
@@ -364,41 +372,41 @@ export default class VuejsNodeStyle extends NodeStyleBase {
    * @see Overrides {@link LabelStyleBase#createVisual}
    */
   createVisual(context, node) {
-    const component = new this.constructorFunction()
+    const component = new this.constructorFunction();
 
-    this.prepareVueComponent(component, context, node)
+    this.prepareVueComponent(component, context, node);
 
     // mount the component without passing in a DOM element
-    component.$mount()
-    const svgElement = component.$el
+    component.$mount();
+    const svgElement = component.$el;
 
     if (!(svgElement instanceof SVGElement)) {
-      throw 'VuejsNodeStyle: Invalid template!'
+      throw "VuejsNodeStyle: Invalid template!";
     }
 
-    const yFilesContext = component.yFilesContext
-    const observedContext = yFilesContext.observedContext
+    const yFilesContext = component.yFilesContext;
+    const observedContext = yFilesContext.observedContext;
 
     if (observedContext) {
-      const changes = observedContext.reset()
+      const changes = observedContext.reset();
       if (changes) {
-        observedContext.changes = changes
+        observedContext.changes = changes;
       }
     }
 
     // set the location
-    this.updateLocation(node, svgElement)
+    this.updateLocation(node, svgElement);
 
     // save the component instance with the DOM element so we can retrieve it later
-    svgElement['data-vueComponent'] = component
+    svgElement["data-vueComponent"] = component;
 
     // return an SvgVisual that uses the DOM element of the component
-    const svgVisual = new SvgVisual(svgElement)
+    const svgVisual = new SvgVisual(svgElement);
     context.setDisposeCallback(svgVisual, (context, visual) => {
       // clean up vue component instance after the visual is disposed
-      visual.svgElement['data-vueComponent'].$destroy()
-    })
-    return svgVisual
+      visual.svgElement["data-vueComponent"].$destroy();
+    });
+    return svgVisual;
   }
 
   /**
@@ -411,34 +419,40 @@ export default class VuejsNodeStyle extends NodeStyleBase {
    */
   updateVisual(context, oldVisual, node) {
     if (oldVisual instanceof SvgVisual && oldVisual.svgElement) {
-      const component = oldVisual.svgElement['data-vueComponent']
+      const component = oldVisual.svgElement["data-vueComponent"];
       if (component) {
-        const yfilesContext = component.yFilesContext
-        const observedContext = yfilesContext.observedContext
-        observedContext.update(context)
-        if (observedContext && observedContext.changes && !observedContext.updatePending) {
-          const { change } = observedContext.checkModification(observedContext.changes)
+        const yfilesContext = component.yFilesContext;
+        const observedContext = yfilesContext.observedContext;
+        observedContext.update(context);
+        if (
+          observedContext &&
+          observedContext.changes &&
+          !observedContext.updatePending
+        ) {
+          const { change } = observedContext.checkModification(
+            observedContext.changes
+          );
           if (change) {
-            observedContext.updatePending = true
-            this.updateVueComponent(component, yfilesContext, node)
+            observedContext.updatePending = true;
+            this.updateVueComponent(component, yfilesContext, node);
             component.$nextTick(() => {
               if (observedContext.updatePending) {
-                observedContext.updatePending = false
-                const changes = observedContext.reset()
+                observedContext.updatePending = false;
+                const changes = observedContext.reset();
                 if (changes) {
-                  observedContext.changes = changes
+                  observedContext.changes = changes;
                 } else {
-                  delete observedContext.changes
+                  delete observedContext.changes;
                 }
               }
-            })
+            });
           }
         }
-        this.updateLocation(node, oldVisual.svgElement)
-        return oldVisual
+        this.updateLocation(node, oldVisual.svgElement);
+        return oldVisual;
       }
     }
-    return this.createVisual(context, node)
+    return this.createVisual(context, node);
   }
 
   /**
@@ -448,17 +462,17 @@ export default class VuejsNodeStyle extends NodeStyleBase {
    * @param {INode} node
    */
   prepareVueComponent(component, context, node) {
-    const yFilesContext = {}
+    const yFilesContext = {};
 
-    const ctx = new ObservedContext(node, context)
+    const ctx = new ObservedContext(node, context);
 
-    Object.defineProperty(yFilesContext, 'observedContext', {
+    Object.defineProperty(yFilesContext, "observedContext", {
       configurable: false,
       enumerable: false,
-      value: ctx
-    })
+      value: ctx,
+    });
 
-    component.yFilesContext = yFilesContext
+    component.yFilesContext = yFilesContext;
   }
 
   /**
@@ -468,18 +482,18 @@ export default class VuejsNodeStyle extends NodeStyleBase {
    * @param {INode} node
    */
   updateVueComponent(component, context, node) {
-    const yFilesContext = {}
+    const yFilesContext = {};
 
-    const ctx = component.yFilesContext.observedContext
+    const ctx = component.yFilesContext.observedContext;
 
-    Object.defineProperty(yFilesContext, 'observedContext', {
+    Object.defineProperty(yFilesContext, "observedContext", {
       configurable: false,
       enumerable: false,
-      value: ctx
-    })
+      value: ctx,
+    });
 
-    component.yFilesContext = yFilesContext
-    component.$forceUpdate()
+    component.yFilesContext = yFilesContext;
+    component.$forceUpdate();
   }
 
   /**
@@ -489,7 +503,7 @@ export default class VuejsNodeStyle extends NodeStyleBase {
    */
   updateLocation(node, svgElement) {
     if (svgElement.transform) {
-      SvgVisual.setTranslate(svgElement, node.layout.x, node.layout.y)
+      SvgVisual.setTranslate(svgElement, node.layout.x, node.layout.y);
     }
   }
 }
@@ -500,8 +514,8 @@ export default class VuejsNodeStyle extends NodeStyleBase {
  */
 function initializeDesignerVueComponents() {
   Vue.config.warnHandler = (err, vm, info) => {
-    throw new Error(`${err}\n${info}`)
-  }
+    throw new Error(`${err}\n${info}`);
+  };
 
   function addText(
     value,
@@ -516,64 +530,73 @@ function initializeDesignerVueComponents() {
     wrapping,
     textElement
   ) {
-    if (textElement.nodeType !== Node.ELEMENT_NODE || textElement.nodeName !== 'text') {
-      return null
+    if (
+      textElement.nodeType !== Node.ELEMENT_NODE ||
+      textElement.nodeName !== "text"
+    ) {
+      return null;
     }
 
-    const text = String(value)
+    const text = String(value);
     // create the font which determines the visual text properties
-    const fontSettings = {}
-    if (typeof fontFamily !== 'undefined') {
-      fontSettings.fontFamily = fontFamily
+    const fontSettings = {};
+    if (typeof fontFamily !== "undefined") {
+      fontSettings.fontFamily = fontFamily;
     }
-    if (typeof fontSize !== 'undefined') {
-      fontSettings.fontSize = parseFloat(fontSize)
+    if (typeof fontSize !== "undefined") {
+      fontSettings.fontSize = parseFloat(fontSize);
     }
-    if (typeof fontStyle !== 'undefined') {
-      fontSettings.fontStyle = fontStyle
+    if (typeof fontStyle !== "undefined") {
+      fontSettings.fontStyle = fontStyle;
     }
-    if (typeof fontWeight !== 'undefined') {
-      fontSettings.fontWeight = fontWeight
+    if (typeof fontWeight !== "undefined") {
+      fontSettings.fontWeight = fontWeight;
     }
-    if (typeof textDecoration !== 'undefined') {
-      fontSettings.textDecoration = textDecoration
+    if (typeof textDecoration !== "undefined") {
+      fontSettings.textDecoration = textDecoration;
     }
-    if (typeof lineSpacing !== 'undefined') {
-      fontSettings.lineSpacing = parseFloat(lineSpacing)
+    if (typeof lineSpacing !== "undefined") {
+      fontSettings.lineSpacing = parseFloat(lineSpacing);
     }
-    const font = new Font(fontSettings)
-    let textWrapping = TextWrapping.CHARACTER_ELLIPSIS
+    const font = new Font(fontSettings);
+    let textWrapping = TextWrapping.CHARACTER_ELLIPSIS;
 
     // apply the font
-    font.applyTo(textElement)
+    font.applyTo(textElement);
 
-    if (typeof wrapping !== 'undefined' && wrapping !== null) {
+    if (typeof wrapping !== "undefined" && wrapping !== null) {
       switch (wrapping) {
         case TextWrapping.CHARACTER_ELLIPSIS:
         case TextWrapping.CHARACTER:
         case TextWrapping.NONE:
         case TextWrapping.WORD:
         case TextWrapping.WORD_ELLIPSIS:
-          textWrapping = wrapping
-          break
+          textWrapping = wrapping;
+          break;
         default:
           // in case of faulty input
-          textWrapping = TextWrapping.NONE
+          textWrapping = TextWrapping.NONE;
       }
     }
 
-    if (typeof w === 'undefined' || w === null) {
-      w = Number.POSITIVE_INFINITY
+    if (typeof w === "undefined" || w === null) {
+      w = Number.POSITIVE_INFINITY;
     }
-    if (typeof h === 'undefined' || h === null) {
-      h = Number.POSITIVE_INFINITY
+    if (typeof h === "undefined" || h === null) {
+      h = Number.POSITIVE_INFINITY;
     }
 
     // do the text wrapping
     // This sample uses the strategy CHARACTER_ELLIPSIS. You can use any other setting.
-    TextRenderSupport.addText(textElement, text, font, new Size(w, h), textWrapping)
+    TextRenderSupport.addText(
+      textElement,
+      text,
+      font,
+      new Size(w, h),
+      textWrapping
+    );
 
-    return textElement
+    return textElement;
   }
 
   function updateText(
@@ -590,7 +613,7 @@ function initializeDesignerVueComponents() {
     textElement
   ) {
     while (textElement.firstChild) {
-      textElement.removeChild(textElement.firstChild)
+      textElement.removeChild(textElement.firstChild);
     }
     addText(
       value,
@@ -604,12 +627,12 @@ function initializeDesignerVueComponents() {
       lineSpacing,
       wrapping,
       textElement
-    )
+    );
   }
 
-  let clipId = 0
+  let clipId = 0;
 
-  Vue.component('svg-text', {
+  Vue.component("svg-text", {
     template: `
 <g v-if="visible" :transform="$transform">
 <g v-if="clipped" :transform="'translate('+x+' '+y+')'">
@@ -623,7 +646,7 @@ function initializeDesignerVueComponents() {
 </g>
 </g>`,
     data() {
-      return { refId: `svg-text-${clipId++}` }
+      return { refId: `svg-text-${clipId++}` };
     },
     mounted() {
       addText(
@@ -637,8 +660,8 @@ function initializeDesignerVueComponents() {
         this.textDecoration,
         this.lineSpacing,
         this.wrapping,
-        this.$el.querySelector('text')
-      )
+        this.$el.querySelector("text")
+      );
     },
     watch: {
       width() {
@@ -653,8 +676,8 @@ function initializeDesignerVueComponents() {
           this.textDecoration,
           this.lineSpacing,
           this.wrapping,
-          this.$el.querySelector('text')
-        )
+          this.$el.querySelector("text")
+        );
       },
       height() {
         updateText(
@@ -668,8 +691,8 @@ function initializeDesignerVueComponents() {
           this.textDecoration,
           this.lineSpacing,
           this.wrapping,
-          this.$el.querySelector('text')
-        )
+          this.$el.querySelector("text")
+        );
       },
       content() {
         updateText(
@@ -683,286 +706,292 @@ function initializeDesignerVueComponents() {
           this.textDecoration,
           this.lineSpacing,
           this.wrapping,
-          this.$el.querySelector('text')
-        )
-      }
+          this.$el.querySelector("text")
+        );
+      },
     },
 
     props: {
       x: {
         required: false,
-        default: undefined
+        default: undefined,
       },
       y: {
         required: false,
-        default: undefined
+        default: undefined,
       },
       width: {
         required: false,
-        default: undefined
+        default: undefined,
       },
       height: {
         required: false,
-        default: undefined
+        default: undefined,
       },
       clipped: {
         required: false,
-        default: false
+        default: false,
       },
       align: {
         required: false,
-        default: false
+        default: false,
       },
       fill: {
         required: false,
-        default: undefined
+        default: undefined,
       },
       content: {
         required: false,
-        default: undefined
+        default: undefined,
       },
       opacity: {
         default: undefined,
-        required: false
+        required: false,
       },
       visible: {
         default: true,
-        required: false
+        required: false,
       },
       wrapping: {
         default: TextWrapping.CHARACTER_ELLIPSIS,
-        required: false
+        required: false,
       },
       transform: {
-        default: '',
-        required: false
+        default: "",
+        required: false,
       },
       fontFamily: {
         default: undefined,
-        required: false
+        required: false,
       },
       fontSize: {
         default: undefined,
-        required: false
+        required: false,
       },
       fontWeight: {
         default: undefined,
-        required: false
+        required: false,
       },
       fontStyle: {
         default: undefined,
-        required: false
+        required: false,
       },
       textDecoration: {
         default: undefined,
-        required: false
+        required: false,
       },
       lineSpacing: {
         default: 0.5,
-        required: false
-      }
+        required: false,
+      },
     },
     computed: {
       $dx() {
-        return this.align === 'end' ? this.width : this.align === 'middle' ? this.width * 0.5 : 0
+        return this.align === "end"
+          ? this.width
+          : this.align === "middle"
+          ? this.width * 0.5
+          : 0;
       },
       $textAnchor() {
-        return this.align === 'end' || this.align === 'middle' ? this.align : false
+        return this.align === "end" || this.align === "middle"
+          ? this.align
+          : false;
       },
       $transform() {
-        return !this.transform ? false : this.transform
-      }
-    }
-  })
+        return !this.transform ? false : this.transform;
+      },
+    },
+  });
 
-  Vue.component('svg-rect', {
+  Vue.component("svg-rect", {
     template:
       '<rect :transform="$transform" :x="x" :y="y" :width="width" :height="height" :rx="cornerRadius" :fill="fill" :stroke="stroke" :stroke-width="strokeWidth" :stroke-dasharray="strokeDasharray" :opacity="opacity" v-if="visible"></rect>',
     props: {
       x: {
         type: Number,
         default: 0,
-        required: false
+        required: false,
       },
       y: {
         type: Number,
         default: 0,
-        required: false
+        required: false,
       },
       width: {
         type: Number,
         default: 50,
-        required: false
+        required: false,
       },
       height: {
         type: Number,
         default: 50,
-        required: false
+        required: false,
       },
       cornerRadius: {
         type: Number,
         default: 0,
-        required: false
+        required: false,
       },
       fill: {
         type: String,
         required: false,
-        default: 'orange'
+        default: "orange",
       },
       stroke: {
         type: String,
         required: false,
-        default: 'orange'
+        default: "orange",
       },
       strokeWidth: {
         type: Number,
         default: 1,
-        required: false
+        required: false,
       },
       strokeDasharray: {
         type: String,
-        default: '',
-        required: false
+        default: "",
+        required: false,
       },
       opacity: {
         type: Number,
         default: 1,
-        required: false
+        required: false,
       },
       visible: {
         type: Boolean,
         default: true,
-        required: false
+        required: false,
       },
       transform: {
-        default: '',
-        required: false
-      }
+        default: "",
+        required: false,
+      },
     },
     computed: {
       $transform() {
-        return !this.transform ? false : this.transform
-      }
-    }
-  })
-  Vue.component('svg-ellipse', {
+        return !this.transform ? false : this.transform;
+      },
+    },
+  });
+  Vue.component("svg-ellipse", {
     template:
       '<ellipse :transform="$transform" :cx="$cx" :cy="$cy" :rx="$rx" :ry="$ry" :fill="fill" :stroke="stroke" :stroke-width="strokeWidth" :stroke-dasharray="strokeDasharray" :opacity="opacity" v-if="visible"></ellipse>',
     props: {
       x: {
         type: Number,
         default: 0,
-        required: false
+        required: false,
       },
       y: {
         type: Number,
         default: 0,
-        required: false
+        required: false,
       },
       width: {
         type: Number,
         default: 50,
-        required: false
+        required: false,
       },
       height: {
         type: Number,
         default: 50,
-        required: false
+        required: false,
       },
       fill: {
         type: String,
         required: false,
-        default: 'orange'
+        default: "orange",
       },
       stroke: {
         type: String,
         required: false,
-        default: 'orange'
+        default: "orange",
       },
       strokeWidth: {
         type: Number,
         default: 1,
-        required: false
+        required: false,
       },
       strokeDasharray: {
         type: String,
-        default: '',
-        required: false
+        default: "",
+        required: false,
       },
       opacity: {
         type: Number,
         default: 1,
-        required: false
+        required: false,
       },
       visible: {
         type: Boolean,
         default: true,
-        required: false
+        required: false,
       },
       transform: {
-        default: '',
-        required: false
-      }
+        default: "",
+        required: false,
+      },
     },
     computed: {
       $cx() {
-        return this.x + this.width * 0.5
+        return this.x + this.width * 0.5;
       },
       $cy() {
-        return this.y + this.height * 0.5
+        return this.y + this.height * 0.5;
       },
       $rx() {
-        return this.width * 0.5
+        return this.width * 0.5;
       },
       $ry() {
-        return this.height * 0.5
+        return this.height * 0.5;
       },
       $transform() {
-        return !this.transform ? false : this.transform
-      }
-    }
-  })
-  Vue.component('svg-image', {
+        return !this.transform ? false : this.transform;
+      },
+    },
+  });
+  Vue.component("svg-image", {
     template:
       '<image :transform="$transform" :x="x" :y="y" :width="width" :height="height" v-bind="{\'xlink:href\':src}" :opacity="opacity" v-if="visible"></image>',
     props: {
       x: {
         default: undefined,
-        required: false
+        required: false,
       },
       y: {
         default: undefined,
-        required: false
+        required: false,
       },
       width: {
         default: undefined,
-        required: false
+        required: false,
       },
       height: {
         default: undefined,
-        required: false
+        required: false,
       },
       src: {
         default: undefined,
-        required: false
+        required: false,
       },
       opacity: {
         default: undefined,
-        required: false
+        required: false,
       },
       visible: {
         default: true,
-        required: false
+        required: false,
       },
       transform: {
-        default: '',
-        required: false
-      }
+        default: "",
+        required: false,
+      },
     },
     computed: {
       $transform() {
-        return !this.transform ? false : this.transform
-      }
-    }
-  })
+        return !this.transform ? false : this.transform;
+      },
+    },
+  });
 }

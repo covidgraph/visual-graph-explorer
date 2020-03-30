@@ -25,10 +25,7 @@
     <v-divider></v-divider>
     <v-expand-transition>
       <v-list v-if="model">
-        <v-list-item
-          v-for="(field, i) in fields"
-          :key="i"
-        >
+        <v-list-item v-for="(field, i) in fields" :key="i">
           <v-list-item-content>
             <v-list-item-title v-text="field.value"></v-list-item-title>
             <v-list-item-subtitle v-text="field.key"></v-list-item-subtitle>
@@ -38,17 +35,11 @@
     </v-expand-transition>
     <v-card-actions>
       <v-spacer></v-spacer>
-      <v-btn
-        :disabled="!model"
-        @click="model = null"
-      >
+      <v-btn :disabled="!model" @click="model = null">
         Clear
         <v-icon right>mdi-close-circle</v-icon>
       </v-btn>
-      <v-btn
-        :disabled="!model"
-        @click="$emit('search-gene', model.sid)"
-      >
+      <v-btn :disabled="!model" @click="$emit('search-gene', model.sid)">
         Load Papers
         <v-icon right>mdi-cloud-search-outline</v-icon>
       </v-btn>
@@ -57,9 +48,9 @@
 </template>
 
 <script>
-import Vuetify from 'vuetify'
+import Vuetify from "vuetify";
 
-import query from '../util/dbconnection'
+import query from "../util/dbconnection";
 
 export default {
   name: "SearchGene",
@@ -74,51 +65,56 @@ export default {
 
   computed: {
     fields() {
-      if (!this.model) return []
-        return [{
-          key:"Name",
-          value: this.model["Description"] || 'n/a',
-        }]
+      if (!this.model) return [];
+      return [
+        {
+          key: "Name",
+          value: this.model["Description"] || "n/a",
+        },
+      ];
     },
     items() {
-      return this.entries.map(entry => {
-        const Description = entry.Description.length > this.descriptionLimit
-          ? entry.Description.slice(0, this.descriptionLimit) + '...'
-          : entry.Description
+      return this.entries.map((entry) => {
+        const Description =
+          entry.Description.length > this.descriptionLimit
+            ? entry.Description.slice(0, this.descriptionLimit) + "..."
+            : entry.Description;
 
-        return { sid:entry.sid, Description }
-      })
+        return { sid: entry.sid, Description };
+      });
     },
   },
 
   watch: {
     search(val) {
       // Items have already been requested
-      if (this.isLoading) return
+      if (this.isLoading) return;
 
-      this.isLoading = true
+      this.isLoading = true;
 
       // Lazily load input items
-      query('MATCH (g:GeneSymbol) WHERE toLower(g.sid) STARTS WITH $sid RETURN g LIMIT 100', {sid:val.toLowerCase()})
-        .then(res => {
-          this.count = res.records.length
-          this.entries = res.records.map(record => {
-            let node = record.get('g')
-            return ({
+      query(
+        "MATCH (g:GeneSymbol) WHERE toLower(g.sid) STARTS WITH $sid RETURN g LIMIT 100",
+        { sid: val.toLowerCase() }
+      )
+        .then((res) => {
+          this.count = res.records.length;
+          this.entries = res.records.map((record) => {
+            let node = record.get("g");
+            return {
               id: node.identity,
-              sid:node.properties['sid'],
-              Description: node.properties['sid']
-            })
+              sid: node.properties["sid"],
+              Description: node.properties["sid"],
+            };
           });
         })
-        .catch(err => {
-          console.log(err)
+        .catch((err) => {
+          console.log(err);
         })
-        .finally(() => (this.isLoading = false))
+        .finally(() => (this.isLoading = false));
     },
-  }
-}
+  },
+};
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>
