@@ -231,7 +231,7 @@ export default {
     createPaperNode: createNodeCreator(
       paperNodeStyle,
       new Size(400, 150),
-      (paper) => [paper.properties.title || "untitled"]
+      () => []
     ),
     createPatentNode: createNodeCreator(
       patentNodeStyle,
