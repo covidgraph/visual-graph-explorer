@@ -27,10 +27,10 @@ export default {
   },
 
   methods: {
-    loadPapers () {
-      this.eventBus.$emit('load-papers-for-gene', this.value)
-    }
-  }
+    loadPapers() {
+      this.eventBus.$emit("load-papers-for-gene", this.value);
+    },
+  },
 };
 </script>
 

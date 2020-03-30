@@ -76,7 +76,7 @@
       </v-list-item-content>
     </v-list-item>
 
-    <v-card-actions style="flex-flow: wrap">
+    <v-card-actions style="flex-flow: wrap;">
       <v-btn text color="#1976d2" @click="loadAuthors">
         Load Authors
       </v-btn>
@@ -154,15 +154,15 @@ export default {
   },
   methods: {
     loadReferencedPapers() {
-      this.eventBus.$emit('load-referenced-papers-for-paper',this.value);
+      this.eventBus.$emit("load-referenced-papers-for-paper", this.value);
     },
     loadAuthors() {
-      this.eventBus.$emit('load-authors-for-paper',this.value);
+      this.eventBus.$emit("load-authors-for-paper", this.value);
     },
     loadGenes() {
-      this.eventBus.$emit('load-genes-for-paper', this.value);
-    }
-  }
+      this.eventBus.$emit("load-genes-for-paper", this.value);
+    },
+  },
 };
 </script>
 

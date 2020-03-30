@@ -1,4 +1,4 @@
-import * as neo4j from 'neo4j-driver/lib/browser/neo4j-web'
+import * as neo4j from "neo4j-driver/lib/browser/neo4j-web";
 
 /**
  * Establishes a connection to a Neo4j database.
@@ -11,19 +11,19 @@ async function connectToDB(url, user, pass, encrypted = false) {
   // create a new Neo4j driver instance
   const neo4jDriver = neo4j.driver(url, neo4j.auth.basic(user, pass), {
     encrypted: encrypted,
-    trust: 'TRUST_CUSTOM_CA_SIGNED_CERTIFICATES'
-  })
+    trust: "TRUST_CUSTOM_CA_SIGNED_CERTIFICATES",
+  });
 
-  const runCypherQuery = createCypherQueryRunner(neo4jDriver)
+  const runCypherQuery = createCypherQueryRunner(neo4jDriver);
 
   try {
     // check connection
-    await runCypherQuery('MATCH (n) RETURN n LIMIT 1')
+    await runCypherQuery("MATCH (n) RETURN n LIMIT 1");
   } catch (e) {
-    throw new Error(`Could not connect to Neo4j: ${e}`)
+    throw new Error(`Could not connect to Neo4j: ${e}`);
   }
 
-  return runCypherQuery
+  return runCypherQuery;
 }
 
 function createCypherQueryRunner(neo4jDriver) {
@@ -34,24 +34,28 @@ function createCypherQueryRunner(neo4jDriver) {
    * @yjs:keep=run
    */
   return async function runCypherQuery(query, params = {}) {
-    const session = neo4jDriver.session('READ')
-    let result
+    const session = neo4jDriver.session("READ");
+    let result;
     try {
-      result = await session.run(query, params)
+      result = await session.run(query, params);
     } catch (e) {
-      throw new Error(`Could not run cypher query: ${e}`)
+      throw new Error(`Could not run cypher query: ${e}`);
     } finally {
-      await session.close()
+      await session.close();
     }
-    return result
-  }
+    return result;
+  };
 }
 
 let runQuery = null;
 
-export default async function query(query, params = {}){
-  if (runQuery == null){
-    runQuery = await connectToDB('bolt://covid.petesis.com:7687', 'public', 'corona')
+export default async function query(query, params = {}) {
+  if (runQuery == null) {
+    runQuery = await connectToDB(
+      "bolt://covid.petesis.com:7687",
+      "public",
+      "corona"
+    );
   }
   return await runQuery(query, params);
 }

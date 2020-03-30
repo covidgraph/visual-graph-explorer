@@ -204,20 +204,20 @@ export default {
       this.$emit("item-selected", evt.item.tag);
     });
 
-    this.eventBus.$on('load-papers-for-gene', gene => {
-      this.loadPapersForGene(gene)
+    this.eventBus.$on("load-papers-for-gene", (gene) => {
+      this.loadPapersForGene(gene);
     });
-    this.eventBus.$on('load-papers-for-author', author => {
-      this.loadPapersForAuthor(author)
+    this.eventBus.$on("load-papers-for-author", (author) => {
+      this.loadPapersForAuthor(author);
     });
-    this.eventBus.$on('load-referenced-papers-for-paper', paper => {
-      this.loadReferencedPapersForPaper(paper)
+    this.eventBus.$on("load-referenced-papers-for-paper", (paper) => {
+      this.loadReferencedPapersForPaper(paper);
     });
-    this.eventBus.$on('load-authors-for-paper', paper => {
-      this.loadAuthorsForPaper(paper)
+    this.eventBus.$on("load-authors-for-paper", (paper) => {
+      this.loadAuthorsForPaper(paper);
     });
-    this.eventBus.$on('load-genes-for-paper', paper => {
-      this.loadGenesForPaper(paper)
+    this.eventBus.$on("load-genes-for-paper", (paper) => {
+      this.loadGenesForPaper(paper);
     });
   },
   methods: {
