@@ -351,6 +351,9 @@ export default {
     this.eventBus.$on("load-papers-for-gene", (gene) => {
       this.loadPapersForGene(gene);
     });
+    this.eventBus.$on("load-patents-for-gene", (gene) => {
+      this.loadPatentsForGene(gene);
+    });
     this.eventBus.$on("load-papers-for-author", (author) => {
       this.loadPapersForAuthor(author);
     });
