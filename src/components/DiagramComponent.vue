@@ -77,6 +77,9 @@ import {
   Point,
   ComponentArrangementStyles,
   ComponentLayout,
+  IVisualTemplate,
+  RectangleIndicatorInstaller,
+  INode,
 } from "yfiles";
 import ContextMenu from "./ContextMenu";
 import {
@@ -103,20 +106,28 @@ enableWorkarounds();
 Class.ensure(LayoutExecutor);
 
 const paperNodeStyle = new VuejsNodeStyle(`<g>
-<rect fill="white" stroke="#C0C0C0" :width="layout.width" :height="layout.height" rx="30"></rect>
-<use href="#book-icon" :width="layout.height" :height="layout.height" fill="#5B9AD9" x="-10" y="0"></use>
-<rect fill='transparent' :stroke="selected ? '#5B9AD9' : 'transparent'" stroke-width="3" :width="layout.width-3" :height="layout.height-3" x="1.5" y="1.5" rx="30"></rect>
-<svg-text :content="tag.properties.title" x="145" y="25" :width="layout.width - 165" :height="50" :wrapping="4" font-family="Roboto,sans-serif" :font-size="18" :font-style="0" :font-weight="0" :text-decoration="0" fill="#5B9AD9" :opacity="1" visible="true" :clipped="true" align="start" transform=""></svg-text>
-<g transform="translate(145 112)">
-  <g>
-    <use href="#calendar-icon" width="20" height="20" fill="gray"></use>
-    <svg-text :content="tag.properties.publish_time" x="25" y="0" style="text-transform: uppercase" :width="80" :height="25" :wrapping="0" font-family="Roboto,sans-serif" :font-size="16" :font-style="0" :font-weight="0" :text-decoration="0" fill="gray" :opacity="1" visible="true" :clipped="true" align="start" transform=""></svg-text>
+<g v-if="zoom >= 0.4">
+  <g :transform="\`translate(90 0) scale(\${selected && zoom >= 0.5 ? 1 : 0} 1)\`" style="transition: transform 0.3s ease-out;">
+    <rect fill='white' stroke="#5B9AD9" stroke-width="3" width="310" :height="layout.height - 3" x="1.5" y="1.5" rx="30"></rect>
+    <svg-text :content="tag.properties.title" x="50" y="15" :width="400 - 165" :height="75" :wrapping="4" font-family="Roboto,sans-serif" :font-size="18" :font-style="0" :font-weight="0" :text-decoration="0" fill="#5B9AD9" :opacity="1" visible="true" :clipped="true" align="start" transform=""></svg-text>
+    <g transform="translate(50 112)">
+      <g>
+        <use href="#calendar-icon" width="20" height="20" fill="gray"></use>
+        <svg-text :content="tag.properties.publish_time" x="25" y="0" style="text-transform: uppercase" :width="80" :height="25" :wrapping="0" font-family="Roboto,sans-serif" :font-size="16" :font-style="0" :font-weight="0" :text-decoration="0" fill="gray" :opacity="1" visible="true" :clipped="true" align="start" transform=""></svg-text>
+      </g>
+      <g transform="translate(140 0)">
+        <use href="#license-icon" width="20" height="20" fill="gray"></use>
+        <svg-text :content="tag.properties.license" x="25" y="0" style="text-transform: uppercase" :width="75" :height="25" :wrapping="0" font-family="Roboto,sans-serif" :font-size="16" :font-style="0" :font-weight="0" :text-decoration="0" fill="gray" :opacity="1" visible="true" :clipped="true" align="start" transform=""></svg-text>
+      </g>
+    </g>
   </g>
-  <g transform="translate(150 0)">
-    <use href="#license-icon" width="20" height="20" fill="gray"></use>
-    <svg-text :content="tag.properties.license" x="25" y="0" style="text-transform: uppercase" :width="65" :height="25" :wrapping="0" font-family="Roboto,sans-serif" :font-size="16" :font-style="0" :font-weight="0" :text-decoration="0" fill="gray" :opacity="1" visible="true" :clipped="true" align="start" transform=""></svg-text>
-  </g>
+  <rect fill="white" x="10" y="10" :width="layout.height - 40" :height="layout.height - 20"></rect>
 </g>
+<use href="#book-icon" :width="layout.height" :height="layout.height" fill="#5B9AD9" x="-10" y="0"></use>
+<template v-if="zoom >= 0.5">
+  <rect fill="#5B9AD9" x="10" y="10" :width="layout.height - 40" :height="layout.height - 80"></rect>
+  <svg-text :content="tag.properties.title" x="0" y="30" :width="layout.width - 18" :height="50" :wrapping="4" font-family="Roboto,sans-serif" :font-size="16" :font-style="0" :font-weight="0" :text-decoration="0" fill="white" :opacity="1" visible="true" :clipped="true" align="middle" transform=""></svg-text>
+</template>
 <defs>
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" id="book-icon"><path d="M448 360V24c0-13.3-10.7-24-24-24H96C43 0 0 43 0 96v320c0 53 43 96 96 96h328c13.3 0 24-10.7 24-24v-16c0-7.5-3.5-14.3-8.9-18.7-4.2-15.4-4.2-59.3 0-74.7 5.4-4.3 8.9-11.1 8.9-18.6zM128 134c0-3.3 2.7-6 6-6h212c3.3 0 6 2.7 6 6v20c0 3.3-2.7 6-6 6H134c-3.3 0-6-2.7-6-6v-20zm0 64c0-3.3 2.7-6 6-6h212c3.3 0 6 2.7 6 6v20c0 3.3-2.7 6-6 6H134c-3.3 0-6-2.7-6-6v-20zm253.4 250H96c-17.7 0-32-14.3-32-32 0-17.6 14.4-32 32-32h285.4c-1.9 17.1-1.9 46.9 0 64z"/></svg>
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" id="calendar-icon"><path d="M400 64h-48V12c0-6.627-5.373-12-12-12h-40c-6.627 0-12 5.373-12 12v52H160V12c0-6.627-5.373-12-12-12h-40c-6.627 0-12 5.373-12 12v52H48C21.49 64 0 85.49 0 112v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V112c0-26.51-21.49-48-48-48zm-6 400H54a6 6 0 0 1-6-6V160h352v298a6 6 0 0 1-6 6zm-52.849-200.65L198.842 404.519c-4.705 4.667-12.303 4.637-16.971-.068l-75.091-75.699c-4.667-4.705-4.637-12.303.068-16.971l22.719-22.536c4.705-4.667 12.303-4.637 16.97.069l44.104 44.461 111.072-110.181c4.705-4.667 12.303-4.637 16.971.068l22.536 22.718c4.667 4.705 4.636 12.303-.069 16.97z"/></svg>
@@ -167,6 +178,13 @@ export default {
   }),
   mounted() {
     this.$graphComponent = new GraphComponent(this.$refs.GraphComponentElement);
+
+    const graph = this.$graphComponent.graph;
+    graph.decorator.nodeDecorator.selectionDecorator.hideImplementation();
+    graph.decorator.nodeDecorator.focusIndicatorDecorator.hideImplementation();
+    const graphModelManager = this.$graphComponent.graphModelManager;
+    graphModelManager.edgeLabelGroup.below(graphModelManager.nodeGroup);
+
     this.id2NodeMapping = new Map();
     let viewerInputMode = new GraphViewerInputMode();
     viewerInputMode.contextMenuItems = GraphItemTypes.NODE;
@@ -202,6 +220,10 @@ export default {
     viewerInputMode.addItemClickedListener((sender, evt) => {
       //this.$refs.popupPanel.showPopup(evt.item);
       this.$emit("item-selected", evt.item.tag);
+
+      if (INode.isInstance(evt.item)) {
+        graphModelManager.getCanvasObject(evt.item).toFront();
+      }
     });
 
     this.eventBus.$on("load-papers-for-gene", (gene) => {
@@ -230,7 +252,7 @@ export default {
     },
     createPaperNode: createNodeCreator(
       paperNodeStyle,
-      new Size(400, 150),
+      new Size(150, 150),
       () => []
     ),
     createPatentNode: createNodeCreator(
@@ -340,7 +362,9 @@ export default {
       await this.runLayout();
     },
     async runLayout() {
-      let organicLayout = new OrganicLayout();
+      let organicLayout = new OrganicLayout({
+        minimumNodeDistance: 100,
+      });
       await this.$graphComponent.morphLayout(organicLayout);
     },
     async loadReferencedPapersForPaper(paper) {
