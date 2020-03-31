@@ -1,82 +1,16 @@
 <template>
   <v-card>
     <v-list-item>
-      <v-icon x-large>mdi-file-document-outline</v-icon>
+      <v-icon x-large color="#5B9AD9">mdi-book</v-icon>
       <v-list-item-content>
-        <v-list-item-title>{{ this.value.properties.title }}</v-list-item-title>
+        <v-list-item-title style="color:#5B9AD9">{{ this.value.properties.title }}</v-list-item-title>
         <v-list-item-subtitle
           >{{ this.value.properties.source_x }}
         </v-list-item-subtitle>
       </v-list-item-content>
     </v-list-item>
 
-    <v-list-item>
-      <v-list-item-content>
-        <v-list-item-title>Authors</v-list-item-title>
-        <v-list-item-subtitle> </v-list-item-subtitle>
-        <v-list-item v-for="author in authors">
-          {{ author.properties.first }}
-          {{ author.properties.middle }}
-          {{ author.properties.last }}
-          <a :href="`mailto:` + author.properties.email">
-            {{ author.properties.email }}</a
-          >
-        </v-list-item>
-      </v-list-item-content>
-    </v-list-item>
-
-    <v-list-item>
-      <v-list-item-content>
-        <v-list-item-title>Published</v-list-item-title>
-        <v-list-item-subtitle
-          >{{ this.value.properties.publish_time }}
-        </v-list-item-subtitle>
-      </v-list-item-content>
-    </v-list-item>
-    <v-list-item>
-      <v-list-item-content>
-        <v-list-item-title>License</v-list-item-title>
-        <v-list-item-subtitle
-          >{{ this.value.properties.license }}
-        </v-list-item-subtitle>
-      </v-list-item-content>
-    </v-list-item>
-
-    <!--    <v-img
-                  src="https://cdn.vuetifyjs.com/images/cards/mountain.jpg"
-                  height="194"
-                ></v-img>-->
-
-    <v-list-item>
-      <v-list-item-content>
-        <v-list-item-title>Abstract</v-list-item-title>
-        <v-list-item-subtitle> </v-list-item-subtitle>
-        <v-card-text style="max-height: 300px; overflow-y: auto;">
-          {{ abstract }}
-        </v-card-text>
-      </v-list-item-content>
-    </v-list-item>
-
-    <v-list-item>
-      <v-list-item-content>
-        <v-list-item-title>Full Text</v-list-item-title>
-        <v-list-item-subtitle> </v-list-item-subtitle>
-        <v-card-text style="max-height: 300px; overflow-y: auto;">
-          {{ fullText }}
-        </v-card-text>
-      </v-list-item-content>
-    </v-list-item>
-    <v-list-item>
-      <v-list-item-content>
-        <v-list-item-title>Mentioned Genes</v-list-item-title>
-        <v-list-item-subtitle> </v-list-item-subtitle>
-        <v-list-item-group v-for="geneSymbol in geneSymbols">
-          <v-list-item-content>{{ geneSymbol }}</v-list-item-content>
-        </v-list-item-group>
-      </v-list-item-content>
-    </v-list-item>
-
-    <v-card-actions style="flex-flow: wrap;">
+    <v-container fluid>
       <v-btn text color="#1976d2" @click="loadAuthors">
         Load Authors
       </v-btn>
@@ -86,7 +20,73 @@
       <v-btn text color="#1976d2" @click="loadReferencedPapers">
         Load Referenced Papers
       </v-btn>
-    </v-card-actions>
+    </v-container>
+
+    <v-expansion-panels v-model="panel" multiple accordion>
+      <v-expansion-panel>
+        <v-expansion-panel-header>Published</v-expansion-panel-header>
+        <v-expansion-panel-content>
+          {{ this.value.properties.publish_time }}
+        </v-expansion-panel-content>
+      </v-expansion-panel>
+      <v-expansion-panel>
+        <v-expansion-panel-header>Abstract</v-expansion-panel-header>
+        <v-expansion-panel-content class="overflow-content">
+          {{ abstract }}
+        </v-expansion-panel-content>
+      </v-expansion-panel>
+      <v-expansion-panel>
+        <v-expansion-panel-header>Full Text</v-expansion-panel-header>
+        <v-expansion-panel-content class="overflow-content">
+          {{ fullText }}
+        </v-expansion-panel-content>
+      </v-expansion-panel>
+      <v-expansion-panel>
+        <v-expansion-panel-header>Mentioned Genes</v-expansion-panel-header>
+        <v-expansion-panel-content class="overflow-content">
+          <v-chip-group v-for="geneSymbol in geneSymbols">
+            <v-chip label>
+              <v-avatar left>
+                <v-icon color="#BCD104">mdi-dna</v-icon>
+              </v-avatar>
+              {{ geneSymbol }}
+            </v-chip>
+          </v-chip-group>
+        </v-expansion-panel-content>
+      </v-expansion-panel>
+      <v-expansion-panel>
+        <v-expansion-panel-header>Authors</v-expansion-panel-header>
+        <v-expansion-panel-content class="overflow-content">
+          <v-chip-group column>
+            <v-chip link v-for="author in authors" :key="author.id" :href="'mailto\:'+author.properties.email" v-if="author.properties.email">
+              <v-avatar left>
+                <v-icon color="#D12EAE">mdi-account-circle</v-icon>
+              </v-avatar>
+              {{ author.properties.first }}
+              {{ author.properties.middle }}
+              {{ author.properties.last }}
+              <v-icon right>
+                mdi-email-outline
+              </v-icon>
+            </v-chip>
+            <v-chip pill :ripple="false" v-for="author in authors" :key="author.id" v-else>
+              <v-avatar left>
+                <v-icon color="#D12EAE">mdi-account-circle</v-icon>
+              </v-avatar>
+              {{ author.properties.first }}
+              {{ author.properties.middle }}
+              {{ author.properties.last }}
+            </v-chip>
+          </v-chip-group>
+        </v-expansion-panel-content>
+      </v-expansion-panel>
+      <v-expansion-panel>
+        <v-expansion-panel-header>License</v-expansion-panel-header>
+        <v-expansion-panel-content>
+          {{this.value.properties.license}}
+        </v-expansion-panel-content>
+      </v-expansion-panel>
+    </v-expansion-panels>
   </v-card>
 </template>
 
@@ -106,6 +106,7 @@ export default {
     fullText: "",
     authors: [],
     geneSymbols: [],
+    panel: [0, 1, 0, 0, 0, 0],
   }),
   props: {
     value: null,
@@ -166,4 +167,9 @@ export default {
 };
 </script>
 
-<style scoped></style>
+<style scoped>
+  .overflow-content {
+    max-height: 300px;
+    overflow-y: auto;
+  }
+</style>
