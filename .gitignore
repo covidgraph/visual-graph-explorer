@@ -4,3 +4,4 @@
 package-lock.json
 yfiles-typeinfo.js
 .idea/
+/dist/
