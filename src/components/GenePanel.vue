@@ -1,6 +1,6 @@
 <template>
   <v-card>
-    <v-list-item style="background-color:#BCD104; color: #555555">
+    <v-list-item style="background-color: #bcd104; color: #555555;">
       <v-list-item-title>
         <v-icon x-large color="#555555">mdi-dna</v-icon>
         {{ this.value.properties.sid }}
@@ -34,8 +34,8 @@ export default {
       this.eventBus.$emit("load-papers-for-gene", this.value);
     },
     loadPatents() {
-      this.eventBus.$emit("load-patents-for-gene", this.value)
-    }
+      this.eventBus.$emit("load-patents-for-gene", this.value);
+    },
   },
 };
 </script>

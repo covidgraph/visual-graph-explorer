@@ -1,10 +1,12 @@
 <template>
   <v-card>
-    <v-list-item style="background-color:#5B9AD9; color: white">
+    <v-list-item style="background-color: #5b9ad9; color: white;">
       <v-icon x-large color="white">mdi-book</v-icon>
       <v-list-item-content>
-        <v-list-item-title style="color:white">{{ this.value.properties.title }}</v-list-item-title>
-        <v-list-item-subtitle style="color: #dddddd">
+        <v-list-item-title style="color: white;">{{
+          this.value.properties.title
+        }}</v-list-item-title>
+        <v-list-item-subtitle style="color: #dddddd;">
           {{ this.value.properties.source_x }}
         </v-list-item-subtitle>
       </v-list-item-content>
@@ -58,7 +60,13 @@
         <v-expansion-panel-header>Authors</v-expansion-panel-header>
         <v-expansion-panel-content class="overflow-content">
           <v-chip-group column>
-            <v-chip link v-for="author in authors" :key="author.id" :href="'mailto\:'+author.properties.email" v-if="author.properties.email">
+            <v-chip
+              link
+              v-for="author in authors"
+              :key="author.id"
+              :href="'mailto\:' + author.properties.email"
+              v-if="author.properties.email"
+            >
               <v-avatar left>
                 <v-icon color="#D12EAE">mdi-account-circle</v-icon>
               </v-avatar>
@@ -69,7 +77,13 @@
                 mdi-email-outline
               </v-icon>
             </v-chip>
-            <v-chip pill :ripple="false" v-for="author in authors" :key="author.id" v-else>
+            <v-chip
+              pill
+              :ripple="false"
+              v-for="author in authors"
+              :key="author.id"
+              v-else
+            >
               <v-avatar left>
                 <v-icon color="#D12EAE">mdi-account-circle</v-icon>
               </v-avatar>
@@ -83,7 +97,7 @@
       <v-expansion-panel>
         <v-expansion-panel-header>License</v-expansion-panel-header>
         <v-expansion-panel-content>
-          {{this.value.properties.license}}
+          {{ this.value.properties.license }}
         </v-expansion-panel-content>
       </v-expansion-panel>
     </v-expansion-panels>
@@ -168,8 +182,8 @@ export default {
 </script>
 
 <style scoped>
-  .overflow-content {
-    max-height: 300px;
-    overflow-y: auto;
-  }
+.overflow-content {
+  max-height: 300px;
+  overflow-y: auto;
+}
 </style>
