@@ -554,7 +554,7 @@ export default {
       await this.$graphComponent.morphLayout(organicLayout);
     },
     async loadReferencedPapersForPaper(paper) {
-      await this.loadEdges(paper, paper_paper);
+      await this.loadOutEdges(paper, paper_paper);
     },
     async searchGene(geneSid) {
       const genes = await this.fetchGenes(geneSid);
