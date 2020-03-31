@@ -39,10 +39,7 @@
         Clear
         <v-icon right>mdi-close-circle</v-icon>
       </v-btn>
-      <v-btn
-        :disabled="!model"
-        @click="$emit('search-article', model.paper_id)"
-      >
+      <v-btn :disabled="!model" @click="$emit('search-article', model.id)">
         Load Papers
         <v-icon right>mdi-cloud-search-outline</v-icon>
       </v-btn>
@@ -99,7 +96,6 @@ export default {
             let node = record.get("p");
             return {
               id: node.identity,
-              paper_id: node.properties["paper_id"],
               publishTime: node.properties["publish_time"],
               title: node.properties["title"],
             };
