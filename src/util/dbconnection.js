@@ -47,8 +47,13 @@ function createCypherQueryRunner(neo4jDriver) {
   };
 }
 
+/** @type {function(query:String, params:{key:string, value:object})} */
 let runQuery = null;
 
+/** @param {String} query
+ *  @param {{key:string, value:object}} params
+ *  @return {QueryResult}
+ */
 export default async function query(query, params = {}) {
   if (runQuery == null) {
     runQuery = await connectToDB(
