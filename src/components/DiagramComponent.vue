@@ -241,10 +241,7 @@ function addRelationShip(
     targetNode,
     matchClause
   );
-  edge.tag.creator = createEdgeCreator(
-    style || new PolylineEdgeStyle(),
-    labels
-  );
+  edge.tag.creator = createEdgeCreator(style || edgeStyle, labels);
   edge.tag.type = relationShipType;
   return edge;
 }
@@ -267,14 +264,14 @@ let paper_author = addRelationShip(
   paperType,
   authorType,
   wroteEdgeStyle,
-  () => ["Wrote"],
+  () => [],
   "(sourceNode:Paper)-[:PAPER_HAS_METADATA]->(m:Metadata)-[:METADATA_HAS_AUTHOR]->(:Author:CollectionHub)-[:AUTHOR_HAS_AUTHOR]->(targetNode:Author)"
 );
 
 let paper_geneSymbol = addRelationShip(
   paperType,
   geneSymbolType,
-  new PolylineEdgeStyle(),
+  edgeStyle,
   () => [],
   "(sourceNode:Paper)-[:MENTIONS]->(targetNode:GeneSymbol)"
 );
@@ -282,7 +279,7 @@ let paper_geneSymbol = addRelationShip(
 let patent_geneSymbol = addRelationShip(
   patentType,
   geneSymbolType,
-  new PolylineEdgeStyle(),
+  edgeStyle,
   () => [],
   "(sourceNode:Patent)-[:HAS_DESCRIPTION]->(:PatentDescription)-[:MENTIONS]->(targetNode:GeneSymbol)"
 );
@@ -290,7 +287,7 @@ let patent_geneSymbol = addRelationShip(
 let paper_paper = addRelationShip(
   paperType,
   paperType,
-  new PolylineEdgeStyle(),
+  edgeStyle,
   () => [],
   "(sourceNode:Paper)-[:PAPER_HAS_BIB_ENTRIES]->(:Bib_entries)-[:BIB_ENTRIES_HAS_BIBREF]->(:Bibref)-[:BIBREF_HAS_OTHER_IDS]->(:Other_ids)-->(:CollectionHub)-->(paperId)<-[:PAPERID_COLLECTION_HAS_PAPERID]-(:CollectionHub:PaperID)<-[:PAPER_HAS_PAPERID_COLLECTION]-(targetNode:Paper)"
 );
