@@ -174,12 +174,6 @@ const edgeStyle = new PolylineEdgeStyle({
 const wroteEdgeStyle = new PolylineEdgeStyle({
   stroke: "2px blue",
 });
-const geneNodeStyle = new ShapeNodeStyle({
-  fill: "yellow",
-  stroke: null,
-  shape: "round-rectangle",
-});
-
 const edgeLabelStyle = new DefaultLabelStyle({
   textFill: "gray",
   textSize: 20,
@@ -191,7 +185,6 @@ const edgeLabelLayoutParameter = new SmartEdgeLabelModel({
   segmentIndex: 0,
   segmentRatio: 0.5,
 });
-
 
 function createNodeCreator(style, size, labels) {
   return function (item, location) {
@@ -263,17 +256,11 @@ let patentType = addNodeType(
   (patent) => [patent.properties.Title || "untitled"]
 );
 let paperType = addNodeType("Paper", paperNodeStyle, new Size(150, 150));
-let authorType = addNodeType(
-  "Author",
-  authorNodeStyle,
-  new Size(150, 150),
-  (author) => [author.properties.last || "Anonymous"]
-);
+let authorType = addNodeType("Author", authorNodeStyle, new Size(150, 150));
 let geneSymbolType = addNodeType(
   "GeneSymbol",
   geneNodeStyle,
-  new Size(150, 150),
-  (gene) => [gene.properties.sid || "Gene"]
+  new Size(150, 150)
 );
 
 let paper_author = addRelationShip(
