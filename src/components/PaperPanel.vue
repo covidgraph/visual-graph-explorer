@@ -1,11 +1,11 @@
 <template>
   <v-card>
-    <v-list-item>
-      <v-icon x-large color="#5B9AD9">mdi-book</v-icon>
+    <v-list-item style="background-color:#5B9AD9; color: white">
+      <v-icon x-large color="white">mdi-book</v-icon>
       <v-list-item-content>
-        <v-list-item-title style="color:#5B9AD9">{{ this.value.properties.title }}</v-list-item-title>
-        <v-list-item-subtitle
-          >{{ this.value.properties.source_x }}
+        <v-list-item-title style="color:white">{{ this.value.properties.title }}</v-list-item-title>
+        <v-list-item-subtitle style="color: #dddddd">
+          {{ this.value.properties.source_x }}
         </v-list-item-subtitle>
       </v-list-item-content>
     </v-list-item>

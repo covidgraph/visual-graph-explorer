@@ -1,10 +1,10 @@
 <template>
   <v-card>
-    <v-list-item>
-      <v-icon x-large color="#BCD104">mdi-dna</v-icon>
-      <v-list-item-content>
-        <v-list-item-title style="color:#BCD104">{{ this.value.properties.sid }}</v-list-item-title>
-      </v-list-item-content>
+    <v-list-item style="background-color:#BCD104; color: #555555">
+      <v-list-item-title>
+        <v-icon x-large color="#555555">mdi-dna</v-icon>
+        {{ this.value.properties.sid }}
+      </v-list-item-title>
     </v-list-item>
     <v-card-text>
       {{ value.properties.status }}

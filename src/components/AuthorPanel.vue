@@ -1,14 +1,15 @@
 <template>
   <v-card>
-    <v-list-item>
-      <v-icon x-large color="#D12EAE">mdi-account-circle</v-icon>
+    <v-list-item style="background-color: #D12EAE">
+      <v-icon x-large color="white">mdi-account</v-icon>
       <v-list-item-content>
-        <v-list-item-title
-          >{{ this.value.properties.first }} {{ this.value.properties.middle }}
+        <v-list-item-title style="color:white">
+          {{ this.value.properties.first }}
+          {{ this.value.properties.middle }}
           {{ this.value.properties.last }}
-          {{ this.value.properties.suffix }}</v-list-item-title
-        >
-        <v-list-item-subtitle>{{
+          {{ this.value.properties.suffix }}
+        </v-list-item-title>
+        <v-list-item-subtitle style="color: #dddddd">{{
           this.value.properties.email
         }}</v-list-item-subtitle>
       </v-list-item-content>
