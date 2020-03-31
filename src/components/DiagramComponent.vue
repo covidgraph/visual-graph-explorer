@@ -80,6 +80,12 @@ import {
   IVisualTemplate,
   RectangleIndicatorInstaller,
   INode,
+  PolylineEdgeStyle,
+  Arrow,
+  ArrowType,
+  Stroke,
+  DefaultLabelStyle,
+  SmartEdgeLabelModel,
 } from "yfiles";
 import ContextMenu from "./ContextMenu";
 import {
@@ -107,13 +113,13 @@ Class.ensure(LayoutExecutor);
 
 const paperNodeStyle = new VuejsNodeStyle(`<g>
 <g v-if="zoom >= 0.4">
-  <g :transform="\`translate(90 0) scale(\${selected && zoom >= 0.5 ? 1 : 0} 1)\`" style="transition: transform 0.3s ease-out;">
+  <g :transform="\`translate(100 0) scale(\${selected && zoom >= 0.5 ? 1 : 0} 1)\`" style="transition: transform 0.3s ease-out;">
     <rect fill='white' stroke="#5B9AD9" stroke-width="3" width="310" :height="layout.height - 3" x="1.5" y="1.5" rx="30"></rect>
     <svg-text :content="tag.properties.title" x="50" y="15" :width="400 - 165" :height="75" :wrapping="4" font-family="Roboto,sans-serif" :font-size="18" :font-style="0" :font-weight="0" :text-decoration="0" fill="#5B9AD9" :opacity="1" visible="true" :clipped="true" align="start" transform=""></svg-text>
     <g transform="translate(50 112)">
       <g>
         <use href="#calendar-icon" width="20" height="20" fill="gray"></use>
-        <svg-text :content="tag.properties.publish_time" x="25" y="0" style="text-transform: uppercase" :width="80" :height="25" :wrapping="0" font-family="Roboto,sans-serif" :font-size="16" :font-style="0" :font-weight="0" :text-decoration="0" fill="gray" :opacity="1" visible="true" :clipped="true" align="start" transform=""></svg-text>
+        <svg-text :content="tag.properties.publish_time || '-'" x="25" y="0" style="text-transform: uppercase" :width="80" :height="25" :wrapping="0" font-family="Roboto,sans-serif" :font-size="16" :font-style="0" :font-weight="0" :text-decoration="0" fill="gray" :opacity="1" visible="true" :clipped="true" align="start" transform=""></svg-text>
       </g>
       <g transform="translate(140 0)">
         <use href="#license-icon" width="20" height="20" fill="gray"></use>
@@ -123,10 +129,10 @@ const paperNodeStyle = new VuejsNodeStyle(`<g>
   </g>
   <rect fill="white" x="10" y="10" :width="layout.height - 40" :height="layout.height - 20"></rect>
 </g>
-<use href="#book-icon" :width="layout.height" :height="layout.height" fill="#5B9AD9" x="-10" y="0"></use>
+<use href="#book-icon" :width="layout.height" :height="layout.height" fill="#5B9AD9" x="0" y="0"></use>
 <template v-if="zoom >= 0.5">
-  <rect fill="#5B9AD9" x="10" y="10" :width="layout.height - 40" :height="layout.height - 80"></rect>
-  <svg-text :content="tag.properties.title" x="0" y="30" :width="layout.width - 18" :height="50" :wrapping="4" font-family="Roboto,sans-serif" :font-size="16" :font-style="0" :font-weight="0" :text-decoration="0" fill="white" :opacity="1" visible="true" :clipped="true" align="middle" transform=""></svg-text>
+  <rect fill="#5B9AD9" x="20" y="10" :width="layout.height - 40" :height="layout.height - 80"></rect>
+  <svg-text :content="tag.properties.title" x="10" y="30" :width="layout.width - 18" :height="50" :wrapping="2" font-family="Roboto,sans-serif" :font-size="16" :font-style="0" :font-weight="0" :text-decoration="0" fill="white" :opacity="1" visible="true" :clipped="true" align="middle" transform=""></svg-text>
 </template>
 <defs>
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" id="book-icon"><path d="M448 360V24c0-13.3-10.7-24-24-24H96C43 0 0 43 0 96v320c0 53 43 96 96 96h328c13.3 0 24-10.7 24-24v-16c0-7.5-3.5-14.3-8.9-18.7-4.2-15.4-4.2-59.3 0-74.7 5.4-4.3 8.9-11.1 8.9-18.6zM128 134c0-3.3 2.7-6 6-6h212c3.3 0 6 2.7 6 6v20c0 3.3-2.7 6-6 6H134c-3.3 0-6-2.7-6-6v-20zm0 64c0-3.3 2.7-6 6-6h212c3.3 0 6 2.7 6 6v20c0 3.3-2.7 6-6 6H134c-3.3 0-6-2.7-6-6v-20zm253.4 250H96c-17.7 0-32-14.3-32-32 0-17.6 14.4-32 32-32h285.4c-1.9 17.1-1.9 46.9 0 64z"/></svg>
@@ -135,20 +141,59 @@ const paperNodeStyle = new VuejsNodeStyle(`<g>
 </defs>
 
 </g>`);
+
 const patentNodeStyle = new ShapeNodeStyle({
   fill: "red",
   stroke: null,
   shape: "rectangle",
 });
-const authorNodeStyle = new ShapeNodeStyle({
-  fill: "green",
-  stroke: null,
-  shape: "ellipse",
+const authorNodeStyle = new VuejsNodeStyle(`<g>
+<use href="#author-icon" :width="layout.height" :height="layout.height" fill="#D12EAE" x="0" y="0"></use>
+<template v-if="zoom >= 0.5">
+  <svg-text stroke="#D12EAE" stroke-width="6" :content="[tag.properties.first, tag.properties.middle, tag.properties.last].filter(n=>n).join(' ')" x="0" y="110" :width="layout.width" :height="25" :wrapping="0" font-family="Roboto,sans-serif" :font-size="20" :font-style="0" :font-weight="0" :text-decoration="0" fill="white" :opacity="1" visible="true" :clipped="false" align="middle" transform=""></svg-text>
+  <svg-text :content="[tag.properties.first, tag.properties.middle, tag.properties.last].filter(n=>n).join(' ')" x="0" y="110" :width="layout.width" :height="25" :wrapping="0" font-family="Roboto,sans-serif" :font-size="20" :font-style="0" :font-weight="0" :text-decoration="0" fill="white" :opacity="1" visible="true" :clipped="false" align="middle" transform=""></svg-text>
+</template>
+<template v-if="0.2 < zoom && zoom < 0.5">
+  <svg-text :content="tag.properties.last || tag.properties.first || 'Anonymous'" x="0" y="100" :width="layout.width" :height="50" :wrapping="0" font-family="Roboto,sans-serif" :font-size="32" :font-style="0" :font-weight="1" :text-decoration="0" fill="white" :opacity="1" visible="true" :clipped="false" align="middle" transform=""></svg-text>
+</template>
+<defs>
+  <svg id="author-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M224 256c70.7 0 128-57.3 128-128S294.7 0 224 0 96 57.3 96 128s57.3 128 128 128zm89.6 32h-16.7c-22.2 10.2-46.9 16-72.9 16s-50.6-5.8-72.9-16h-16.7C60.2 288 0 348.2 0 422.4V464c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48v-41.6c0-74.2-60.2-134.4-134.4-134.4z"/></svg>
+</defs>
+</g>
+`);
+
+const geneNodeStyle = new VuejsNodeStyle(`<g>
+<use href="#dna-icon" :width="layout.height" :height="layout.height" fill="#BCD104" x="0" y="0"></use>
+<template v-if="zoom >= 0.2">
+  <svg-text :content="tag.properties.sid || 'Gene'" x="0" :y="layout.height" :width="layout.width" :height="50" :wrapping="0" font-family="Roboto,sans-serif" :font-size="32" :font-style="0" :font-weight="1" :text-decoration="0" fill="black" :opacity="1" visible="true" :clipped="false" align="middle" transform=""></svg-text>
+</template>
+<defs>
+  <svg id="dna-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M.1 494.1c-1.1 9.5 6.3 17.8 15.9 17.8l32.3.1c8.1 0 14.9-5.9 16-13.9.7-4.9 1.8-11.1 3.4-18.1H380c1.6 6.9 2.9 13.2 3.5 18.1 1.1 8 7.9 14 16 13.9l32.3-.1c9.6 0 17.1-8.3 15.9-17.8-4.6-37.9-25.6-129-118.9-207.7-17.6 12.4-37.1 24.2-58.5 35.4 6.2 4.6 11.4 9.4 17 14.2H159.7c21.3-18.1 47-35.6 78.7-51.4C410.5 199.1 442.1 65.8 447.9 17.9 449 8.4 441.6.1 432 .1L399.6 0c-8.1 0-14.9 5.9-16 13.9-.7 4.9-1.8 11.1-3.4 18.1H67.8c-1.6-7-2.7-13.1-3.4-18.1-1.1-8-7.9-14-16-13.9L16.1.1C6.5.1-1 8.4.1 17.9 5.3 60.8 31.4 171.8 160 256 31.5 340.2 5.3 451.2.1 494.1zM224 219.6c-25.1-13.7-46.4-28.4-64.3-43.6h128.5c-17.8 15.2-39.1 30-64.2 43.6zM355.1 96c-5.8 10.4-12.8 21.1-21 32H114c-8.3-10.9-15.3-21.6-21-32h262.1zM92.9 416c5.8-10.4 12.8-21.1 21-32h219.4c8.3 10.9 15.4 21.6 21.2 32H92.9z"/></svg>
+</defs>
+</g>`);
+
+const edgeStyle = new PolylineEdgeStyle({
+  stroke: new Stroke({
+    fill: "gray",
+    thickness: 3,
+  }),
+  targetArrow: new Arrow({
+    fill: "gray",
+    type: ArrowType.TRIANGLE,
+    scale: 2,
+  }),
 });
-const geneNodeStyle = new ShapeNodeStyle({
-  fill: "yellow",
-  stroke: null,
-  shape: "round-rectangle",
+
+const edgeLabelStyle = new DefaultLabelStyle({
+  textFill: "gray",
+  textSize: 20,
+});
+const edgeLabelLayoutParameter = new SmartEdgeLabelModel({
+  autoRotation: true,
+}).createParameterFromSource({
+  distance: 6,
+  segmentIndex: 0,
+  segmentRatio: 0.5,
 });
 
 function createNodeCreator(style, size, labels) {
@@ -184,6 +229,10 @@ export default {
     graph.decorator.nodeDecorator.focusIndicatorDecorator.hideImplementation();
     const graphModelManager = this.$graphComponent.graphModelManager;
     graphModelManager.edgeLabelGroup.below(graphModelManager.nodeGroup);
+
+    graph.edgeDefaults.style = edgeStyle;
+    graph.edgeDefaults.labels.style = edgeLabelStyle;
+    graph.edgeDefaults.labels.layoutParameter = edgeLabelLayoutParameter;
 
     this.id2NodeMapping = new Map();
     let viewerInputMode = new GraphViewerInputMode();
@@ -262,13 +311,13 @@ export default {
     ),
     createAuthorNode: createNodeCreator(
       authorNodeStyle,
-      new Size(35, 35),
-      (author) => [author.properties.last || "Anonymous"]
+      new Size(150, 150),
+      () => []
     ),
     createGeneNode: createNodeCreator(
       geneNodeStyle,
-      new Size(30, 30),
-      (gene) => [gene.properties.sid || "Gene"]
+      new Size(150, 150),
+      () => []
     ),
     async loadPapersForAuthor(author) {
       await this.loadAndConnectNodes(
