@@ -29,6 +29,7 @@
 const YWorksOptimizer = require("@yworks/optimizer/webpack-plugin");
 
 module.exports = {
+  publicPath: process.env.PUBLIC_PATH || '/',
   productionSourceMap: false,
   configureWebpack: {
     plugins:
