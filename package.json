@@ -11,7 +11,9 @@
     "@mdi/font": "^3.6.95",
     "core-js": "^2.6.5",
     "neo4j-driver": "^4.0.2",
+    "node-sass": "^4.13.1",
     "roboto-fontface": "*",
+    "sass-loader": "^8.0.2",
     "vue": "^2.6.10",
     "vuetify": "^2.2.18",
     "yfiles": "./yfiles-22.0.3-eval.tgz"

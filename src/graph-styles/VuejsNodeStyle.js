@@ -26,24 +26,9 @@
  ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **
  ***************************************************************************/
-import {
-  Font,
-  INode,
-  IRenderContext,
-  NodeStyleBase,
-  Size,
-  SvgVisual,
-  TextRenderSupport,
-  TextWrapping,
-} from "yfiles";
+import { INode, IRenderContext, NodeStyleBase, SvgVisual } from "yfiles";
 
 import Vue from "vue";
-
-/**
- * Initializes custom components that can be used in the template. Those components can either be used directly or
- * come from a style created by 'Node Template Designer' (https://www.yworks.com/node-template-designer/).
- */
-initializeDesignerVueComponents();
 
 /**
  * A context object that helps to enhance performance. There are some properties that are provided for binding
@@ -254,30 +239,45 @@ class ObservedContext {
  */
 export default class VuejsNodeStyle extends NodeStyleBase {
   /**
-   * @param {string} template
+   * @param {Component} component
    */
-  constructor(template) {
+  constructor(component) {
     super();
-    this.template = template;
+    this.component = component;
   }
 
   /**
    * Returns the Vuejs template.
-   * @return {string}
+   * @return {Component}
    */
-  get template() {
-    return this.$template;
+  get component() {
+    return this.$component;
   }
 
   /**
    * Sets the Vuejs template.
-   * @param {string} value
+   * @param {Component} value
    */
-  set template(value) {
-    if (value !== this.$template) {
-      this.$template = value;
+  set component(value) {
+    if (value !== this.$component) {
+      this.$component = value;
       this.constructorFunction = Vue.extend({
-        template: value,
+        render(createElement) {
+          return createElement(value, {
+            props: {
+              tag: this.$options.computed.tag.call(this),
+              layout: this.$options.computed.layout.call(this),
+              selected: this.$options.computed.selected.call(this),
+              zoom: this.$options.computed.zoom.call(this),
+              focused: this.$options.computed.zoom.call(this),
+              highlighted: this.$options.computed.highlighted.call(this),
+              fill: this.$options.computed.fill.call(this),
+              scale: this.$options.computed.scale.call(this),
+              localId: this.$options.methods.localId.bind(this),
+              localUrl: this.$options.methods.localUrl.bind(this),
+            },
+          });
+        },
         data() {
           return {
             yFilesContext: null,
@@ -506,492 +506,4 @@ export default class VuejsNodeStyle extends NodeStyleBase {
       SvgVisual.setTranslate(svgElement, node.layout.x, node.layout.y);
     }
   }
-}
-
-/**
- * Initializes the Vuejs components that are used in the 'Node Template Designer'.
- * @yjs:keep=visible,Node
- */
-function initializeDesignerVueComponents() {
-  Vue.config.warnHandler = (err, vm, info) => {
-    throw new Error(`${err}\n${info}`);
-  };
-
-  function addText(
-    value,
-    w,
-    h,
-    fontFamily,
-    fontSize,
-    fontWeight,
-    fontStyle,
-    textDecoration,
-    lineSpacing,
-    wrapping,
-    textElement
-  ) {
-    if (
-      textElement.nodeType !== Node.ELEMENT_NODE ||
-      textElement.nodeName !== "text"
-    ) {
-      return null;
-    }
-
-    const text = String(value);
-    // create the font which determines the visual text properties
-    const fontSettings = {};
-    if (typeof fontFamily !== "undefined") {
-      fontSettings.fontFamily = fontFamily;
-    }
-    if (typeof fontSize !== "undefined") {
-      fontSettings.fontSize = parseFloat(fontSize);
-    }
-    if (typeof fontStyle !== "undefined") {
-      fontSettings.fontStyle = fontStyle;
-    }
-    if (typeof fontWeight !== "undefined") {
-      fontSettings.fontWeight = fontWeight;
-    }
-    if (typeof textDecoration !== "undefined") {
-      fontSettings.textDecoration = textDecoration;
-    }
-    if (typeof lineSpacing !== "undefined") {
-      fontSettings.lineSpacing = parseFloat(lineSpacing);
-    }
-    const font = new Font(fontSettings);
-    let textWrapping = TextWrapping.CHARACTER_ELLIPSIS;
-
-    // apply the font
-    font.applyTo(textElement);
-
-    if (typeof wrapping !== "undefined" && wrapping !== null) {
-      switch (wrapping) {
-        case TextWrapping.CHARACTER_ELLIPSIS:
-        case TextWrapping.CHARACTER:
-        case TextWrapping.NONE:
-        case TextWrapping.WORD:
-        case TextWrapping.WORD_ELLIPSIS:
-          textWrapping = wrapping;
-          break;
-        default:
-          // in case of faulty input
-          textWrapping = TextWrapping.NONE;
-      }
-    }
-
-    if (typeof w === "undefined" || w === null) {
-      w = Number.POSITIVE_INFINITY;
-    }
-    if (typeof h === "undefined" || h === null) {
-      h = Number.POSITIVE_INFINITY;
-    }
-
-    // do the text wrapping
-    // This sample uses the strategy CHARACTER_ELLIPSIS. You can use any other setting.
-    TextRenderSupport.addText(
-      textElement,
-      text,
-      font,
-      new Size(w, h),
-      textWrapping
-    );
-
-    return textElement;
-  }
-
-  function updateText(
-    value,
-    w,
-    h,
-    fontFamily,
-    fontSize,
-    fontWeight,
-    fontStyle,
-    textDecoration,
-    lineSpacing,
-    wrapping,
-    textElement
-  ) {
-    while (textElement.firstChild) {
-      textElement.removeChild(textElement.firstChild);
-    }
-    addText(
-      value,
-      w,
-      h,
-      fontFamily,
-      fontSize,
-      fontWeight,
-      fontStyle,
-      textDecoration,
-      lineSpacing,
-      wrapping,
-      textElement
-    );
-  }
-
-  let clipId = 0;
-
-  Vue.component("svg-text", {
-    template: `
-<g v-if="visible" :transform="$transform">
-<g v-if="clipped" :transform="'translate('+x+' '+y+')'">
-  <text dy="1em" :transform="'translate('+$dx+' 0)'" :text-anchor="$textAnchor" :clip-path="'url(#'+refId+')'" :fill="fill" :opacity="opacity">{{content}}</text>
-  <clipPath :id="refId">
-    <rect :width="width" :height="height" :x="-$dx"></rect>
-  </clipPath>
-</g>
-<g v-else :transform="'translate('+x+' '+y+')'">
-  <text dy="1em" :transform="'translate('+$dx+' 0)'" :text-anchor="$textAnchor" :fill="fill" :opacity="opacity">{{content}}</text>
-</g>
-</g>`,
-    data() {
-      return { refId: `svg-text-${clipId++}` };
-    },
-    mounted() {
-      addText(
-        this.content,
-        this.width,
-        this.height,
-        this.fontFamily,
-        this.fontSize,
-        this.fontWeight,
-        this.fontStyle,
-        this.textDecoration,
-        this.lineSpacing,
-        this.wrapping,
-        this.$el.querySelector("text")
-      );
-    },
-    watch: {
-      width() {
-        updateText(
-          this.content,
-          this.width,
-          this.height,
-          this.fontFamily,
-          this.fontSize,
-          this.fontWeight,
-          this.fontStyle,
-          this.textDecoration,
-          this.lineSpacing,
-          this.wrapping,
-          this.$el.querySelector("text")
-        );
-      },
-      height() {
-        updateText(
-          this.content,
-          this.width,
-          this.height,
-          this.fontFamily,
-          this.fontSize,
-          this.fontWeight,
-          this.fontStyle,
-          this.textDecoration,
-          this.lineSpacing,
-          this.wrapping,
-          this.$el.querySelector("text")
-        );
-      },
-      content() {
-        updateText(
-          this.content,
-          this.width,
-          this.height,
-          this.fontFamily,
-          this.fontSize,
-          this.fontWeight,
-          this.fontStyle,
-          this.textDecoration,
-          this.lineSpacing,
-          this.wrapping,
-          this.$el.querySelector("text")
-        );
-      },
-    },
-
-    props: {
-      x: {
-        required: false,
-        default: undefined,
-      },
-      y: {
-        required: false,
-        default: undefined,
-      },
-      width: {
-        required: false,
-        default: undefined,
-      },
-      height: {
-        required: false,
-        default: undefined,
-      },
-      clipped: {
-        required: false,
-        default: false,
-      },
-      align: {
-        required: false,
-        default: false,
-      },
-      fill: {
-        required: false,
-        default: undefined,
-      },
-      content: {
-        required: false,
-        default: undefined,
-      },
-      opacity: {
-        default: undefined,
-        required: false,
-      },
-      visible: {
-        default: true,
-        required: false,
-      },
-      wrapping: {
-        default: TextWrapping.CHARACTER_ELLIPSIS,
-        required: false,
-      },
-      transform: {
-        default: "",
-        required: false,
-      },
-      fontFamily: {
-        default: undefined,
-        required: false,
-      },
-      fontSize: {
-        default: undefined,
-        required: false,
-      },
-      fontWeight: {
-        default: undefined,
-        required: false,
-      },
-      fontStyle: {
-        default: undefined,
-        required: false,
-      },
-      textDecoration: {
-        default: undefined,
-        required: false,
-      },
-      lineSpacing: {
-        default: 0.5,
-        required: false,
-      },
-    },
-    computed: {
-      $dx() {
-        return this.align === "end"
-          ? this.width
-          : this.align === "middle"
-          ? this.width * 0.5
-          : 0;
-      },
-      $textAnchor() {
-        return this.align === "end" || this.align === "middle"
-          ? this.align
-          : false;
-      },
-      $transform() {
-        return !this.transform ? false : this.transform;
-      },
-    },
-  });
-
-  Vue.component("svg-rect", {
-    template:
-      '<rect :transform="$transform" :x="x" :y="y" :width="width" :height="height" :rx="cornerRadius" :fill="fill" :stroke="stroke" :stroke-width="strokeWidth" :stroke-dasharray="strokeDasharray" :opacity="opacity" v-if="visible"></rect>',
-    props: {
-      x: {
-        type: Number,
-        default: 0,
-        required: false,
-      },
-      y: {
-        type: Number,
-        default: 0,
-        required: false,
-      },
-      width: {
-        type: Number,
-        default: 50,
-        required: false,
-      },
-      height: {
-        type: Number,
-        default: 50,
-        required: false,
-      },
-      cornerRadius: {
-        type: Number,
-        default: 0,
-        required: false,
-      },
-      fill: {
-        type: String,
-        required: false,
-        default: "orange",
-      },
-      stroke: {
-        type: String,
-        required: false,
-        default: "orange",
-      },
-      strokeWidth: {
-        type: Number,
-        default: 1,
-        required: false,
-      },
-      strokeDasharray: {
-        type: String,
-        default: "",
-        required: false,
-      },
-      opacity: {
-        type: Number,
-        default: 1,
-        required: false,
-      },
-      visible: {
-        type: Boolean,
-        default: true,
-        required: false,
-      },
-      transform: {
-        default: "",
-        required: false,
-      },
-    },
-    computed: {
-      $transform() {
-        return !this.transform ? false : this.transform;
-      },
-    },
-  });
-  Vue.component("svg-ellipse", {
-    template:
-      '<ellipse :transform="$transform" :cx="$cx" :cy="$cy" :rx="$rx" :ry="$ry" :fill="fill" :stroke="stroke" :stroke-width="strokeWidth" :stroke-dasharray="strokeDasharray" :opacity="opacity" v-if="visible"></ellipse>',
-    props: {
-      x: {
-        type: Number,
-        default: 0,
-        required: false,
-      },
-      y: {
-        type: Number,
-        default: 0,
-        required: false,
-      },
-      width: {
-        type: Number,
-        default: 50,
-        required: false,
-      },
-      height: {
-        type: Number,
-        default: 50,
-        required: false,
-      },
-      fill: {
-        type: String,
-        required: false,
-        default: "orange",
-      },
-      stroke: {
-        type: String,
-        required: false,
-        default: "orange",
-      },
-      strokeWidth: {
-        type: Number,
-        default: 1,
-        required: false,
-      },
-      strokeDasharray: {
-        type: String,
-        default: "",
-        required: false,
-      },
-      opacity: {
-        type: Number,
-        default: 1,
-        required: false,
-      },
-      visible: {
-        type: Boolean,
-        default: true,
-        required: false,
-      },
-      transform: {
-        default: "",
-        required: false,
-      },
-    },
-    computed: {
-      $cx() {
-        return this.x + this.width * 0.5;
-      },
-      $cy() {
-        return this.y + this.height * 0.5;
-      },
-      $rx() {
-        return this.width * 0.5;
-      },
-      $ry() {
-        return this.height * 0.5;
-      },
-      $transform() {
-        return !this.transform ? false : this.transform;
-      },
-    },
-  });
-  Vue.component("svg-image", {
-    template:
-      '<image :transform="$transform" :x="x" :y="y" :width="width" :height="height" v-bind="{\'xlink:href\':src}" :opacity="opacity" v-if="visible"></image>',
-    props: {
-      x: {
-        default: undefined,
-        required: false,
-      },
-      y: {
-        default: undefined,
-        required: false,
-      },
-      width: {
-        default: undefined,
-        required: false,
-      },
-      height: {
-        default: undefined,
-        required: false,
-      },
-      src: {
-        default: undefined,
-        required: false,
-      },
-      opacity: {
-        default: undefined,
-        required: false,
-      },
-      visible: {
-        default: true,
-        required: false,
-      },
-      transform: {
-        default: "",
-        required: false,
-      },
-    },
-    computed: {
-      $transform() {
-        return !this.transform ? false : this.transform;
-      },
-    },
-  });
 }
