@@ -92,6 +92,7 @@ import PopupPanel from "./PopupPanel";
 import { enableWorkarounds } from "./../util/Workarounds";
 import VuejsNodeStyle from "../graph-styles/VuejsNodeStyle.js";
 import SchemaBasedLoader from "../util/schema-based-loader";
+import { isOfType } from "../util/queries";
 
 License.value = licenseData;
 
@@ -375,6 +376,11 @@ export default {
     getLoadedNode(item) {
       return this.id2NodeMapping.get(getId(item.identity));
     },
+    getLoadedIdsOfType(schemaNode) {
+      this.$graphComponent.graph.nodes
+        .filter((n) => isOfType(item.tag, schemaNode.tag.type))
+        .map((n) => n.tag.identity);
+    },
     async loadAndLayout(load) {
       const oldlementCounter =
         this.$graphComponent.graph.nodes.size +
@@ -437,11 +443,7 @@ export default {
       await this.loadOutEdges(paper, paper_author);
     },
     currentItemIs(type) {
-      return (
-        this.currentItem &&
-        this.currentItem.labels &&
-        this.currentItem.labels.indexOf(type) >= 0
-      );
+      return isOfType(this.currentItem, type);
     },
     async loadAndConnectSchemaOutEdges(
       item,
