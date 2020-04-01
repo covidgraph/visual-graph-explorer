@@ -51,7 +51,7 @@ export default {
   watch: {
     value: function (patent) {
       this.titles = [];
-      if (patent != null) {
+      if (patent) {
         loadTitlesForPatent(patent)
           .then((value) => {
             this.titles = value;

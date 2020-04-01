@@ -22,7 +22,7 @@
 <script>
 import runQuery, { queryEvents } from "../util/dbconnection";
 
-const testInterval = 10 * 1000;
+const testInterval = 120 * 1000;
 function testConnection() {
   runQuery("MATCH (n) RETURN n LIMIT 1");
 }

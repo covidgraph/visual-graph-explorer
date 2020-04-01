@@ -107,18 +107,17 @@ export default {
       // Items have already been requested
       if (this.isLoading) return;
 
-      this.isLoading = true;
-
-      if (val.length > 2) {
+      if (val && val.length > 4) {
+        this.isLoading = true;
         // Lazily load input items
         query(
-          'call db.index.fulltext.queryNodes("patents",$text) \n' +
-            "yield node,score match (node)--(p:Patent)--(pt:PatentTitle)\n" +
-            "return distinct(p.id) as id, collect(pt.text) as titles, labels(node)[0] as found_type, node.lang as found_in_lang ,score\n" +
-            "order by score\n" +
-            "desc limit 20",
+          `call db.index.fulltext.queryNodes("patents", $searchtext)
+yield node,score match (node)--(p:Patent)-[:HAS_TITLE]->(pt:PatentTitle)
+return distinct(id(p)) as id, collect(pt.text) as titles, labels(node)[0] as found_type, node.lang as found_in_lang, score
+order by score
+desc limit 10`,
           {
-            text: val,
+            searchtext: val,
           }
         )
           .then((res) => {
@@ -127,7 +126,7 @@ export default {
               return {
                 id: record.get("id"),
                 PublicationDate: "unknown",
-                Title: record.get("titles"),
+                Title: record.get("titles")[0],
               };
             });
           })
