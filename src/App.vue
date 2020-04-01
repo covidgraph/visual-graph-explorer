@@ -26,8 +26,8 @@
       <v-spacer></v-spacer>
       <v-tooltip bottom>
         <template v-slot:activator="{ on }">
-          <v-btn text icon color="white" @click="" v-on="on">
-            <v-icon>mdi-help-circle-outline</v-icon>
+          <v-btn text icon color="white" @click="showAboutDialog" v-on="on">
+            <v-icon>mdi-information-outline</v-icon>
           </v-btn>
         </template>
         <span>About</span>
@@ -56,6 +56,8 @@
         ></diagram-component>
       </v-container>
     </v-content>
+
+    <about-dialog></about-dialog>
   </v-app>
 </template>
 
@@ -66,16 +68,23 @@ import DetailPanel from "./components/DetailPanel";
 import SearchGene from "./components/SearchGene";
 import SearchAuthor from "./components/SearchAuthor";
 import SearchPatent from "./components/SearchPatent";
+import AboutDialog from "./components/AboutDialog";
 
 export default {
   name: "app",
   components: {
+    AboutDialog,
     SearchArticle,
     SearchGene,
     DiagramComponent,
     DetailPanel,
     SearchAuthor,
     SearchPatent,
+  },
+  methods: {
+    showAboutDialog() {
+      this.eventBus.$emit("show-about-dialog");
+    },
   },
 };
 </script>
