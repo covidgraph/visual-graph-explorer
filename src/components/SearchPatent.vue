@@ -28,7 +28,7 @@
           <v-list-item-content>
             <v-list-item-title v-html="data.item.Title"></v-list-item-title>
             <v-list-item-subtitle
-                v-html="data.item.PublicationDate"
+              v-html="data.item.PublicationDate"
             ></v-list-item-subtitle>
           </v-list-item-content>
         </template>
@@ -145,9 +145,9 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-  @import "../styles/colors";
-  .v-icon.patent-icon {
-    color: $dark-icon-color;
-    background-color: $patent-color;
-  }
+@import "../styles/colors";
+.v-icon.patent-icon {
+  color: $dark-icon-color;
+  background-color: $patent-color;
+}
 </style>

@@ -150,17 +150,17 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-  @import "../styles/colors";
-  .wrap-actions {
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-  .action-button {
-    margin-top: 5px;
-    margin-bottom: 5px;
-  }
-  .v-icon.author-icon {
-    color: $dark-icon-color;
-    background-color: $author-color;
-  }
+@import "../styles/colors";
+.wrap-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.action-button {
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+.v-icon.author-icon {
+  color: $dark-icon-color;
+  background-color: $author-color;
+}
 </style>
