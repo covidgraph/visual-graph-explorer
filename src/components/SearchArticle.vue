@@ -1,4 +1,4 @@
-<template>
+<template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
   <v-card>
     <v-card-title class="headline primary--text">
       Search Article
@@ -20,7 +20,19 @@
         placeholder="Start typing to Search"
         prepend-icon="mdi-database-search"
         return-object
-      ></v-autocomplete>
+      >
+        <template v-slot:item="data">
+          <v-list-item-avatar>
+            <v-icon class="paper-icon">mdi-book</v-icon>
+          </v-list-item-avatar>
+          <v-list-item-content>
+            <v-list-item-title v-html="data.item.title"></v-list-item-title>
+            <v-list-item-subtitle
+              v-html="data.item.publishTime"
+            ></v-list-item-subtitle>
+          </v-list-item-content>
+        </template>
+      </v-autocomplete>
     </v-card-text>
     <v-divider></v-divider>
     <v-expand-transition>
@@ -122,4 +134,10 @@ export default {
 };
 </script>
 
-<style scoped></style>
+<style lang="scss" scoped>
+@import "../styles/colors";
+.v-icon.paper-icon {
+  color: $dark-icon-color;
+  background-color: $paper-color;
+}
+</style>
