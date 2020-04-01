@@ -69,18 +69,15 @@ export default {
 };
 </script>
 
-<style>
-:root {
-  --gene-primary-color: #bcd104;
-  --gene-text-color: black;
-}
+<style lang="scss">
+@import "../styles/colors";
 .gene .fill-primary {
-  fill: var(--gene-primary-color);
+  fill: $gene-color;
 }
 .gene .stroke-primary {
-  stroke: var(--gene-primary-color);
+  stroke: $gene-color;
 }
 .gene .text-fill {
-  fill: var(--gene-text-color);
+  fill: $font-color;
 }
 </style>
