@@ -34,7 +34,7 @@
       </v-tooltip>
     </v-app-bar>
 
-    <v-navigation-drawer app permanent clipped right width="310px">
+    <v-navigation-drawer app permanent clipped right width="350">
       <SearchGene
         @search-gene="$refs.graphComponent.searchGene($event)"
       ></SearchGene>
