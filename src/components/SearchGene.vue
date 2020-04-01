@@ -34,6 +34,9 @@
           </v-chip>
         </template>
         <template v-slot:item="data">
+          <v-list-item-avatar>
+            <v-icon class="dna-icon">mdi-dna</v-icon>
+          </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title v-html="data.item.sid"></v-list-item-title>
             <v-list-item-subtitle v-html="data.item.description"></v-list-item-subtitle>
@@ -152,4 +155,10 @@ export default {
 };
 </script>
 
-<style scoped></style>
+<style lang="scss" scoped>
+  @import "../styles/colors";
+  .v-icon.dna-icon {
+    color: $dark-icon-color;
+    background-color: $gene-color;
+  }
+</style>
