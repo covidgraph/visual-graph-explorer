@@ -227,7 +227,8 @@ let paper_geneSymbol = addRelationShip(
   geneSymbolType,
   edgeStyle,
   () => [],
-  "(sourceNode:Paper)-[:MENTIONS]->(targetNode:GeneSymbol)"
+  //"(sourceNode:Paper)-[:PAPER_HAS_ABSTRACT]->(:Abstract:CollectionHub)-[:ABSTRACT_HAS_ABSTRACT]->(:Abstract)-[:HAS_FRAGMENT]->(f)-[:MENTIONS]->(targetNode:GeneSymbol)"
+  "(sourceNode:Paper)-[:PAPER_HAS_BODY_TEXT]->(:Body_text:CollectionHub)-[:BODY_TEXT_HAS_BODY_TEXT]->(:Body_text)-[:HAS_FRAGMENT]->(f)-[:MENTIONS]->(targetNode:GeneSymbol)"
 );
 
 let patent_geneSymbol = addRelationShip(
@@ -235,7 +236,7 @@ let patent_geneSymbol = addRelationShip(
   geneSymbolType,
   edgeStyle,
   () => [],
-  "(sourceNode:Patent)-[:HAS_DESCRIPTION]->(:PatentDescription)-[:MENTIONS]->(targetNode:GeneSymbol)"
+  "(sourceNode:Patent)-[:HAS_DESCRIPTION]->(:PatentDescription)-[:HAS_FRAGMENT]->(f)-[:MENTIONS]->(targetNode:GeneSymbol)"
 );
 
 let paper_paper = addRelationShip(
@@ -336,17 +337,18 @@ export default {
         .toArray();
     },
     async loadAndLayout(load) {
-      const oldlementCounter =
+      const oldElementCounter =
         this.$graphComponent.graph.nodes.size +
         this.$graphComponent.graph.edges.size;
-      await load();
+      const result = await load();
       if (
         this.$graphComponent.graph.nodes.size +
           this.$graphComponent.graph.edges.size >
-        oldlementCounter
+        oldElementCounter
       ) {
         await this.runLayout();
       }
+      return result;
     },
 
     clearGraph() {
@@ -562,11 +564,12 @@ export default {
       );
     },
     async loadNodeForSchema(schemaNode, id) {
-      this.loadAndLayout(async () => {
+      return await this.loadAndLayout(async () => {
         let item = await loader.loadNodeById(schemaNode, id);
         if (item && !this.getLoadedNode(item)) {
           schemaNode.tag.creator.call(this, item);
         }
+        return item;
       });
     },
     async runLayout() {
@@ -594,6 +597,10 @@ export default {
     },
     async searchAuthor(id) {
       await this.loadNodeForSchema(authorType, id);
+    },
+    async searchAuthorPapers(id) {
+      const author = await this.loadNodeForSchema(authorType, id);
+      await this.loadInEdges(author, paper_author);
     },
     async fetchGenes(geneName) {
       return await loader.loadNodes(geneSymbolType, ["node.sid = $geneName"], {

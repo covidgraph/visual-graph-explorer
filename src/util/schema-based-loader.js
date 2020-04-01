@@ -6,7 +6,7 @@ async function query(query, args = {}, name = "result") {
   return (await coreQuery(query, args, name)).records.map((r) => r.get(name));
 }
 
-const limit = 50;
+const limit = 200;
 
 export default class SchemaBasedLoader {
   schemaGraph = new DefaultGraph();

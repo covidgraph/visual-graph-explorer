@@ -87,6 +87,15 @@ export async function loadReferencedPapersForPaper(paper) {
   );
 }
 
+export async function loadTitlesForPatent(patent) {
+  return await query(
+    `MATCH (p:Patent)--(pt:PatentTitle)
+            WHERE id(p) = $id
+            RETURN pt.text as result LIMIT 50`,
+    { id: patent.identity }
+  );
+}
+
 export async function loadBodyTextForPaper(paper) {
   return await query(
     `MATCH (p:Paper)

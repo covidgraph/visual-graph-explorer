@@ -100,19 +100,22 @@ export default {
       if (val.length > 2) {
         // Lazily load input items
         query(
-          "MATCh (p:Patent) WHERE p.Title CONTAINS $word RETURN p LIMIT 50",
+          'call db.index.fulltext.queryNodes("patents",$text) \n' +
+            "yield node,score match (node)--(p:Patent)--(pt:PatentTitle)\n" +
+            "return distinct(p.id) as id, collect(pt.text) as titles, labels(node)[0] as found_type, node.lang as found_in_lang ,score\n" +
+            "order by score\n" +
+            "desc limit 20",
           {
-            word: val,
+            text: val,
           }
         )
           .then((res) => {
             this.count = res.records.length;
             this.entries = res.records.map((record) => {
-              let node = record.get("p");
               return {
-                id: node.identity,
-                PublicationDate: node.properties["PublicationDate"],
-                Title: node.properties["Title"],
+                id: record.get("id"),
+                PublicationDate: "unknown",
+                Title: record.get("titles"),
               };
             });
           })

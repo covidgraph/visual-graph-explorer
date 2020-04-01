@@ -44,7 +44,10 @@
       </SearchArticle>
       <SearchPatent @search-patent="$refs.graphComponent.searchPatent($event)">
       </SearchPatent>
-      <SearchAuthor @search-article="$refs.graphComponent.searchAuthor($event)">
+      <SearchAuthor
+        @search-author="$refs.graphComponent.searchAuthor($event)"
+        @search-author-papers="$refs.graphComponent.searchAuthorPapers($event)"
+      >
       </SearchAuthor>
     </v-navigation-drawer>
 
