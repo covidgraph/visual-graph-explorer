@@ -109,27 +109,32 @@ export default {
       // Items have already been requested
       if (this.isLoading) return;
 
-      this.isLoading = true;
+      if (val.length > 2) {
+        this.isLoading = true;
 
-      // Lazily load input items
-      query(
-        "MATCH (a:Author) WHERE (toLower(a.last) CONTAINS $word) OR (toLower(a.first) CONTAINS $word) RETURN a LIMIT 50",
-        { word: val.toLowerCase() }
-      )
-        .then((res) => {
-          this.count = res.records.length;
-          this.entries = res.records.map((record) => {
-            let node = record.get("a");
-            return {
-              id: node.identity,
-              name: node.properties["first"] + " " + node.properties["last"],
-            };
-          });
-        })
-        .catch((err) => {
-          console.log(err);
-        })
-        .finally(() => (this.isLoading = false));
+        // Lazily load input items
+        query(
+          "MATCH (a:Author) WHERE (toLower(a.last) CONTAINS $word) OR (toLower(a.first) CONTAINS $word) RETURN a LIMIT 50",
+          { word: val.toLowerCase() }
+        )
+          .then((res) => {
+            this.count = res.records.length;
+            this.entries = res.records.map((record) => {
+              let node = record.get("a");
+              return {
+                id: node.identity,
+                name: node.properties["first"] + " " + node.properties["last"],
+              };
+            });
+          })
+          .catch((err) => {
+            console.log(err);
+          })
+          .finally(() => (this.isLoading = false));
+      } else {
+        this.count = 0;
+        this.entries = [];
+      }
     },
   },
 };

@@ -95,28 +95,33 @@ export default {
       // Items have already been requested
       if (this.isLoading) return;
 
-      this.isLoading = true;
+      if (val.length > 2) {
+        this.isLoading = true;
 
-      // Lazily load input items
-      query(
-        "MATCH (p:Paper) WHERE toLower(p.title) CONTAINS $word RETURN p LIMIT 50",
-        { word: val.toLowerCase() }
-      )
-        .then((res) => {
-          this.count = res.records.length;
-          this.entries = res.records.map((record) => {
-            let node = record.get("p");
-            return {
-              id: node.identity,
-              publishTime: node.properties["publish_time"],
-              title: node.properties["title"],
-            };
-          });
-        })
-        .catch((err) => {
-          console.log(err);
-        })
-        .finally(() => (this.isLoading = false));
+        // Lazily load input items
+        query(
+          "MATCH (p:Paper) WHERE toLower(p.title) CONTAINS $word RETURN p LIMIT 50",
+          { word: val.toLowerCase() }
+        )
+          .then((res) => {
+            this.count = res.records.length;
+            this.entries = res.records.map((record) => {
+              let node = record.get("p");
+              return {
+                id: node.identity,
+                publishTime: node.properties["publish_time"],
+                title: node.properties["title"],
+              };
+            });
+          })
+          .catch((err) => {
+            console.log(err);
+          })
+          .finally(() => (this.isLoading = false));
+      } else {
+        this.count = 0;
+        this.entries = [];
+      }
     },
   },
 };

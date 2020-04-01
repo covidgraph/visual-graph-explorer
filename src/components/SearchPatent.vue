@@ -97,25 +97,33 @@ export default {
 
       this.isLoading = true;
 
-      // Lazily load input items
-      query("MATCh (p:Patent) WHERE p.Title CONTAINS $word RETURN p LIMIT 50", {
-        word: val,
-      })
-        .then((res) => {
-          this.count = res.records.length;
-          this.entries = res.records.map((record) => {
-            let node = record.get("p");
-            return {
-              id: node.identity,
-              PublicationDate: node.properties["PublicationDate"],
-              Title: node.properties["Title"],
-            };
-          });
-        })
-        .catch((err) => {
-          console.log(err);
-        })
-        .finally(() => (this.isLoading = false));
+      if (val.length > 2) {
+        // Lazily load input items
+        query(
+          "MATCh (p:Patent) WHERE p.Title CONTAINS $word RETURN p LIMIT 50",
+          {
+            word: val,
+          }
+        )
+          .then((res) => {
+            this.count = res.records.length;
+            this.entries = res.records.map((record) => {
+              let node = record.get("p");
+              return {
+                id: node.identity,
+                PublicationDate: node.properties["PublicationDate"],
+                Title: node.properties["Title"],
+              };
+            });
+          })
+          .catch((err) => {
+            console.log(err);
+          })
+          .finally(() => (this.isLoading = false));
+      } else {
+        this.count = 0;
+        this.entries = [];
+      }
     },
   },
 };

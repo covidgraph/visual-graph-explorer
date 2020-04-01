@@ -101,28 +101,33 @@ export default {
       // Items have already been requested
       if (this.isLoading) return;
 
-      this.isLoading = true;
+      if (val.length > 1) {
+        this.isLoading = true;
 
-      // Lazily load input items
-      query(
-        "MATCH (g:GeneSymbol) WHERE toLower(g.sid) STARTS WITH $sid RETURN g LIMIT 100",
-        { sid: val.toLowerCase() }
-      )
-        .then((res) => {
-          this.count = res.records.length;
-          this.entries = res.records.map((record) => {
-            let node = record.get("g");
-            return {
-              id: node.identity,
-              sid: node.properties["sid"],
-              Description: node.properties["sid"],
-            };
-          });
-        })
-        .catch((err) => {
-          console.log(err);
-        })
-        .finally(() => (this.isLoading = false));
+        // Lazily load input items
+        query(
+          "MATCH (g:GeneSymbol) WHERE toLower(g.sid) STARTS WITH $sid RETURN g LIMIT 100",
+          { sid: val.toLowerCase() }
+        )
+          .then((res) => {
+            this.count = res.records.length;
+            this.entries = res.records.map((record) => {
+              let node = record.get("g");
+              return {
+                id: node.identity,
+                sid: node.properties["sid"],
+                Description: node.properties["sid"],
+              };
+            });
+          })
+          .catch((err) => {
+            console.log(err);
+          })
+          .finally(() => (this.isLoading = false));
+      } else {
+        this.count = 0;
+        this.entries = [];
+      }
     },
   },
 };
