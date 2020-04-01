@@ -1,6 +1,6 @@
 <template>
   <v-card>
-    <v-list-item style="background-color: #bcd104; color: #555555;">
+    <v-list-item class="header">
       <v-list-item-title>
         <v-icon x-large color="#555555">mdi-dna</v-icon>
         {{ this.value.properties.sid }}
@@ -11,14 +11,15 @@
       {{ value.properties.taxid }}
     </v-card-text>
 
-    <v-container fluid>
-      <v-btn text color="#1976d2" @click="loadPapers">
+    <v-card-actions>
+      <v-spacer></v-spacer>
+      <v-btn text outlined rounded color="primary" @click="loadPapers">
         Load Papers
       </v-btn>
-      <v-btn text color="#1976d2" @click="loadPatents">
+      <v-btn text outlined rounded color="primary" @click="loadPatents">
         Load Patents
       </v-btn>
-    </v-container>
+    </v-card-actions>
   </v-card>
 </template>
 
@@ -40,4 +41,10 @@ export default {
 };
 </script>
 
-<style scoped></style>
+<style lang="scss" scoped>
+@import "../styles/colors";
+.header {
+  background-color: $gene-color;
+  color: $font-color;
+}
+</style>

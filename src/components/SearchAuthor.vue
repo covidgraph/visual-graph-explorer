@@ -1,6 +1,6 @@
 <template>
   <v-card>
-    <v-card-title class="headline">
+    <v-card-title class="headline primary--text">
       Search Author
     </v-card-title>
     <v-card-text>
@@ -33,35 +33,49 @@
         </v-list-item>
       </v-list>
     </v-expand-transition>
-    <v-card-actions>
+    <v-card-actions class="wrap-actions">
       <v-spacer></v-spacer>
-      <v-btn x-small :disabled="!model" @click="model = null">
+      <v-btn
+        :disabled="!model"
+        @click="model = null"
+        outlined
+        rounded
+        small
+        color="primary"
+        class="action-button"
+      >
         Clear
-        <v-icon right>mdi-close-circle</v-icon>
+        <v-icon right small>mdi-close-circle</v-icon>
       </v-btn>
       <v-btn
-        x-small
         :disabled="!model"
         @click="$emit('search-author', model.id)"
+        outlined
+        rounded
+        small
+        color="primary"
+        class="action-button"
       >
         Load Author
-        <v-icon right>mdi-cloud-search-outline</v-icon>
+        <v-icon right small>mdi-cloud-search-outline</v-icon>
       </v-btn>
       <v-btn
-        x-small
         :disabled="!model"
         @click="$emit('search-author-papers', model.id)"
+        outlined
+        rounded
+        small
+        color="primary"
+        class="action-button"
       >
         Load Papers
-        <v-icon right>mdi-cloud-search-outline</v-icon>
+        <v-icon right small>mdi-cloud-search-outline</v-icon>
       </v-btn>
     </v-card-actions>
   </v-card>
 </template>
 
 <script>
-import Vuetify from "vuetify";
-
 import query from "../util/dbconnection";
 
 export default {
@@ -121,4 +135,13 @@ export default {
 };
 </script>
 
-<style scoped></style>
+<style scoped>
+.wrap-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.action-button {
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+</style>
