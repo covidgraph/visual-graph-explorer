@@ -24,11 +24,11 @@
       >
         <template v-slot:selection="data">
           <v-chip
-              v-bind="data.attrs"
-              :input-value="data.selected"
-              close
-              @click="data.select"
-              @click:close="remove(data.item)"
+            v-bind="data.attrs"
+            :input-value="data.selected"
+            close
+            @click="data.select"
+            @click:close="remove(data.item)"
           >
             {{ data.item.sid }}
           </v-chip>
@@ -39,10 +39,11 @@
           </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title v-html="data.item.sid"></v-list-item-title>
-            <v-list-item-subtitle v-html="data.item.description"></v-list-item-subtitle>
+            <v-list-item-subtitle
+              v-html="data.item.description"
+            ></v-list-item-subtitle>
           </v-list-item-content>
         </template>
-
       </v-autocomplete>
     </v-card-text>
     <v-card-actions>
@@ -60,7 +61,12 @@
       </v-btn>
       <v-btn
         :disabled="!model"
-        @click="$emit('search-gene', model.map(item => item.sid))"
+        @click="
+          $emit(
+            'search-gene',
+            model.map((item) => item.sid)
+          )
+        "
         outlined
         rounded
         small
@@ -106,12 +112,11 @@ export default {
         return { sid: entry.sid, description };
       });
 
-      this.model.forEach(modelItem => {
-          if (items.findIndex(item => item.sid === modelItem.sid) < 0) {
-            items.push(modelItem)
-          }
+      this.model.forEach((modelItem) => {
+        if (items.findIndex((item) => item.sid === modelItem.sid) < 0) {
+          items.push(modelItem);
         }
-      )
+      });
       return items;
     },
   },
@@ -147,18 +152,18 @@ export default {
   },
 
   methods: {
-    remove (item) {
-      const index = this.model.findIndex(o => o.sid === item.sid)
-      if (index >= 0) this.model.splice(index, 1)
+    remove(item) {
+      const index = this.model.findIndex((o) => o.sid === item.sid);
+      if (index >= 0) this.model.splice(index, 1);
     },
-  }
+  },
 };
 </script>
 
 <style lang="scss" scoped>
-  @import "../styles/colors";
-  .v-icon.dna-icon {
-    color: $dark-icon-color;
-    background-color: $gene-color;
-  }
+@import "../styles/colors";
+.v-icon.dna-icon {
+  color: $dark-icon-color;
+  background-color: $gene-color;
+}
 </style>

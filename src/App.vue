@@ -24,6 +24,7 @@
         <span>https://covidgraph.org</span>
       </v-tooltip>
       <v-spacer></v-spacer>
+      <ConnectionStatus></ConnectionStatus>
       <v-tooltip bottom>
         <template v-slot:activator="{ on }">
           <v-btn text icon color="white" @click="" v-on="on">
@@ -66,10 +67,12 @@ import DetailPanel from "./components/DetailPanel";
 import SearchGene from "./components/SearchGene";
 import SearchAuthor from "./components/SearchAuthor";
 import SearchPatent from "./components/SearchPatent";
+import ConnectionStatus from "./components/ConnectionStatus";
 
 export default {
   name: "app",
   components: {
+    ConnectionStatus,
     SearchArticle,
     SearchGene,
     DiagramComponent,

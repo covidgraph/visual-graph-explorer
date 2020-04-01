@@ -579,10 +579,10 @@ export default {
       await this.loadOutEdges(paper, paper_paper);
     },
     async searchGenes(geneSids) {
-      let genes = []
+      let genes = [];
       for (let i = 0; i < geneSids.length; i++) {
         const fetchedGenes = await this.fetchGenes(geneSids[i]);
-        genes = genes.concat(fetchedGenes)
+        genes = genes.concat(fetchedGenes);
       }
 
       for (let i = 0; i < genes.length; i++) {

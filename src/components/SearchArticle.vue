@@ -1,7 +1,7 @@
 <template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
   <v-card>
     <v-card-title class="headline primary--text">
-      Search Article
+      Find Article
     </v-card-title>
     <v-card-text>
       Find publications by title
