@@ -2,6 +2,8 @@
 
 ![A screenshot of this sample application](docs/screenshot.png)
 
+Run the application here: https://live.yworks.com/covidgraph
+
 This repository contains a sample application that can be used as a template to browse the 
 "covid-graph" See [https://covidgraph.org](https://covidgraph.org) for more info.  
 
