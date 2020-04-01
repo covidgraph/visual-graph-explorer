@@ -578,8 +578,13 @@ export default {
     async loadReferencedPapersForPaper(paper) {
       await this.loadOutEdges(paper, paper_paper);
     },
-    async searchGene(geneSid) {
-      const genes = await this.fetchGenes(geneSid);
+    async searchGenes(geneSids) {
+      let genes = []
+      for (let i = 0; i < geneSids.length; i++) {
+        const fetchedGenes = await this.fetchGenes(geneSids[i]);
+        genes = genes.concat(fetchedGenes)
+      }
+
       for (let i = 0; i < genes.length; i++) {
         const g = genes[i];
         geneSymbolType.tag.creator.call(this, g);
