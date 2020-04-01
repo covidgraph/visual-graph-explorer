@@ -56,6 +56,7 @@ module.exports = {
                 "getValue",
                 "graphComponent",
                 "hide",
+                "isConnected",
                 "invalid",
                 "list",
                 "mode",
