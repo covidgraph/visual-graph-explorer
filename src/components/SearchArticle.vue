@@ -1,6 +1,6 @@
 <template>
   <v-card>
-    <v-card-title class="headline">
+    <v-card-title class="headline primary--text">
       Search Article
     </v-card-title>
     <v-card-text>
@@ -35,21 +35,33 @@
     </v-expand-transition>
     <v-card-actions>
       <v-spacer></v-spacer>
-      <v-btn :disabled="!model" @click="model = null">
+      <v-btn
+        :disabled="!model"
+        @click="model = null"
+        outlined
+        rounded
+        small
+        color="primary"
+      >
         Clear
-        <v-icon right>mdi-close-circle</v-icon>
+        <v-icon right small>mdi-close-circle</v-icon>
       </v-btn>
-      <v-btn :disabled="!model" @click="$emit('search-article', model.id)">
+      <v-btn
+        :disabled="!model"
+        @click="$emit('search-article', model.id)"
+        outlined
+        rounded
+        small
+        color="primary"
+      >
         Load Papers
-        <v-icon right>mdi-cloud-search-outline</v-icon>
+        <v-icon right small>mdi-cloud-search-outline</v-icon>
       </v-btn>
     </v-card-actions>
   </v-card>
 </template>
 
 <script>
-import Vuetify from "vuetify";
-
 import query from "../util/dbconnection";
 
 export default {

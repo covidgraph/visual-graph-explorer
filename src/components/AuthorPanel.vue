@@ -1,6 +1,6 @@
 <template>
   <v-card>
-    <v-list-item style="background-color: #d12eae;">
+    <v-list-item class="header">
       <v-icon x-large color="white">mdi-account</v-icon>
       <v-list-item-content>
         <v-list-item-title style="color: white;">
@@ -15,11 +15,12 @@
       </v-list-item-content>
     </v-list-item>
 
-    <v-container fluid>
-      <v-btn text color="#1976d2" @click="loadPapers">
+    <v-card-actions>
+      <v-spacer></v-spacer>
+      <v-btn text outlined rounded color="primary" @click="loadPapers">
         Load Papers
       </v-btn>
-    </v-container>
+    </v-card-actions>
 
     <v-card-text>
       This is an author
@@ -41,4 +42,9 @@ export default {
 };
 </script>
 
-<style scoped></style>
+<style lang="scss" scoped>
+@import "../styles/colors";
+.header {
+  background-color: $author-color;
+}
+</style>

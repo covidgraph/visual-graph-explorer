@@ -12,17 +12,39 @@
       </v-list-item-content>
     </v-list-item>
 
-    <v-container fluid>
-      <v-btn text color="#1976d2" @click="loadAuthors">
+    <v-card-actions class="wrap-actions">
+      <v-spacer></v-spacer>
+      <v-btn
+        text
+        outlined
+        rounded
+        color="primary"
+        @click="loadAuthors"
+        class="action-button"
+      >
         Load Authors
       </v-btn>
-      <v-btn text color="#1976d2" @click="loadGenes">
+      <v-btn
+        text
+        outlined
+        rounded
+        color="primary"
+        @click="loadGenes"
+        class="action-button"
+      >
         Load Genes
       </v-btn>
-      <v-btn text color="#1976d2" @click="loadReferencedPapers">
+      <v-btn
+        text
+        outlined
+        rounded
+        color="primary"
+        @click="loadReferencedPapers"
+        class="action-button"
+      >
         Load Referenced Papers
       </v-btn>
-    </v-container>
+    </v-card-actions>
 
     <v-expansion-panels v-model="panel" multiple accordion>
       <v-expansion-panel>
@@ -185,5 +207,13 @@ export default {
 .overflow-content {
   max-height: 300px;
   overflow-y: auto;
+}
+.wrap-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.action-button {
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
 </style>
