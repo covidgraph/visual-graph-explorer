@@ -1,5 +1,15 @@
 import coreQuery from "./dbconnection";
 
+export function isOfType(item, type) {
+  if (item && item.labels && item.labels.length > 0) {
+    if (Array.isArray(type)) {
+      return type.every((t) => item.labels.indexOf(t) >= 0);
+    } else {
+      return item.labels.indexOf(type) >= 0;
+    }
+  }
+}
+
 export async function query(query, args = {}, name = "result") {
   return (await coreQuery(query, args, name)).records.map((r) => r.get(name));
 }
@@ -74,6 +84,15 @@ export async function loadReferencedPapersForPaper(paper) {
     `MATCH (n0:Paper) Where id(n0) in $papers MATCH (n0)-[r0:PAPER_HAS_BIB_ENTRIES]->(n1:Bib_entries)-[r1:BIB_ENTRIES_HAS_BIBREF]->(n2:Bibref)-[r2:BIBREF_HAS_OTHER_IDS]->(n3:Other_ids)-[r3]->(n4:CollectionHub)-[r4]->(paperId)<-[r6:PAPERID_COLLECTION_HAS_PAPERID]-(n5:CollectionHub:PaperID)<-[r5:PAPER_HAS_PAPERID_COLLECTION]-(p:Paper) WHERE n0 <> p
      RETURN p as result LIMIT 500`,
     { papers: [paper.identity] }
+  );
+}
+
+export async function loadTitlesForPatent(patent) {
+  return await query(
+    `MATCH (p:Patent)--(pt:PatentTitle)
+            WHERE id(p) = $id
+            RETURN pt.text as result LIMIT 50`,
+    { id: patent.identity }
   );
 }
 

@@ -196,30 +196,25 @@ export default {
 };
 </script>
 
-<style>
-:root {
-  --paper-primary-color: #5b9ad9;
-  --paper-background: white;
-  --paper-text-white: white;
-  --paper-text-gray: gray;
-}
+<style lang="scss">
+@import "../styles/colors";
 .paper .fill-primary {
-  fill: var(--paper-primary-color);
+  fill: $paper-color;
 }
 .paper .stroke-primary {
-  stroke: var(--paper-primary-color);
+  stroke: $paper-color;
 }
 .paper .background {
-  fill: var(--paper-background);
+  fill: white;
 }
 .paper .text-white {
-  fill: var(--paper-text-white);
+  fill: $primary-text-color;
 }
 .paper .text-gray {
-  fill: var(--paper-text-gray);
+  fill: gray;
 }
 .paper .text-primary {
-  fill: var(--paper-primary-color);
+  fill: $paper-color;
 }
 
 .paper .transition-transform {

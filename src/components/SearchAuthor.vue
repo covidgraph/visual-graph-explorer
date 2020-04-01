@@ -1,7 +1,7 @@
-<template>
+<template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
   <v-card>
     <v-card-title class="headline primary--text">
-      Search Author
+      Find Author
     </v-card-title>
     <v-card-text>
       Find publications by Authors
@@ -20,7 +20,16 @@
         placeholder="Start typing to Search"
         prepend-icon="mdi-database-search"
         return-object
-      ></v-autocomplete>
+      >
+        <template v-slot:item="data">
+          <v-list-item-avatar>
+            <v-icon class="author-icon">mdi-account</v-icon>
+          </v-list-item-avatar>
+          <v-list-item-content>
+            <v-list-item-title v-html="data.item.name"></v-list-item-title>
+          </v-list-item-content>
+        </template>
+      </v-autocomplete>
     </v-card-text>
     <v-divider></v-divider>
     <v-expand-transition>
@@ -109,33 +118,39 @@ export default {
       // Items have already been requested
       if (this.isLoading) return;
 
-      this.isLoading = true;
+      if (val.length > 2) {
+        this.isLoading = true;
 
-      // Lazily load input items
-      query(
-        "MATCH (a:Author) WHERE (toLower(a.last) CONTAINS $word) OR (toLower(a.first) CONTAINS $word) RETURN a LIMIT 50",
-        { word: val.toLowerCase() }
-      )
-        .then((res) => {
-          this.count = res.records.length;
-          this.entries = res.records.map((record) => {
-            let node = record.get("a");
-            return {
-              id: node.identity,
-              name: node.properties["first"] + " " + node.properties["last"],
-            };
-          });
-        })
-        .catch((err) => {
-          console.log(err);
-        })
-        .finally(() => (this.isLoading = false));
+        // Lazily load input items
+        query(
+          "MATCH (a:Author) WHERE (toLower(a.last) CONTAINS $word) OR (toLower(a.first) CONTAINS $word) RETURN a LIMIT 50",
+          { word: val.toLowerCase() }
+        )
+          .then((res) => {
+            this.count = res.records.length;
+            this.entries = res.records.map((record) => {
+              let node = record.get("a");
+              return {
+                id: node.identity,
+                name: node.properties["first"] + " " + node.properties["last"],
+              };
+            });
+          })
+          .catch((err) => {
+            console.log(err);
+          })
+          .finally(() => (this.isLoading = false));
+      } else {
+        this.count = 0;
+        this.entries = [];
+      }
     },
   },
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@import "../styles/colors";
 .wrap-actions {
   flex-wrap: wrap;
   justify-content: flex-end;
@@ -143,5 +158,9 @@ export default {
 .action-button {
   margin-top: 5px;
   margin-bottom: 5px;
+}
+.v-icon.author-icon {
+  color: $dark-icon-color;
+  background-color: $author-color;
 }
 </style>

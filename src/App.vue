@@ -24,6 +24,7 @@
         <span>https://covidgraph.org</span>
       </v-tooltip>
       <v-spacer></v-spacer>
+      <ConnectionStatus></ConnectionStatus>
       <v-tooltip bottom>
         <template v-slot:activator="{ on }">
           <v-btn text icon color="white" @click="showAboutDialog" v-on="on">
@@ -34,9 +35,9 @@
       </v-tooltip>
     </v-app-bar>
 
-    <v-navigation-drawer app permanent clipped right width="310px">
+    <v-navigation-drawer app permanent clipped right width="350">
       <SearchGene
-        @search-gene="$refs.graphComponent.searchGene($event)"
+        @search-gene="$refs.graphComponent.searchGenes($event)"
       ></SearchGene>
       <SearchArticle
         @search-article="$refs.graphComponent.searchArticle($event)"
@@ -44,7 +45,10 @@
       </SearchArticle>
       <SearchPatent @search-patent="$refs.graphComponent.searchPatent($event)">
       </SearchPatent>
-      <SearchAuthor @search-article="$refs.graphComponent.searchAuthor($event)">
+      <SearchAuthor
+        @search-author="$refs.graphComponent.searchAuthor($event)"
+        @search-author-papers="$refs.graphComponent.searchAuthorPapers($event)"
+      >
       </SearchAuthor>
     </v-navigation-drawer>
 
@@ -68,12 +72,14 @@ import DetailPanel from "./components/DetailPanel";
 import SearchGene from "./components/SearchGene";
 import SearchAuthor from "./components/SearchAuthor";
 import SearchPatent from "./components/SearchPatent";
+import ConnectionStatus from "./components/ConnectionStatus";
 import AboutDialog from "./components/AboutDialog";
 
 export default {
   name: "app",
   components: {
     AboutDialog,
+    ConnectionStatus,
     SearchArticle,
     SearchGene,
     DiagramComponent,

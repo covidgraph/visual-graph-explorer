@@ -1,7 +1,7 @@
-<template>
+<template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
   <v-card>
     <v-card-title class="headline primary--text">
-      Search Patent
+      Find Patent
     </v-card-title>
     <v-card-text>
       Find patents by title
@@ -20,7 +20,19 @@
         placeholder="Start typing to Search"
         prepend-icon="mdi-database-search"
         return-object
-      ></v-autocomplete>
+      >
+        <template v-slot:item="data">
+          <v-list-item-avatar>
+            <v-icon class="patent-icon">mdi-file-document-outline</v-icon>
+          </v-list-item-avatar>
+          <v-list-item-content>
+            <v-list-item-title v-html="data.item.Title"></v-list-item-title>
+            <v-list-item-subtitle
+              v-html="data.item.PublicationDate"
+            ></v-list-item-subtitle>
+          </v-list-item-content>
+        </template>
+      </v-autocomplete>
     </v-card-text>
     <v-divider></v-divider>
     <v-expand-transition>
@@ -95,30 +107,46 @@ export default {
       // Items have already been requested
       if (this.isLoading) return;
 
-      this.isLoading = true;
-
-      // Lazily load input items
-      query("MATCh (p:Patent) WHERE p.Title CONTAINS $word RETURN p LIMIT 50", {
-        word: val,
-      })
-        .then((res) => {
-          this.count = res.records.length;
-          this.entries = res.records.map((record) => {
-            let node = record.get("p");
-            return {
-              id: node.identity,
-              PublicationDate: node.properties["PublicationDate"],
-              Title: node.properties["Title"],
-            };
-          });
-        })
-        .catch((err) => {
-          console.log(err);
-        })
-        .finally(() => (this.isLoading = false));
+      if (val && val.length > 4) {
+        this.isLoading = true;
+        // Lazily load input items
+        query(
+          `call db.index.fulltext.queryNodes("patents", $searchtext)
+yield node,score match (node)--(p:Patent)-[:HAS_TITLE]->(pt:PatentTitle)
+return distinct(id(p)) as id, collect(pt.text) as titles, labels(node)[0] as found_type, node.lang as found_in_lang, score
+order by score
+desc limit 10`,
+          {
+            searchtext: val,
+          }
+        )
+          .then((res) => {
+            this.count = res.records.length;
+            this.entries = res.records.map((record) => {
+              return {
+                id: record.get("id"),
+                PublicationDate: "unknown",
+                Title: record.get("titles")[0],
+              };
+            });
+          })
+          .catch((err) => {
+            console.log(err);
+          })
+          .finally(() => (this.isLoading = false));
+      } else {
+        this.count = 0;
+        this.entries = [];
+      }
     },
   },
 };
 </script>
 
-<style scoped></style>
+<style lang="scss" scoped>
+@import "../styles/colors";
+.v-icon.patent-icon {
+  color: $dark-icon-color;
+  background-color: $patent-color;
+}
+</style>

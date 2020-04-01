@@ -23,6 +23,7 @@ import PaperPanel from "./PaperPanel";
 import AuthorPanel from "./AuthorPanel";
 import GenePanel from "./GenePanel";
 import PatentPanel from "./PatentPanel";
+import { isOfType } from "../util/queries";
 
 export default {
   name: "DetailPanel",
@@ -37,9 +38,7 @@ export default {
   }),
   methods: {
     nodeIs(label) {
-      return (
-        this.model && this.model.labels && this.model.labels.indexOf(label) >= 0
-      );
+      return isOfType(this.model, label);
     },
     show(value) {
       this.model = value;

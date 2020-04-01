@@ -123,18 +123,15 @@ export default {
 };
 </script>
 
-<style>
-:root {
-  --author-primary-color: #d12eae;
-  --author-text-color: white;
-}
+<style lang="scss">
+@import "../styles/colors";
 .author .fill-primary {
-  fill: var(--author-primary-color);
+  fill: $author-color;
 }
 .author .stroke-primary {
-  stroke: var(--author-primary-color);
+  stroke: $author-color;
 }
 .author .text-fill {
-  fill: var(--author-text-color);
+  fill: $primary-text-color;
 }
 </style>

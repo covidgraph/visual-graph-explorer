@@ -1,7 +1,7 @@
-<template>
+<template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
   <v-card>
     <v-card-title class="headline primary--text">
-      Search Article
+      Find Article
     </v-card-title>
     <v-card-text>
       Find publications by title
@@ -20,7 +20,19 @@
         placeholder="Start typing to Search"
         prepend-icon="mdi-database-search"
         return-object
-      ></v-autocomplete>
+      >
+        <template v-slot:item="data">
+          <v-list-item-avatar>
+            <v-icon class="paper-icon">mdi-book</v-icon>
+          </v-list-item-avatar>
+          <v-list-item-content>
+            <v-list-item-title v-html="data.item.title"></v-list-item-title>
+            <v-list-item-subtitle
+              v-html="data.item.publishTime"
+            ></v-list-item-subtitle>
+          </v-list-item-content>
+        </template>
+      </v-autocomplete>
     </v-card-text>
     <v-divider></v-divider>
     <v-expand-transition>
@@ -95,31 +107,42 @@ export default {
       // Items have already been requested
       if (this.isLoading) return;
 
-      this.isLoading = true;
+      if (val.length > 2) {
+        this.isLoading = true;
 
-      // Lazily load input items
-      query(
-        "MATCH (p:Paper) WHERE toLower(p.title) CONTAINS $word RETURN p LIMIT 50",
-        { word: val.toLowerCase() }
-      )
-        .then((res) => {
-          this.count = res.records.length;
-          this.entries = res.records.map((record) => {
-            let node = record.get("p");
-            return {
-              id: node.identity,
-              publishTime: node.properties["publish_time"],
-              title: node.properties["title"],
-            };
-          });
-        })
-        .catch((err) => {
-          console.log(err);
-        })
-        .finally(() => (this.isLoading = false));
+        // Lazily load input items
+        query(
+          "MATCH (p:Paper) WHERE toLower(p.title) CONTAINS $word RETURN p LIMIT 50",
+          { word: val.toLowerCase() }
+        )
+          .then((res) => {
+            this.count = res.records.length;
+            this.entries = res.records.map((record) => {
+              let node = record.get("p");
+              return {
+                id: node.identity,
+                publishTime: node.properties["publish_time"],
+                title: node.properties["title"],
+              };
+            });
+          })
+          .catch((err) => {
+            console.log(err);
+          })
+          .finally(() => (this.isLoading = false));
+      } else {
+        this.count = 0;
+        this.entries = [];
+      }
     },
   },
 };
 </script>
 
-<style scoped></style>
+<style lang="scss" scoped>
+@import "../styles/colors";
+.v-icon.paper-icon {
+  color: $dark-icon-color;
+  background-color: $paper-color;
+}
+</style>

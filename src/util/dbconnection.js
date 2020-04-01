@@ -11,7 +11,7 @@ async function connectToDB(url, user, pass, encrypted = false) {
   // create a new Neo4j driver instance
   const neo4jDriver = neo4j.driver(url, neo4j.auth.basic(user, pass), {
     encrypted: encrypted,
-    trust: "TRUST_CUSTOM_CA_SIGNED_CERTIFICATES",
+    trust: "TRUST_SYSTEM_CA_SIGNED_CERTIFICATES",
   });
 
   const runCypherQuery = createCypherQueryRunner(neo4jDriver);
@@ -50,17 +50,33 @@ function createCypherQueryRunner(neo4jDriver) {
 /** @type {function(query:String, params:{key:string, value:object})} */
 let runQuery = null;
 
-/** @param {String} query
+export const queryEvents = {
+  onQueryStarted: () => {},
+  onQuerySuccess: () => {},
+  onQueryFailed: () => Promise.resolve(),
+};
+
+/** @param {String} q
  *  @param {{key:string, value:object}} params
  *  @return {QueryResult}
  */
-export default async function query(query, params = {}) {
-  if (runQuery == null) {
-    runQuery = await connectToDB(
-      "bolt://covid.petesis.com:7687",
-      "public",
-      "corona"
-    );
+export default async function query(q, params = {}) {
+  try {
+    queryEvents.onQueryStarted();
+    if (runQuery == null) {
+      runQuery = await connectToDB(
+        "bolt://covid.petesis.com:7687",
+        "public",
+        "corona",
+        true
+      );
+    }
+
+    const result = runQuery(q, params);
+    queryEvents.onQuerySuccess();
+    return result;
+  } catch (e) {
+    await queryEvents.onQueryFailed();
+    return query(q, params);
   }
-  return await runQuery(query, params);
 }
