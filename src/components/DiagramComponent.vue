@@ -376,10 +376,11 @@ export default {
     getLoadedNode(item) {
       return this.id2NodeMapping.get(getId(item.identity));
     },
-    getLoadedIdsOfType(schemaNode) {
-      this.$graphComponent.graph.nodes
-        .filter((n) => isOfType(item.tag, schemaNode.tag.type))
-        .map((n) => n.tag.identity);
+    getLoadedItemsOfType(schemaNode) {
+      return this.$graphComponent.graph.nodes
+        .map((n) => n.tag)
+        .filter((t) => isOfType(t, schemaNode.tag.type))
+        .toArray();
     },
     async loadAndLayout(load) {
       const oldlementCounter =
@@ -394,25 +395,81 @@ export default {
         await this.runLayout();
       }
     },
+
+    clearGraph() {
+      this.id2NodeMapping.clear();
+      this.$graphComponent.graph.clear();
+    },
+    loadMissingEdges: function (missingEdges, schemaEdge) {
+      let graph = this.$graphComponent.graph;
+      missingEdges.forEach((missingEdge) => {
+        let sourceNode = this.getLoadedNode({
+          identity: missingEdge.sourceId,
+        });
+        let targetNode = this.getLoadedNode({
+          identity: missingEdge.targetId,
+        });
+        if (!graph.getEdge(sourceNode, targetNode)) {
+          schemaEdge.tag.creator.call(this, {}, sourceNode, targetNode);
+        }
+      });
+    },
+    loadMissingEdgesForSchemaNodes: async function (schemaNode, newItems) {
+      await Promise.all(
+        loader.schemaGraph
+          .inEdgesAt(schemaNode)
+          .toArray()
+          .map(async (schemaEdge) => {
+            const missingEdges = await loader.loadMissingEdges(
+              schemaEdge,
+              this.getLoadedItemsOfType(schemaEdge.sourceNode),
+              newItems
+            );
+            this.loadMissingEdges(missingEdges, schemaEdge);
+          })
+      );
+      await Promise.all(
+        loader.schemaGraph
+          .outEdgesAt(schemaNode)
+          .filter((e) => e.targetNode !== schemaNode)
+          .toArray()
+          .map(async (schemaEdge) => {
+            const missingEdges = await loader.loadMissingEdges(
+              schemaEdge,
+              newItems,
+              this.getLoadedItemsOfType(schemaEdge.targetNode)
+            );
+            this.loadMissingEdges(missingEdges, schemaEdge);
+          })
+      );
+    },
     async loadInEdges(item, schemaEdge) {
-      this.loadAndLayout(() =>
-        this.loadAndConnectSchemaInEdges(
+      this.loadAndLayout(async () => {
+        const newItems = await this.loadAndConnectSchemaInEdges(
           item,
           schemaEdge,
           schemaEdge.sourceNode.tag.creator.bind(this),
           schemaEdge.tag.creator.bind(this)
-        )
-      );
+        );
+        await this.loadMissingEdgesForSchemaNodes(
+          schemaEdge.sourceNode,
+          newItems
+        );
+      });
     },
     async loadOutEdges(item, schemaEdge) {
-      this.loadAndLayout(() =>
-        this.loadAndConnectSchemaOutEdges(
+      this.loadAndLayout(async () => {
+        const newItems = await this.loadAndConnectSchemaOutEdges(
           item,
           schemaEdge,
           schemaEdge.targetNode.tag.creator.bind(this),
           schemaEdge.tag.creator.bind(this)
-        )
-      );
+        );
+        await this.loadMissingEdgesForSchemaNodes(
+          schemaEdge.targetNode,
+          newItems
+        );
+      });
     },
     async loadEdges(item, schemaEdge) {
       this.loadAndLayout(() =>
