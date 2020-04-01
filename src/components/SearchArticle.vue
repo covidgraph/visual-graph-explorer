@@ -1,7 +1,7 @@
 <template>
   <v-card>
     <v-card-title class="headline primary--text">
-      Search Article
+      Find Article
     </v-card-title>
     <v-card-text>
       Find publications by title

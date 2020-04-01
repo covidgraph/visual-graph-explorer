@@ -1,7 +1,7 @@
 <template>
   <v-card>
     <v-card-title class="headline primary--text">
-      Search Patent
+      Find Patent
     </v-card-title>
     <v-card-text>
       Find patents by title
