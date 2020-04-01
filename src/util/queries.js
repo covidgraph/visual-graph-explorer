@@ -1,5 +1,15 @@
 import coreQuery from "./dbconnection";
 
+export function isOfType(item, type) {
+  if (item && item.labels && item.labels.length > 0) {
+    if (Array.isArray(type)) {
+      return type.every((t) => item.labels.indexOf(t) >= 0);
+    } else {
+      return item.labels.indexOf(type) >= 0;
+    }
+  }
+}
+
 export async function query(query, args = {}, name = "result") {
   return (await coreQuery(query, args, name)).records.map((r) => r.get(name));
 }

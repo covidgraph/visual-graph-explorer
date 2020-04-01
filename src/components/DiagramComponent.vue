@@ -95,6 +95,7 @@ import SchemaBasedLoader from "../util/schema-based-loader";
 import PaperNode from "../graph-styles/PaperNode";
 import AuthorNode from "../graph-styles/AuthorNode";
 import GeneNode from "../graph-styles/GeneNode";
+import { isOfType } from "../util/queries";
 
 License.value = licenseData;
 
@@ -328,28 +329,109 @@ export default {
     getLoadedNode(item) {
       return this.id2NodeMapping.get(getId(item.identity));
     },
-    async loadInEdges(item, schemaEdge) {
-      await this.loadAndConnectSchemaInEdges(
-        item,
-        schemaEdge,
-        schemaEdge.sourceNode.tag.creator.bind(this),
-        schemaEdge.tag.creator.bind(this)
+    getLoadedItemsOfType(schemaNode) {
+      return this.$graphComponent.graph.nodes
+        .map((n) => n.tag)
+        .filter((t) => isOfType(t, schemaNode.tag.type))
+        .toArray();
+    },
+    async loadAndLayout(load) {
+      const oldlementCounter =
+        this.$graphComponent.graph.nodes.size +
+        this.$graphComponent.graph.edges.size;
+      await load();
+      if (
+        this.$graphComponent.graph.nodes.size +
+          this.$graphComponent.graph.edges.size >
+        oldlementCounter
+      ) {
+        await this.runLayout();
+      }
+    },
+
+    clearGraph() {
+      this.id2NodeMapping.clear();
+      this.$graphComponent.graph.clear();
+    },
+    loadMissingEdges: function (missingEdges, schemaEdge) {
+      let graph = this.$graphComponent.graph;
+      missingEdges.forEach((missingEdge) => {
+        let sourceNode = this.getLoadedNode({
+          identity: missingEdge.sourceId,
+        });
+        let targetNode = this.getLoadedNode({
+          identity: missingEdge.targetId,
+        });
+        if (!graph.getEdge(sourceNode, targetNode)) {
+          schemaEdge.tag.creator.call(this, {}, sourceNode, targetNode);
+        }
+      });
+    },
+    loadMissingEdgesForSchemaNodes: async function (schemaNode, newItems) {
+      await Promise.all(
+        loader.schemaGraph
+          .inEdgesAt(schemaNode)
+          .toArray()
+          .map(async (schemaEdge) => {
+            const missingEdges = await loader.loadMissingEdges(
+              schemaEdge,
+              this.getLoadedItemsOfType(schemaEdge.sourceNode),
+              newItems
+            );
+            this.loadMissingEdges(missingEdges, schemaEdge);
+          })
       );
+      await Promise.all(
+        loader.schemaGraph
+          .outEdgesAt(schemaNode)
+          .filter((e) => e.targetNode !== schemaNode)
+          .toArray()
+          .map(async (schemaEdge) => {
+            const missingEdges = await loader.loadMissingEdges(
+              schemaEdge,
+              newItems,
+              this.getLoadedItemsOfType(schemaEdge.targetNode)
+            );
+            this.loadMissingEdges(missingEdges, schemaEdge);
+          })
+      );
+    },
+    async loadInEdges(item, schemaEdge) {
+      this.loadAndLayout(async () => {
+        const newItems = await this.loadAndConnectSchemaInEdges(
+          item,
+          schemaEdge,
+          schemaEdge.sourceNode.tag.creator.bind(this),
+          schemaEdge.tag.creator.bind(this)
+        );
+        await this.loadMissingEdgesForSchemaNodes(
+          schemaEdge.sourceNode,
+          newItems
+        );
+      });
     },
     async loadOutEdges(item, schemaEdge) {
-      await this.loadAndConnectSchemaOutEdges(
-        item,
-        schemaEdge,
-        schemaEdge.targetNode.tag.creator.bind(this),
-        schemaEdge.tag.creator.bind(this)
-      );
+      this.loadAndLayout(async () => {
+        const newItems = await this.loadAndConnectSchemaOutEdges(
+          item,
+          schemaEdge,
+          schemaEdge.targetNode.tag.creator.bind(this),
+          schemaEdge.tag.creator.bind(this)
+        );
+        await this.loadMissingEdgesForSchemaNodes(
+          schemaEdge.targetNode,
+          newItems
+        );
+      });
     },
     async loadEdges(item, schemaEdge) {
-      await this.loadAndConnectSchemaUndirectedEdges(
-        item,
-        schemaEdge,
-        schemaEdge.sourceNode.tag.creator.bind(this),
-        schemaEdge.tag.creator.bind(this)
+      this.loadAndLayout(() =>
+        this.loadAndConnectSchemaUndirectedEdges(
+          item,
+          schemaEdge,
+          schemaEdge.sourceNode.tag.creator.bind(this),
+          schemaEdge.tag.creator.bind(this)
+        )
       );
     },
     async loadPapersForAuthor(author) {
@@ -371,11 +453,7 @@ export default {
       await this.loadOutEdges(paper, paper_author);
     },
     currentItemIs(type) {
-      return (
-        this.currentItem &&
-        this.currentItem.labels &&
-        this.currentItem.labels.indexOf(type) >= 0
-      );
+      return isOfType(this.currentItem, type);
     },
     async loadAndConnectSchemaOutEdges(
       item,
@@ -384,29 +462,25 @@ export default {
       edgeCreator
     ) {
       let node = this.getLoadedNode(item);
+      let newItems = [];
       if (node) {
         let location = node.layout.center.toPoint();
         let graph = this.$graphComponent.graph;
-        let newElementCounter = 0;
         (await loader.loadOutEdges(schemaEdge, item)).forEach((item) => {
           let existingNode = this.getLoadedNode(item);
           if (existingNode) {
             if (!graph.getEdge(node, existingNode)) {
-              newElementCounter++;
               edgeCreator.call(this, item, node, existingNode);
             }
           } else {
+            newItems.push(item);
             let newNode = nodeCreator.call(this, item, location);
-            newElementCounter++;
             if (!graph.getEdge(node, newNode)) {
-              newElementCounter++;
               edgeCreator.call(this, item, node, newNode);
             }
           }
         });
-        if (newElementCounter > 0) {
-          await this.runLayout();
-        }
+        return newItems;
       }
     },
     async loadAndConnectSchemaInEdges(
@@ -416,30 +490,26 @@ export default {
       edgeCreator
     ) {
       let node = this.getLoadedNode(item);
+      let newItems = [];
       if (node) {
         let location = node.layout.center.toPoint();
         let graph = this.$graphComponent.graph;
-        let newElementCounter = 0;
         (await loader.loadInEdges(schemaEdge, item)).forEach((item) => {
           let existingNode = this.getLoadedNode(item);
           if (existingNode) {
             if (!graph.getEdge(existingNode, node)) {
-              newElementCounter++;
               edgeCreator.call(this, item, existingNode, node);
             }
           } else {
+            newItems.push(item);
             let newNode = nodeCreator.call(this, item, location);
-            newElementCounter++;
             if (!graph.getEdge(newNode, node)) {
-              newElementCounter++;
               edgeCreator.call(this, item, newNode, node);
             }
           }
         });
-        if (newElementCounter > 0) {
-          await this.runLayout();
-        }
       }
+      return newItems;
     },
     async loadAndConnectSchemaUndirectedEdges(
       item,
@@ -448,10 +518,10 @@ export default {
       edgeCreator
     ) {
       let node = this.getLoadedNode(item);
+      let newItems = [];
       if (node) {
         let location = node.layout.center.toPoint();
         let graph = this.$graphComponent.graph;
-        let newElementCounter = 0;
         (await loader.loadOutEdges(schemaEdge, item)).forEach((item) => {
           let existingNode = this.getLoadedNode(item);
           if (existingNode) {
@@ -459,46 +529,45 @@ export default {
               !graph.getEdge(existingNode, node) &&
               !graph.getEdge(node, existingNode)
             ) {
-              newElementCounter++;
               edgeCreator.call(this, item, existingNode, node);
             }
           } else {
+            newItems.push(item);
             let newNode = nodeCreator.call(this, item, location);
-            newElementCounter++;
             if (
               !graph.getEdge(newNode, node) &&
               !graph.getEdge(node, newNode)
             ) {
-              newElementCounter++;
               edgeCreator.call(this, item, newNode, node);
             }
           }
         });
-        if (newElementCounter > 0) {
-          await this.runLayout();
-        }
+        return newItems;
       }
     },
     /** @param {function():Promise<object[]>} loader */
     async loadNodes(loader, creator) {
-      (await loader())
-        .filter((item) => !this.getLoadedNode(item))
-        .forEach((item) => creator.call(this, item));
-      await this.runLayout();
+      this.loadAndLayout(async () =>
+        (await loader())
+          .filter((item) => !this.getLoadedNode(item))
+          .forEach((item) => creator.call(this, item))
+      );
     },
     /** @param {function():Promise<object[]>} loader */
     async loadNodesForSchema(schemaNode, whereClauses, creator) {
-      (await loader.loadNodes(schemaNode, whereClauses))
-        .filter((item) => !this.getLoadedNode(item))
-        .forEach((item) => creator.call(this, item));
-      await this.runLayout();
+      this.loadAndLayout(async () =>
+        (await loader.loadNodes(schemaNode, whereClauses))
+          .filter((item) => !this.getLoadedNode(item))
+          .forEach((item) => creator.call(this, item))
+      );
     },
     async loadNodeForSchema(schemaNode, id) {
-      let item = await loader.loadNodeById(schemaNode, id);
-      if (item && !this.getLoadedNode(item)) {
-        schemaNode.tag.creator.call(this, item);
-        await this.runLayout();
-      }
+      this.loadAndLayout(async () => {
+        let item = await loader.loadNodeById(schemaNode, id);
+        if (item && !this.getLoadedNode(item)) {
+          schemaNode.tag.creator.call(this, item);
+        }
+      });
     },
     async runLayout() {
       let organicLayout = new OrganicLayout({
@@ -509,8 +578,13 @@ export default {
     async loadReferencedPapersForPaper(paper) {
       await this.loadOutEdges(paper, paper_paper);
     },
-    async searchGene(geneSid) {
-      const genes = await this.fetchGenes(geneSid);
+    async searchGenes(geneSids) {
+      let genes = []
+      for (let i = 0; i < geneSids.length; i++) {
+        const fetchedGenes = await this.fetchGenes(geneSids[i]);
+        genes = genes.concat(fetchedGenes)
+      }
+
       for (let i = 0; i < genes.length; i++) {
         const g = genes[i];
         geneSymbolType.tag.creator.call(this, g);
@@ -518,13 +592,13 @@ export default {
       }
     },
     async searchPatent(id) {
-      this.loadNodeForSchema(patentType, id);
+      await this.loadNodeForSchema(patentType, id);
     },
     async searchArticle(id) {
       await this.loadNodeForSchema(paperType, id);
     },
     async searchAuthor(id) {
-      this.loadNodeForSchema(authorType, id);
+      await this.loadNodeForSchema(authorType, id);
     },
     async fetchGenes(geneName) {
       return await loader.loadNodes(geneSymbolType, ["node.sid = $geneName"], {

@@ -11,7 +11,7 @@ async function connectToDB(url, user, pass, encrypted = false) {
   // create a new Neo4j driver instance
   const neo4jDriver = neo4j.driver(url, neo4j.auth.basic(user, pass), {
     encrypted: encrypted,
-    trust: "TRUST_CUSTOM_CA_SIGNED_CERTIFICATES",
+    trust: "TRUST_SYSTEM_CA_SIGNED_CERTIFICATES",
   });
 
   const runCypherQuery = createCypherQueryRunner(neo4jDriver);
@@ -67,7 +67,8 @@ export default async function query(q, params = {}) {
       runQuery = await connectToDB(
         "bolt://covid.petesis.com:7687",
         "public",
-        "corona"
+        "corona",
+        true
       );
     }
 

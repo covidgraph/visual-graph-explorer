@@ -77,9 +77,9 @@ export default class SchemaBasedLoader {
 
   /** @param {IEdge} schemaEdge */
   createMissingEdgesQuery(schemaEdge) {
-    return `MATCH (sourceNode:${schemaEdge.targetNode.tag.nodeLabels.join(
+    return `MATCH (sourceNode:${schemaEdge.sourceNode.tag.nodeLabels.join(
       ":"
-    )}) WHERE id(sourceNode) in $sourceIds ${
+    )}) WHERE id(sourceNode) in $sourceIds MATCH ${
       schemaEdge.tag.matchClause
     } WHERE id(targetNode) in $targetIds RETURN id(sourceNode) as sourceNodeId, id(targetNode) as targetNodeId LIMIT ${limit}`;
   }
@@ -127,13 +127,15 @@ export default class SchemaBasedLoader {
    * @param {IEdge} schemaEdge
    * @param {object[]} sourceObjects
    * @param {object[]} targetObjects
-   * @return {Promise<{sourceId:integer, targetId:integer}[]>}}
+   * @return {Promise<{sourceId:integer, targetId:integer}[]>}
    */
   async loadMissingEdges(schemaEdge, sourceObjects, targetObjects) {
-    await coreQuery(this.createMissingEdgesQuery(schemaEdge), {
-      sourceNodeIds: sourceObjects.map((item) => item.identity),
-      targetNodeIds: targetObjects.map((item) => item.identity),
-    }).records.map((r) => ({
+    return (
+      await coreQuery(this.createMissingEdgesQuery(schemaEdge), {
+        sourceIds: sourceObjects.map((item) => item.identity),
+        targetIds: targetObjects.map((item) => item.identity),
+      })
+    ).records.map((r) => ({
       sourceId: r.get("sourceNodeId"),
       targetId: r.get("targetNodeId"),
     }));
