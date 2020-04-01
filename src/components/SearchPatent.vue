@@ -1,7 +1,7 @@
-<template>
+<template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
   <v-card>
     <v-card-title class="headline primary--text">
-      Search Patent
+      Find Patent
     </v-card-title>
     <v-card-text>
       Find patents by title
@@ -20,7 +20,19 @@
         placeholder="Start typing to Search"
         prepend-icon="mdi-database-search"
         return-object
-      ></v-autocomplete>
+      >
+        <template v-slot:item="data">
+          <v-list-item-avatar>
+            <v-icon class="patent-icon">mdi-file-document-outline</v-icon>
+          </v-list-item-avatar>
+          <v-list-item-content>
+            <v-list-item-title v-html="data.item.Title"></v-list-item-title>
+            <v-list-item-subtitle
+                v-html="data.item.PublicationDate"
+            ></v-list-item-subtitle>
+          </v-list-item-content>
+        </template>
+      </v-autocomplete>
     </v-card-text>
     <v-divider></v-divider>
     <v-expand-transition>
@@ -132,4 +144,10 @@ export default {
 };
 </script>
 
-<style scoped></style>
+<style lang="scss" scoped>
+  @import "../styles/colors";
+  .v-icon.patent-icon {
+    color: $dark-icon-color;
+    background-color: $patent-color;
+  }
+</style>

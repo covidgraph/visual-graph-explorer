@@ -1,7 +1,7 @@
-<template>
+<template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
   <v-card>
     <v-card-title class="headline primary--text">
-      Search Author
+      Find Author
     </v-card-title>
     <v-card-text>
       Find publications by Authors
@@ -20,7 +20,16 @@
         placeholder="Start typing to Search"
         prepend-icon="mdi-database-search"
         return-object
-      ></v-autocomplete>
+      >
+        <template v-slot:item="data">
+          <v-list-item-avatar>
+            <v-icon class="author-icon">mdi-account</v-icon>
+          </v-list-item-avatar>
+          <v-list-item-content>
+            <v-list-item-title v-html="data.item.name"></v-list-item-title>
+          </v-list-item-content>
+        </template>
+      </v-autocomplete>
     </v-card-text>
     <v-divider></v-divider>
     <v-expand-transition>
@@ -140,13 +149,18 @@ export default {
 };
 </script>
 
-<style scoped>
-.wrap-actions {
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-.action-button {
-  margin-top: 5px;
-  margin-bottom: 5px;
-}
+<style lang="scss" scoped>
+  @import "../styles/colors";
+  .wrap-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .action-button {
+    margin-top: 5px;
+    margin-bottom: 5px;
+  }
+  .v-icon.author-icon {
+    color: $dark-icon-color;
+    background-color: $author-color;
+  }
 </style>

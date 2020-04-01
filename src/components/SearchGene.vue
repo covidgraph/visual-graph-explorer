@@ -1,4 +1,4 @@
-<template>
+<template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
   <v-card>
     <v-card-title class="headline primary--text">
       Find Genes
@@ -12,32 +12,45 @@
         :items="items"
         :loading="isLoading"
         :search-input.sync="search"
+        chips
+        multiple
         hide-no-data
         hide-selected
-        item-text="Description"
-        item-value="Name"
+        item-text="sid"
         label="Gene Name"
         placeholder="Start typing to Search"
         prepend-icon="mdi-database-search"
         return-object
-      ></v-autocomplete>
-    </v-card-text>
-    <v-divider></v-divider>
-    <v-expand-transition>
-      <v-list v-if="model">
-        <v-list-item v-for="(field, i) in fields" :key="i">
+      >
+        <template v-slot:selection="data">
+          <v-chip
+            v-bind="data.attrs"
+            :input-value="data.selected"
+            close
+            @click="data.select"
+            @click:close="remove(data.item)"
+          >
+            {{ data.item.sid }}
+          </v-chip>
+        </template>
+        <template v-slot:item="data">
+          <v-list-item-avatar>
+            <v-icon class="dna-icon">mdi-dna</v-icon>
+          </v-list-item-avatar>
           <v-list-item-content>
-            <v-list-item-title v-text="field.value"></v-list-item-title>
-            <v-list-item-subtitle v-text="field.key"></v-list-item-subtitle>
+            <v-list-item-title v-html="data.item.sid"></v-list-item-title>
+            <v-list-item-subtitle
+              v-html="data.item.description"
+            ></v-list-item-subtitle>
           </v-list-item-content>
-        </v-list-item>
-      </v-list>
-    </v-expand-transition>
+        </template>
+      </v-autocomplete>
+    </v-card-text>
     <v-card-actions>
       <v-spacer></v-spacer>
       <v-btn
         :disabled="!model"
-        @click="model = null"
+        @click="model = []"
         outlined
         rounded
         small
@@ -48,7 +61,12 @@
       </v-btn>
       <v-btn
         :disabled="!model"
-        @click="$emit('search-gene', model.sid)"
+        @click="
+          $emit(
+            'search-gene',
+            model.map((item) => item.sid)
+          )
+        "
         outlined
         rounded
         small
@@ -70,7 +88,7 @@ export default {
     descriptionLimit: 60,
     entries: [],
     isLoading: false,
-    model: null,
+    model: [],
     search: null,
   }),
 
@@ -85,21 +103,28 @@ export default {
       ];
     },
     items() {
-      return this.entries.map((entry) => {
-        const Description =
+      const items = this.entries.map((entry) => {
+        const description =
           entry.Description.length > this.descriptionLimit
             ? entry.Description.slice(0, this.descriptionLimit) + "..."
             : entry.Description;
 
-        return { sid: entry.sid, Description };
+        return { sid: entry.sid, description };
       });
+
+      this.model.forEach((modelItem) => {
+        if (items.findIndex((item) => item.sid === modelItem.sid) < 0) {
+          items.push(modelItem);
+        }
+      });
+      return items;
     },
   },
 
   watch: {
     search(val) {
       // Items have already been requested
-      if (this.isLoading) return;
+      if (!val || this.isLoading) return;
 
       if (val.length > 1) {
         this.isLoading = true;
@@ -130,7 +155,20 @@ export default {
       }
     },
   },
+
+  methods: {
+    remove(item) {
+      const index = this.model.findIndex((o) => o.sid === item.sid);
+      if (index >= 0) this.model.splice(index, 1);
+    },
+  },
 };
 </script>
 
-<style scoped></style>
+<style lang="scss" scoped>
+@import "../styles/colors";
+.v-icon.dna-icon {
+  color: $dark-icon-color;
+  background-color: $gene-color;
+}
+</style>
