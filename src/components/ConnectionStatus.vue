@@ -68,15 +68,4 @@ export default {
 };
 </script>
 
-<style lang="scss" scoped>
-@import "../styles/colors";
-.failed {
-  background-color: $error-color;
-  color: white;
-}
-
-.ok {
-  //background-color: $success-color;
-  color: white;
-}
-</style>
+<style lang="scss" scoped></style>
