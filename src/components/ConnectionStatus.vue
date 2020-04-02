@@ -38,10 +38,15 @@ export default {
       this.loading = false;
       this.isConnected = true;
     };
-    queryEvents.onQueryFailed = () => {
+    queryEvents.onQueryFailed = async (error, retryQuery) => {
       this.loading = false;
       this.isConnected = false;
-      return new Promise((resolve) => (this.retryQuery = resolve));
+      return new Promise((resolve) => {
+        this.retryQuery = async () => {
+          await retryQuery();
+          resolve();
+        };
+      });
     };
     testConnection();
     this.timerHandle = setInterval(testConnection, testInterval);

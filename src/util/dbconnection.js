@@ -53,7 +53,7 @@ let runQuery = null;
 export const queryEvents = {
   onQueryStarted: () => {},
   onQuerySuccess: () => {},
-  onQueryFailed: () => Promise.resolve(),
+  onQueryFailed: (error, retryQuery) => Promise.reject(error),
 };
 
 /** @param {String} q
@@ -76,7 +76,6 @@ export default async function query(q, params = {}) {
     queryEvents.onQuerySuccess();
     return result;
   } catch (e) {
-    await queryEvents.onQueryFailed();
-    return query(q, params);
+    return await queryEvents.onQueryFailed(e, () => query(q, params));
   }
 }
