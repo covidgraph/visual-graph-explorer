@@ -15,7 +15,7 @@
           >
             <span class="covidgraph-logo-text">COVID</span
             ><v-img
-              src="https://covidgraph.org/img/virus-logo.svg"
+              src="./images/covidgraph-virus-logo.svg"
               class="covidgraph-logo"
             ></v-img>
             <span class="covidgraph-logo-text">GRAPH</span>
