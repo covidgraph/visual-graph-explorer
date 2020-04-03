@@ -95,7 +95,7 @@ export default {
 };
 </script>
 
-<style scoped>
+<style>
 @import url("https://fonts.googleapis.com/css?family=Teko");
 .covidgraph-logo-text {
   color: white;
