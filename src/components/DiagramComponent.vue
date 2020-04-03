@@ -20,9 +20,21 @@
         </v-list-item>
         <v-list-item
           v-if="currentItemIs('Paper')"
+          @click="loadReferencingPapersForPaper(currentItem)"
+        >
+          <v-list-item-title>Load Referencing Papers</v-list-item-title>
+        </v-list-item>
+        <v-list-item
+          v-if="currentItemIs('Paper')"
           @click="loadAuthorsForPaper(currentItem)"
         >
           <v-list-item-title>Load Authors</v-list-item-title>
+        </v-list-item>
+        <v-list-item
+          v-if="currentItemIs('Paper')"
+          @click="loadAffiliationsForPaper(currentItem)"
+        >
+          <v-list-item-title>Load Affiliations</v-list-item-title>
         </v-list-item>
         <v-list-item
           v-if="currentItemIs('Paper')"
@@ -51,6 +63,12 @@
         <v-list-item
           v-if="currentItemIs('Author')"
           @click="loadPapersForAuthor(currentItem)"
+        >
+          <v-list-item-title>Load Papers</v-list-item-title>
+        </v-list-item>
+        <v-list-item
+          v-if="currentItemIs('Affiliation')"
+          @click="loadPapersForAffiliation(currentItem)"
         >
           <v-list-item-title>Load Papers</v-list-item-title>
         </v-list-item>
@@ -208,6 +226,12 @@ let patentType = addNodeType(
 );
 let paperType = addNodeType("Paper", paperNodeStyle, new Size(150, 150));
 let authorType = addNodeType("Author", authorNodeStyle, new Size(150, 150));
+let affiliationType = addNodeType(
+  "Affiliation",
+  new ShapeNodeStyle({ stroke: null, fill: "yellow", shape: "ellipse" }),
+  new Size(50, 50),
+  (affiliation) => [affiliation.properties.institution || "untitled"]
+);
 let geneSymbolType = addNodeType(
   "GeneSymbol",
   geneNodeStyle,
@@ -220,6 +244,14 @@ let paper_author = addRelationShip(
   wroteEdgeStyle,
   () => [],
   "(sourceNode:Paper)-[:PAPER_HAS_METADATA]->(m:Metadata)-[:METADATA_HAS_AUTHOR]->(:Author:CollectionHub)-[:AUTHOR_HAS_AUTHOR]->(targetNode:Author)"
+);
+
+let paper_affiliation = addRelationShip(
+  paperType,
+  affiliationType,
+  wroteEdgeStyle,
+  () => [],
+  "(sourceNode:Paper)-[:PAPER_HAS_METADATA]->(m:Metadata)-[:METADATA_HAS_AUTHOR]->(:Author:CollectionHub)-[:AUTHOR_HAS_AUTHOR]->(:Author)-[:AUTHOR_HAS_AFFILIATION]->(targetNode:Affiliation)"
 );
 
 let paper_geneSymbol = addRelationShip(
@@ -315,8 +347,17 @@ export default {
     this.eventBus.$on("load-referenced-papers-for-paper", (paper) => {
       this.loadReferencedPapersForPaper(paper);
     });
+    this.eventBus.$on("load-referencing-papers-for-paper", (paper) => {
+      this.loadReferencingPapersForPaper(paper);
+    });
     this.eventBus.$on("load-authors-for-paper", (paper) => {
       this.loadAuthorsForPaper(paper);
+    });
+    this.eventBus.$on("load-affiliations-for-paper", (paper) => {
+      this.loadAffiliationsForPaper(paper);
+    });
+    this.eventBus.$on("load-papers-for-affiliation", (paper) => {
+      this.loadPapersForAffiliation(paper);
     });
     this.eventBus.$on("load-genes-for-paper", (paper) => {
       this.loadGenesForPaper(paper);
@@ -350,7 +391,6 @@ export default {
       }
       return result;
     },
-
     clearGraph() {
       this.id2NodeMapping.clear();
       this.$graphComponent.graph.clear();
@@ -453,6 +493,12 @@ export default {
     },
     async loadAuthorsForPaper(paper) {
       await this.loadOutEdges(paper, paper_author);
+    },
+    async loadAffiliationsForPaper(paper) {
+      await this.loadOutEdges(paper, paper_affiliation);
+    },
+    async loadPapersForAffiliation(affiliation) {
+      await this.loadInEdges(affiliation, paper_affiliation);
     },
     currentItemIs(type) {
       return isOfType(this.currentItem, type);
@@ -580,6 +626,9 @@ export default {
     },
     async loadReferencedPapersForPaper(paper) {
       await this.loadOutEdges(paper, paper_paper);
+    },
+    async loadReferencingPapersForPaper(paper) {
+      await this.loadInEdges(paper, paper_paper);
     },
     async searchGenes(geneSids) {
       let genes = [];
