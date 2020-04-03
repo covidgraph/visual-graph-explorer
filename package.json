@@ -8,6 +8,7 @@
     "build": "vue-cli-service build"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^5.13.0",
     "@mdi/font": "^3.6.95",
     "core-js": "^2.6.5",
     "neo4j-driver": "^4.0.2",

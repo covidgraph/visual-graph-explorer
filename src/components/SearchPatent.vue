@@ -1,40 +1,45 @@
 <template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
-  <v-card>
-    <v-card-title class="headline primary--text">
-      Find Patent
+  <v-card class="ma-2" outlined>
+    <v-card-title class="primary--text pa-2 pb-1 subtitle-1">
+      <v-icon class="primary--text white mr-1" size="20">mdi-file-document-outline</v-icon>
+      Search for <span class="pl-1"><b>Patents</b></span>
     </v-card-title>
-    <v-card-text>
-      Find patents by title
+    <v-card-text class="pa-2 pt-0">
+      Find patents by typing keywords included in titles
     </v-card-text>
-    <v-card-text>
+    <v-card-text class="ma-0 px-2 py-0">
       <v-autocomplete
         v-model="model"
         :items="items"
         :loading="isLoading"
         :search-input.sync="search"
+        hide-details
+        full-width
+        clearable
+        solo
+        flat
+        outlined
         hide-no-data
         hide-selected
         item-text="Title"
         item-value="Name"
-        label="Words in title"
-        placeholder="Start typing to Search"
-        prepend-icon="mdi-database-search"
+        placeholder="Patent name"
         return-object
       >
         <template v-slot:item="data">
-          <v-list-item-avatar>
-            <v-icon class="patent-icon">mdi-file-document-outline</v-icon>
-          </v-list-item-avatar>
-          <v-list-item-content>
-            <v-list-item-title v-html="data.item.Title"></v-list-item-title>
-            <v-list-item-subtitle
-              v-html="data.item.PublicationDate"
-            ></v-list-item-subtitle>
-          </v-list-item-content>
+          <v-list max-width="280px" dense>
+            <v-list-item :title="data.item.name" class="pa-0">
+              <v-list-item-avatar size="32">
+                <v-icon class="patent-icon" size="20">mdi-file-document-outline</v-icon>
+              </v-list-item-avatar>
+              <v-list-item-content>
+                <v-list-item-title v-html="data.item.Title" />
+              </v-list-item-content>
+            </v-list-item>
+          </v-list>
         </template>
       </v-autocomplete>
     </v-card-text>
-    <v-divider></v-divider>
     <v-expand-transition>
       <v-list v-if="model">
         <v-list-item v-for="(field, i) in fields" :key="i">
@@ -45,29 +50,15 @@
         </v-list-item>
       </v-list>
     </v-expand-transition>
-    <v-card-actions>
-      <v-spacer></v-spacer>
+    <v-card-actions class="pa-0 mt-3">
       <v-btn
-        :disabled="!model"
-        @click="model = null"
-        outlined
-        rounded
-        small
-        color="primary"
-      >
-        Clear
-        <v-icon right small>mdi-close-circle</v-icon>
-      </v-btn>
-      <v-btn
-        :disabled="!model"
+        class="pa-0 pattend-color--background white--text"
+        block
         @click="$emit('search-patent', model.id)"
-        outlined
-        rounded
-        small
-        color="primary"
+        tile
       >
-        Load Patent
-        <v-icon right small>mdi-cloud-search-outline</v-icon>
+        <v-icon left small>mdi-file-document-outline</v-icon>
+        Find Patent
       </v-btn>
     </v-card-actions>
   </v-card>
@@ -148,5 +139,8 @@ desc limit 10`,
 .v-icon.patent-icon {
   color: $dark-icon-color;
   background-color: $patent-color;
+}
+.pattend-color--background {
+  background-color: $patent-color !important;
 }
 </style>

@@ -1,84 +1,65 @@
 <template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
-  <v-card>
-    <v-card-title class="headline primary--text">
-      Find Author
+  <v-card class="ma-2" outlined>
+    <v-card-title class="primary--text pa-2 pb-1 subtitle-1">
+      <v-icon class="primary--text white mr-1" size="20">mdi-account</v-icon>
+      Search for <span class="pl-1"><b>Authors - Publications</b></span>
     </v-card-title>
-    <v-card-text>
-      Find publications by Authors
+    <v-card-text class="pa-2 pt-0">
+      Find authors/publications connections by typing the first or last name of the author
     </v-card-text>
-    <v-card-text>
+    <v-card-text class="ma-0 px-2 py-0">
       <v-autocomplete
         v-model="model"
         :items="items"
         :loading="isLoading"
         :search-input.sync="search"
+        hide-details
+        full-width
+        clearable
+        solo
+        flat
+        outlined
         hide-no-data
         hide-selected
         item-text="name"
         item-value="Name"
         label="Words in first or last name"
-        placeholder="Start typing to Search"
-        prepend-icon="mdi-database-search"
+        placeholder="Author name"
         return-object
       >
         <template v-slot:item="data">
-          <v-list-item-avatar>
-            <v-icon class="author-icon">mdi-account</v-icon>
-          </v-list-item-avatar>
-          <v-list-item-content>
-            <v-list-item-title v-html="data.item.name"></v-list-item-title>
-          </v-list-item-content>
+          <v-list max-width="280px" dense>
+            <v-list-item :title="data.item.name" class="pa-0">
+              <v-list-item-avatar size="32">
+                <v-icon class="author-icon" color="white" size="20">mdi-account</v-icon>
+              </v-list-item-avatar>
+              <v-list-item-content>
+                <v-list-item-subtitle v-html="data.item.name" />
+              </v-list-item-content>
+            </v-list-item>
+          </v-list>
         </template>
       </v-autocomplete>
     </v-card-text>
-    <v-divider></v-divider>
-    <v-expand-transition>
-      <v-list v-if="model">
-        <v-list-item v-for="(field, i) in fields" :key="i">
-          <v-list-item-content>
-            <v-list-item-title v-text="field.value"></v-list-item-title>
-            <v-list-item-subtitle v-text="field.key"></v-list-item-subtitle>
-          </v-list-item-content>
-        </v-list-item>
-      </v-list>
-    </v-expand-transition>
-    <v-card-actions class="wrap-actions">
-      <v-spacer></v-spacer>
+    <v-card-actions class="pa-0 pt-2 ma-0">
       <v-btn
-        :disabled="!model"
-        @click="model = null"
-        outlined
-        rounded
-        small
-        color="primary"
-        class="action-button"
-      >
-        Clear
-        <v-icon right small>mdi-close-circle</v-icon>
-      </v-btn>
-      <v-btn
-        :disabled="!model"
         @click="$emit('search-author', model.id)"
-        outlined
-        rounded
-        small
-        color="primary"
-        class="action-button"
+        width='50%'
+        color="purple"
+        class="ma-0 white--text"
+        tile
       >
-        Load Author
-        <v-icon right small>mdi-cloud-search-outline</v-icon>
+        <v-icon left small>mdi-account</v-icon>
+        Find Author
       </v-btn>
       <v-btn
-        :disabled="!model"
         @click="$emit('search-author-papers', model.id)"
-        outlined
-        rounded
-        small
-        color="primary"
-        class="action-button"
+        width='50%'
+        class="ma-0 paper--background white--text"
+        tile
       >
-        Load Papers
-        <v-icon right small>mdi-cloud-search-outline</v-icon>
+        <v-icon left small>fas fa-book</v-icon>
+        Find Papers
       </v-btn>
     </v-card-actions>
   </v-card>
@@ -162,5 +143,8 @@ export default {
 .v-icon.author-icon {
   color: $dark-icon-color;
   background-color: $author-color;
+}
+.paper--background {
+  background: $paper-color !important;
 }
 </style>
