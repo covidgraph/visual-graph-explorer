@@ -5,6 +5,9 @@
   <v-card v-else-if="nodeIs('Author')">
     <AuthorPanel :value="model"></AuthorPanel>
   </v-card>
+  <v-card v-else-if="nodeIs('Affiliation')">
+    <AffiliationPanel :value="model"></AffiliationPanel>
+  </v-card>
   <v-card v-else-if="nodeIs('GeneSymbol')">
     <GenePanel :value="model"></GenePanel>
   </v-card>
@@ -23,6 +26,7 @@ import PaperPanel from "./PaperPanel";
 import AuthorPanel from "./AuthorPanel";
 import GenePanel from "./GenePanel";
 import PatentPanel from "./PatentPanel";
+import AffiliationPanel from "./AffiliationPanel";
 import { isOfType } from "../util/queries";
 
 export default {
@@ -32,6 +36,7 @@ export default {
     AuthorPanel,
     GenePanel,
     PatentPanel,
+    AffiliationPanel,
   },
   data: () => ({
     model: null,

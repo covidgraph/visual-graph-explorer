@@ -44,6 +44,26 @@
       >
         Load Referenced Papers
       </v-btn>
+      <v-btn
+        text
+        outlined
+        rounded
+        color="primary"
+        @click="loadReferencingPapers"
+        class="action-button"
+      >
+        Load Referencing Papers
+      </v-btn>
+      <v-btn
+        text
+        outlined
+        rounded
+        color="primary"
+        @click="loadAffiliations"
+        class="action-button"
+      >
+        Load Affiliations
+      </v-btn>
     </v-card-actions>
 
     <v-expansion-panels v-model="panel" multiple accordion>
@@ -192,6 +212,12 @@ export default {
   methods: {
     loadReferencedPapers() {
       this.eventBus.$emit("load-referenced-papers-for-paper", this.value);
+    },
+    loadReferencingPapers() {
+      this.eventBus.$emit("load-referencing-papers-for-paper", this.value);
+    },
+    loadAffiliations() {
+      this.eventBus.$emit("load-affiliations-for-paper", this.value);
     },
     loadAuthors() {
       this.eventBus.$emit("load-authors-for-paper", this.value);
