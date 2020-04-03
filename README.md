@@ -1,6 +1,6 @@
 # Visual Graph Explorer (WIP)
 
-![A screenshot of this sample application](docs/screenshot.png)
+[![A screenshot of this sample application](docs/screenshot.png)](https://live.yworks.com/covidgraph)
 
 Run the application here: https://live.yworks.com/covidgraph
 
