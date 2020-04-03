@@ -3,13 +3,7 @@
     <v-card>
       <v-card-title class="primary white--text" primary-title>
         <v-icon color="white">mdi-information-outline</v-icon>
-        <v-btn
-          href="https://covidgraph.org"
-          target="_blank"
-          x-large
-          text
-          v-on="on"
-        >
+        <v-btn href="https://covidgraph.org" target="_blank" x-large text>
           <span class="covidgraph-logo-text">COVID</span
           ><v-img
             src="../images/covidgraph-virus-logo.svg"
