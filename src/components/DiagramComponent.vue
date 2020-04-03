@@ -112,6 +112,7 @@ import VuejsNodeStyle from "../graph-styles/VuejsNodeStyle.js";
 import SchemaBasedLoader from "../util/schema-based-loader";
 import PaperNode from "../graph-styles/PaperNode";
 import AuthorNode from "../graph-styles/AuthorNode";
+import PatentNode from "../graph-styles/PatentNode";
 import GeneNode from "../graph-styles/GeneNode";
 import { isOfType } from "../util/queries";
 
@@ -123,11 +124,8 @@ Class.ensure(LayoutExecutor);
 
 const paperNodeStyle = new VuejsNodeStyle(PaperNode);
 
-const patentNodeStyle = new ShapeNodeStyle({
-  fill: "red",
-  stroke: null,
-  shape: "rectangle",
-});
+const patentNodeStyle = new VuejsNodeStyle(PatentNode);
+
 const authorNodeStyle = new VuejsNodeStyle(AuthorNode);
 
 const geneNodeStyle = new VuejsNodeStyle(GeneNode);
@@ -218,12 +216,7 @@ function addRelationShip(
   return edge;
 }
 
-let patentType = addNodeType(
-  "Patent",
-  patentNodeStyle,
-  new Size(30, 40),
-  (patent) => [patent.properties.Title || "untitled"]
-);
+let patentType = addNodeType("Patent", patentNodeStyle, new Size(30, 40));
 let paperType = addNodeType("Paper", paperNodeStyle, new Size(150, 150));
 let authorType = addNodeType("Author", authorNodeStyle, new Size(150, 150));
 let affiliationType = addNodeType(
