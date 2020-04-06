@@ -1,7 +1,9 @@
 <template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
   <v-card class="ma-2" outlined>
     <v-card-title class="primary--text pa-2 pb-1 subtitle-1">
-      <v-icon class="primary--text white mr-1" size="20">mdi-file-document-outline</v-icon>
+      <v-icon class="primary--text white mr-1" size="20"
+        >mdi-file-document-outline</v-icon
+      >
       Search for <span class="pl-1"><b>Patents</b></span>
     </v-card-title>
     <v-card-text class="pa-2 pt-0">
@@ -30,7 +32,9 @@
           <v-list max-width="280px" dense>
             <v-list-item :title="data.item.name" class="pa-0">
               <v-list-item-avatar size="32">
-                <v-icon class="patent-icon" size="20">mdi-file-document-outline</v-icon>
+                <v-icon class="patent-icon" size="20"
+                  >mdi-file-document-outline</v-icon
+                >
               </v-list-item-avatar>
               <v-list-item-content>
                 <v-list-item-title v-html="data.item.Title" />
@@ -50,12 +54,12 @@
         </v-list-item>
       </v-list>
     </v-expand-transition>
-    <v-card-actions class="pa-0 mt-3">
+    <v-card-actions>
       <v-btn
-        class="pa-0 pattend-color--background white--text"
-        block
+        class="patent-color--background white--text"
         @click="$emit('search-patent', model.id)"
-        tile
+        text
+        rounded
       >
         <v-icon left small>mdi-file-document-outline</v-icon>
         Find Patent
@@ -140,7 +144,7 @@ desc limit 10`,
   color: $dark-icon-color;
   background-color: $patent-color;
 }
-.pattend-color--background {
+.patent-color--background {
   background-color: $patent-color !important;
 }
 </style>

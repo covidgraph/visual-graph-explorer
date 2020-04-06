@@ -35,10 +35,14 @@
       </v-tooltip>
     </v-app-bar>
 
-    <v-navigation-drawer class="mr-3" app permanent clipped floating hide-overlay right width="350" style="background-color:rgba(0,0,0,0.0)">
+    <v-navigation-drawer app permanent clipped right width="350">
       <SearchGene @search-gene="$refs.graphComponent.searchGenes($event)" />
-      <SearchArticle @search-article="$refs.graphComponent.searchArticle($event)" />
-      <SearchPatent @search-patent="$refs.graphComponent.searchPatent($event)" />
+      <SearchArticle
+        @search-article="$refs.graphComponent.searchArticle($event)"
+      />
+      <SearchPatent
+        @search-patent="$refs.graphComponent.searchPatent($event)"
+      />
       <SearchAuthor
         @search-author="$refs.graphComponent.searchAuthor($event)"
         @search-author-papers="$refs.graphComponent.searchAuthorPapers($event)"
@@ -79,11 +83,6 @@ export default {
     DetailPanel,
     SearchAuthor,
     SearchPatent,
-  },
-  data () {
-    return {
-      drawer: null
-    }
   },
   methods: {
     showAboutDialog() {

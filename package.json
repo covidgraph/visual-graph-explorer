@@ -5,7 +5,13 @@
   "author": "yWorks GmbH <yfileshtml@yworks.com>",
   "scripts": {
     "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build"
+    "build": "vue-cli-service build",
+    "pretty-quick": "pretty-quick"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged"
+    }
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.13.0",
@@ -20,6 +26,8 @@
     "yfiles": "./yfiles-22.0.3-eval.tgz"
   },
   "devDependencies": {
+    "husky": "^4.2.3",
+    "pretty-quick": "^2.0.1",
     "@vue/cli-plugin-babel": "^3.0.1",
     "@vue/cli-service": "^3.0.1",
     "@yworks/optimizer": "^1.0.3",

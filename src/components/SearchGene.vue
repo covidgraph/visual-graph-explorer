@@ -8,66 +8,72 @@
       Find publications that mention gene names
     </v-card-text>
     <form>
-    <v-card-text class="ma-0 px-2 py-0 primary--text">
-      <v-autocomplete
-        v-model="model"
-        :items="items"
-        :loading="isLoading"
-        :search-input.sync="search"
-        hide-details
-        full-width
-        clearable
-        chips
-        multiple
-        outlined
-        hide-no-data
-        hide-selected
-        item-text="sid"
-        placeholder="Gene name"
-        return-object
-      >
-        <template v-slot:selection="data">
-          <v-chip
-            v-bind="data.attrs"
-            :input-value="data.selected"
-            close
-            @click="data.select"
-            @click:close="remove(data.item)"
-          >
-            {{ data.item.sid }}
-          </v-chip>
-        </template>
-        <template v-slot:item="data">
-          <v-list max-width="280px" dense>
-            <v-list-item :title="data.item.name" class="pa-0">
-              <v-list-item-avatar color="gene-color--background mr-2" size="32">
-                <v-icon color="primary" size="20">mdi-dna</v-icon>
-              </v-list-item-avatar>
-              <v-list-item-content>
-                <v-list-item-title v-html="data.item.sid" />
-                <v-list-item-subtitle v-html="data.item.description" v-if="data.item.sid !== data.item.description"/>
-              </v-list-item-content>
-            </v-list-item>
-          </v-list>
-        </template>
-      </v-autocomplete>
-    </v-card-text>
-    <v-card-actions class="pa-0 mt-3">
-      <v-btn
-        class="pa-0 paper--background white--text"
-        block
-        @click="
-          $emit(
-            'search-gene',
-            model.map((item) => item.sid)
-          )
-        "
-        tile
-      >
-        <v-icon left small>fas fa-book</v-icon>
-        Find Papers
-      </v-btn>
-    </v-card-actions>
+      <v-card-text class="ma-0 px-2 py-0 primary--text">
+        <v-autocomplete
+          v-model="model"
+          :items="items"
+          :loading="isLoading"
+          :search-input.sync="search"
+          hide-details
+          full-width
+          clearable
+          chips
+          multiple
+          outlined
+          hide-no-data
+          hide-selected
+          item-text="sid"
+          placeholder="Gene name"
+          return-object
+        >
+          <template v-slot:selection="data">
+            <v-chip
+              v-bind="data.attrs"
+              :input-value="data.selected"
+              close
+              @click="data.select"
+              @click:close="remove(data.item)"
+            >
+              {{ data.item.sid }}
+            </v-chip>
+          </template>
+          <template v-slot:item="data">
+            <v-list max-width="280px" dense>
+              <v-list-item :title="data.item.name" class="pa-0">
+                <v-list-item-avatar
+                  color="gene-color--background mr-2"
+                  size="32"
+                >
+                  <v-icon color="primary" size="20">mdi-dna</v-icon>
+                </v-list-item-avatar>
+                <v-list-item-content>
+                  <v-list-item-title v-html="data.item.sid" />
+                  <v-list-item-subtitle
+                    v-html="data.item.description"
+                    v-if="data.item.sid !== data.item.description"
+                  />
+                </v-list-item-content>
+              </v-list-item>
+            </v-list>
+          </template>
+        </v-autocomplete>
+      </v-card-text>
+      <v-card-actions>
+        <v-btn
+          class="paper--background white--text"
+          text
+          rounded
+          @click="
+            $emit(
+              'search-gene',
+              model.map((item) => item.sid)
+            )
+          "
+        >
+          <v-icon left small>fas fa-book</v-icon>
+          Find Papers
+        </v-btn>
+      </v-card-actions>
     </form>
   </v-card>
 </template>
@@ -81,7 +87,7 @@ export default {
     entries: [],
     isLoading: false,
     model: [],
-    search: null
+    search: null,
   }),
 
   computed: {
@@ -95,7 +101,7 @@ export default {
       ];
     },
     addedIds() {
-      return this.model.map(gene => gene.sid)
+      return this.model.map((gene) => gene.sid);
     },
     items() {
       const items = this.entries.map((entry) => {
@@ -132,7 +138,7 @@ export default {
            RETURN g LIMIT 100`,
           { sid: val.toLowerCase(), addedIds: this.addedIds }
         )
-          .then(res => {
+          .then((res) => {
             this.count = res.records.length;
             this.entries = res.records.map((record) => {
               let node = record.get("g");
@@ -143,7 +149,7 @@ export default {
               };
             });
           })
-          .catch(err => console.log(err))
+          .catch((err) => console.log(err))
           .finally(() => (this.isLoading = false));
       } else {
         this.count = 0;
@@ -163,10 +169,10 @@ export default {
 
 <style lang="scss" scoped>
 @import "../styles/colors";
-.gene-color--background{
+.gene-color--background {
   background-color: $gene-color !important;
 }
-.gene-color--text{
+.gene-color--text {
   color: $gene-color !important;
 }
 .paper--background {

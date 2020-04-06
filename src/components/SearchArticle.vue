@@ -1,8 +1,8 @@
 <template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
   <v-card class="ma-2" outlined>
     <v-card-title class="primary--text pa-2 pb-1 subtitle-1">
-       <v-icon class="primary--text white mr-1" size="18">fas fa-book</v-icon>
-       Search for <span class="pl-1"><b>Publications</b></span>
+      <v-icon class="primary--text white mr-1" size="18">fas fa-book</v-icon>
+      Search for <span class="pl-1"><b>Publications</b></span>
     </v-card-title>
     <v-card-text class="pa-2 pt-0">
       Find publications by typing keywords included in titles
@@ -30,10 +30,15 @@
           <v-list max-width="280px" three-line dense>
             <v-list-item :title="data.item.title" class="pa-0">
               <v-list-item-avatar size="32">
-                <v-icon class="paper-icon" color="white" size="18">fas fa-book</v-icon>
+                <v-icon class="paper-icon" color="white" size="18"
+                  >fas fa-book</v-icon
+                >
               </v-list-item-avatar>
               <v-list-item-content>
-                <v-list-item-subtitle v-html="data.item.title" class="primary--text"/>
+                <v-list-item-subtitle
+                  v-html="data.item.title"
+                  class="primary--text"
+                />
                 <v-list-item-subtitle
                   v-html="data.item.publishTime"
                 ></v-list-item-subtitle>
@@ -43,12 +48,12 @@
         </template>
       </v-autocomplete>
     </v-card-text>
-    <v-card-actions class="pa-0 mt-3">
+    <v-card-actions>
       <v-btn
-        class="pa-0 paper--background white--text"
-        block
+        class="paper--background white--text"
+        text
+        rounded
         @click="$emit('search-article', model.id)"
-        tile
       >
         <v-icon left small>fas fa-book</v-icon>
         Find Papers

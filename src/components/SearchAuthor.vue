@@ -5,7 +5,8 @@
       Search for <span class="pl-1"><b>Authors - Publications</b></span>
     </v-card-title>
     <v-card-text class="pa-2 pt-0">
-      Find authors/publications connections by typing the first or last name of the author
+      Find authors/publications connections by typing the first or last name of
+      the author
     </v-card-text>
     <v-card-text class="ma-0 px-2 py-0">
       <v-autocomplete
@@ -31,7 +32,9 @@
           <v-list max-width="280px" dense>
             <v-list-item :title="data.item.name" class="pa-0">
               <v-list-item-avatar size="32">
-                <v-icon class="author-icon" color="white" size="20">mdi-account</v-icon>
+                <v-icon class="author-icon" color="white" size="20"
+                  >mdi-account</v-icon
+                >
               </v-list-item-avatar>
               <v-list-item-content>
                 <v-list-item-subtitle v-html="data.item.name" />
@@ -41,22 +44,23 @@
         </template>
       </v-autocomplete>
     </v-card-text>
-    <v-card-actions class="pa-0 pt-2 ma-0">
+    <v-card-actions>
       <v-btn
         @click="$emit('search-author', model.id)"
-        width='50%'
-        color="purple"
-        class="ma-0 white--text"
-        tile
+        width="50%"
+        class="author--background white--text"
+        text
+        rounded
       >
         <v-icon left small>mdi-account</v-icon>
         Find Author
       </v-btn>
       <v-btn
         @click="$emit('search-author-papers', model.id)"
-        width='50%'
-        class="ma-0 paper--background white--text"
-        tile
+        width="50%"
+        class="paper--background white--text"
+        text
+        rounded
       >
         <v-icon left small>fas fa-book</v-icon>
         Find Papers
@@ -146,5 +150,8 @@ export default {
 }
 .paper--background {
   background: $paper-color !important;
+}
+.author--background {
+  background: $author-color !important;
 }
 </style>
