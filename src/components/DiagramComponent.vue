@@ -64,7 +64,7 @@
           v-if="isMultiSelection('GeneSymbol')"
           @click="loadCommonPapersForGenes(selectedItems)"
         >
-          <v-list-item-title>Load Common Patents</v-list-item-title>
+          <v-list-item-title>Load Common Papers</v-list-item-title>
         </v-list-item>
         <v-list-item
           v-if="isMultiSelection('Author')"
