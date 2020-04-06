@@ -7,8 +7,8 @@
           titles.length > 0 ? titles[0] : "untitled"
         }}</v-list-item-title>
         <v-list-item-subtitle
-          ><a :href="value.properties.URL" target="_blank">{{
-            value.properties.URL
+          ><a :href="value.properties.lens_url" target="_blank">{{
+            value.properties.lens_url
           }}</a></v-list-item-subtitle
         >
       </v-list-item-content>
@@ -46,22 +46,27 @@ export default {
     titles: [],
   }),
   props: {
-    value: null,
+    value: {
+      type: Object,
+      default: null,
+    },
   },
   watch: {
-    value: function (patent) {
-      this.titles = [];
-      if (patent) {
-        loadTitlesForPatent(patent)
-          .then((value) => {
-            this.titles = value;
-          })
-          .catch((reason) => {
-            this.titles = [];
-          });
-      } else {
-        this.titles = [];
-      }
+    value: {
+      immediate: true,
+      handler: function (patent) {
+        if (patent) {
+          loadTitlesForPatent(patent)
+            .then((value) => {
+              this.titles = value;
+            })
+            .catch((reason) => {
+              this.titles = [];
+            });
+        } else {
+          this.titles = [];
+        }
+      },
     },
   },
 };

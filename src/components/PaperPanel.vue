@@ -165,48 +165,53 @@ export default {
     panel: [0, 1, 0, 0, 0, 0],
   }),
   props: {
-    value: null,
+    value: Object,
   },
   watch: {
-    value: function (paper) {
-      this.authors = [];
-      this.geneSymbols = [];
-      if (paper != null) {
-        this.abstract = "Loading...";
-        this.fullText = "Loading...";
-        loadAbstractsForPaper(paper)
-          .then((value) => {
-            this.abstract = value.map((v) => v.properties.text).join(" ");
-          })
-          .catch((reason) => {
-            this.abstract = "Failed to load " + reason;
-          });
-        loadBodyTextForPaper(paper)
-          .then((value) => {
-            this.fullText = value.length > 0 ? value[0][0] : "n/a";
-          })
-          .catch((reason) => {
-            this.fullText = "Failed to load " + reason;
-          });
-        loadGenesForPaper(paper)
-          .then((genes) => {
-            this.geneSymbols =
-              genes.length > 0 ? genes.map((g) => g.properties.sid) : ["none"];
-          })
-          .catch((reason) => {
-            this.geneSymbols = ["Failed to load " + reason];
-          });
-        loadAuthorsForPaper(paper)
-          .then((authors) => {
-            this.authors = authors;
-          })
-          .catch((reason) => {
-            this.authors = [];
-          });
-      } else {
-        this.abstract = "n/a";
-        this.fullText = "n/a";
-      }
+    value: {
+      immediate: true,
+      handler: function (paper) {
+        this.authors = [];
+        this.geneSymbols = [];
+        if (paper != null) {
+          this.abstract = "Loading...";
+          this.fullText = "Loading...";
+          loadAbstractsForPaper(paper)
+            .then((value) => {
+              this.abstract = value.map((v) => v.properties.text).join(" ");
+            })
+            .catch((reason) => {
+              this.abstract = "Failed to load " + reason;
+            });
+          loadBodyTextForPaper(paper)
+            .then((value) => {
+              this.fullText = value.length > 0 ? value[0][0] : "n/a";
+            })
+            .catch((reason) => {
+              this.fullText = "Failed to load " + reason;
+            });
+          loadGenesForPaper(paper)
+            .then((genes) => {
+              this.geneSymbols =
+                genes.length > 0
+                  ? genes.map((g) => g.properties.sid)
+                  : ["none"];
+            })
+            .catch((reason) => {
+              this.geneSymbols = ["Failed to load " + reason];
+            });
+          loadAuthorsForPaper(paper)
+            .then((authors) => {
+              this.authors = authors;
+            })
+            .catch((reason) => {
+              this.authors = [];
+            });
+        } else {
+          this.abstract = "n/a";
+          this.fullText = "n/a";
+        }
+      },
     },
   },
   methods: {
