@@ -11,7 +11,7 @@ export function isOfType(item, type) {
 }
 
 export async function query(query, args = {}, name = "result") {
-  return (await coreQuery(query, args, name)).records.map((r) => r.get(name));
+  return (await coreQuery(query, args)).records.map((r) => r.get(name));
 }
 
 export async function loadGenesForPaper(paper) {

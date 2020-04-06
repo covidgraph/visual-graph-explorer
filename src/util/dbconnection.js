@@ -57,7 +57,7 @@ export const queryEvents = {
 };
 
 /** @param {String} q
- *  @param {{key:string, value:object}} params
+ *  @param {{}} params
  *  @return {QueryResult}
  */
 export default async function query(q, params = {}) {

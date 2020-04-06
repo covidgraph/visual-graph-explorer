@@ -1,9 +1,9 @@
-import { DefaultGraph, Point, Rect, Size, IEdge, INode } from "yfiles";
+import { DefaultGraph, IEdge, INode } from "yfiles";
 
 import coreQuery from "./dbconnection";
 
 async function query(query, args = {}, name = "result") {
-  return (await coreQuery(query, args, name)).records.map((r) => r.get(name));
+  return (await coreQuery(query, args)).records.map((r) => r.get(name));
 }
 
 const limit = 200;
@@ -54,7 +54,7 @@ export default class SchemaBasedLoader {
       ":"
     )}) WHERE ${whereClauses.join(
       " AND "
-    )} RETURN node as result LIMIT ${limit}`;
+    )} RETURN distinct(node) as result LIMIT ${limit}`;
   }
 
   /** @param {IEdge} schemaEdge */
@@ -63,7 +63,7 @@ export default class SchemaBasedLoader {
       ":"
     )}) WHERE id(sourceNode) = $sourceId MATCH ${
       schemaEdge.tag.matchClause
-    } RETURN targetNode as result LIMIT ${limit}`;
+    } RETURN distinct(targetNode) as result LIMIT ${limit}`;
   }
 
   /** @param {IEdge} schemaEdge */
@@ -72,7 +72,7 @@ export default class SchemaBasedLoader {
       ":"
     )}) WHERE id(targetNode) = $targetId MATCH ${
       schemaEdge.tag.matchClause
-    } RETURN sourceNode as result LIMIT ${limit}`;
+    } RETURN distinct(sourceNode) as result LIMIT ${limit}`;
   }
 
   /** @param {IEdge} schemaEdge */
@@ -84,13 +84,77 @@ export default class SchemaBasedLoader {
     } WHERE id(targetNode) in $targetIds RETURN id(sourceNode) as sourceNodeId, id(targetNode) as targetNodeId LIMIT ${limit}`;
   }
 
+  /** @param {IEdge[]} schemaEdges */
+  createCommonNeighborsQuery(schemaEdges) {
+    /*
+     MATCH (sourceNode:Author)-[:AUTHOR_HAS_AFFILIATION]->(targetNode:Affiliation) WHERE id(sourceNode) = 2052470 WITH collect(targetNode) as targetList
+     MATCH (sourceNode:Author)-[:AUTHOR_HAS_AFFILIATION]->(targetNode:Affiliation) WHERE id(sourceNode) = 404 AND targetNode in targetList WITH collect(targetNode) as targetList
+     RETURN targetList
+     */
+
+    return `${schemaEdges.map((edge, i) =>
+      `MATCH ${schemaEdges.tag.matchClause} WHERE ${
+        i > 0 ? "targetNode in targetList AND" : ""
+      } id(sourceNode) = $id[${i}] 
+      WITH collect(distinct(targetNode)) as targetList`.join("\n")
+    )}
+      RETURN targetList as result`;
+  }
+
   /**
+   * @param {{identity:string}} item
    * @param {IEdge} schemaEdge
    */
   async loadOutEdges(schemaEdge, item) {
     return await query(this.createOutEdgeQuery(schemaEdge), {
       sourceId: item.identity,
     });
+  }
+
+  /**
+   * @param {{identity:string}[]} items
+   * @param {IEdge} schemaEdge
+   */
+  async loadCommonTargets(schemaEdge, items) {
+    let sourceIds = items.map((item) => item.identity);
+    let complexQuery = `${sourceIds
+      .map(
+        (_, i) =>
+          `MATCH ${schemaEdge.tag.matchClause} WHERE ${
+            i > 0 ? "targetNode in targetList AND" : ""
+          } id(sourceNode) = $id[${i}]
+      WITH collect(distinct(targetNode)) as targetList`
+      )
+      .join("\n")}
+      RETURN targetList as result`;
+    return (
+      await query(complexQuery, {
+        id: sourceIds,
+      })
+    )[0];
+  }
+
+  /**
+   * @param {{identity:string}[]} items
+   * @param {IEdge} schemaEdge
+   */
+  async loadCommonSources(schemaEdge, items) {
+    let targetIds = items.map((item) => item.identity);
+    let complexQuery = `${targetIds
+      .map(
+        (_, i) =>
+          `MATCH ${schemaEdge.tag.matchClause} WHERE ${
+            i > 0 ? "sourceNode in sourceList AND" : ""
+          } id(targetNode) = $id[${i}]
+      WITH collect(distinct(sourceNode)) as sourceList`
+      )
+      .join("\n")}
+      RETURN sourceList as result`;
+    return (
+      await query(complexQuery, {
+        id: targetIds,
+      })
+    )[0];
   }
 
   /**

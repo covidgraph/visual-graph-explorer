@@ -19,6 +19,60 @@
           <v-list-item-title>Load Referenced Papers</v-list-item-title>
         </v-list-item>
         <v-list-item
+          v-if="isMultiSelection('Paper')"
+          @click="loadCommonAffiliationsForPapers(selectedItems)"
+        >
+          <v-list-item-title>Load Common Affiliations</v-list-item-title>
+        </v-list-item>
+        <v-list-item
+          v-if="isMultiSelection('Paper')"
+          @click="loadCommonAuthorsForPapers(selectedItems)"
+        >
+          <v-list-item-title>Load Common Authors</v-list-item-title>
+        </v-list-item>
+        <v-list-item
+          v-if="isMultiSelection('Paper')"
+          @click="loadCommonReferencedPapers(selectedItems)"
+        >
+          <v-list-item-title>Load Common References</v-list-item-title>
+        </v-list-item>
+        <v-list-item
+          v-if="isMultiSelection('Paper')"
+          @click="loadCommonReferencingPapers(selectedItems)"
+        >
+          <v-list-item-title>Load Common Referencing Papers</v-list-item-title>
+        </v-list-item>
+        <v-list-item
+          v-if="isMultiSelection('Paper')"
+          @click="loadCommonGenesForPapers(selectedItems)"
+        >
+          <v-list-item-title>Load Common Genes</v-list-item-title>
+        </v-list-item>
+        <v-list-item
+          v-if="isMultiSelection('Patent')"
+          @click="loadCommonGenesForPatents(selectedItems)"
+        >
+          <v-list-item-title>Load Common Genes</v-list-item-title>
+        </v-list-item>
+        <v-list-item
+          v-if="isMultiSelection('GeneSymbol')"
+          @click="loadCommonPatentsForGenes(selectedItems)"
+        >
+          <v-list-item-title>Load Common Patents</v-list-item-title>
+        </v-list-item>
+        <v-list-item
+          v-if="isMultiSelection('GeneSymbol')"
+          @click="loadCommonPapersForGenes(selectedItems)"
+        >
+          <v-list-item-title>Load Common Patents</v-list-item-title>
+        </v-list-item>
+        <v-list-item
+          v-if="isMultiSelection('Author')"
+          @click="loadCommonPapersForAuthors(selectedItems)"
+        >
+          <v-list-item-title>Load Common Papers</v-list-item-title>
+        </v-list-item>
+        <v-list-item
           v-if="currentItemIs('Paper')"
           @click="loadReferencingPapersForPaper(currentItem)"
         >
@@ -115,6 +169,7 @@ import AuthorNode from "../graph-styles/AuthorNode";
 import PatentNode from "../graph-styles/PatentNode";
 import GeneNode from "../graph-styles/GeneNode";
 import { isOfType } from "../util/queries";
+import { query } from "../util/queries";
 
 License.value = licenseData;
 
@@ -280,9 +335,22 @@ export default {
   },
   data: () => ({
     currentItem: null,
+    selectedItems: [],
   }),
   mounted() {
     this.$graphComponent = new GraphComponent(this.$refs.GraphComponentElement);
+    this.$graphComponent.selection.selectedNodes.addItemSelectionChangedListener(
+      (sender, evt) => {
+        if (evt.itemSelected) {
+          this.selectedItems.push(evt.item.tag);
+        } else {
+          this.selectedItems.splice(
+            this.selectedItems.indexOf(evt.item.tag),
+            1
+          );
+        }
+      }
+    );
 
     const graph = this.$graphComponent.graph;
     graph.decorator.nodeDecorator.selectionDecorator.hideImplementation();
@@ -459,6 +527,34 @@ export default {
         );
       });
     },
+    async loadTargets(items, schemaEdge) {
+      this.loadAndLayout(async () => {
+        const newItems = await this.loadAndConnectSchemaTargets(
+          items,
+          schemaEdge,
+          schemaEdge.targetNode.tag.creator.bind(this),
+          schemaEdge.tag.creator.bind(this)
+        );
+        await this.loadMissingEdgesForSchemaNodes(
+          schemaEdge.targetNode,
+          newItems
+        );
+      });
+    },
+    async loadSources(items, schemaEdge) {
+      this.loadAndLayout(async () => {
+        const newItems = await this.loadAndConnectSchemaSources(
+          items,
+          schemaEdge,
+          schemaEdge.sourceNode.tag.creator.bind(this),
+          schemaEdge.tag.creator.bind(this)
+        );
+        await this.loadMissingEdgesForSchemaNodes(
+          schemaEdge.sourceNode,
+          newItems
+        );
+      });
+    },
     async loadEdges(item, schemaEdge) {
       this.loadAndLayout(() =>
         this.loadAndConnectSchemaUndirectedEdges(
@@ -496,6 +592,18 @@ export default {
     currentItemIs(type) {
       return isOfType(this.currentItem, type);
     },
+    selectionIs(type) {
+      return (
+        this.selectedItems.length > 0 &&
+        this.selectedItems.every((item) => isOfType(item, type))
+      );
+    },
+    isMultiSelection(type) {
+      return (
+        this.selectedItems.length > 1 &&
+        this.selectedItems.every((item) => isOfType(item, type))
+      );
+    },
     async loadAndConnectSchemaOutEdges(
       item,
       schemaEdge,
@@ -519,6 +627,74 @@ export default {
             if (!graph.getEdge(node, newNode)) {
               edgeCreator.call(this, item, node, newNode);
             }
+          }
+        });
+        return newItems;
+      }
+    },
+    async loadAndConnectSchemaTargets(
+      items,
+      schemaEdge,
+      nodeCreator,
+      edgeCreator
+    ) {
+      let nodes = items
+        .map((item) => this.getLoadedNode(item))
+        .filter((item) => !!item);
+      let newItems = [];
+      if (nodes.length > 0) {
+        let location = nodes[0].layout.center.toPoint();
+        let graph = this.$graphComponent.graph;
+        (await loader.loadCommonTargets(schemaEdge, items)).forEach((item) => {
+          let existingNode = this.getLoadedNode(item);
+          if (existingNode) {
+            nodes.forEach((node) => {
+              if (!graph.getEdge(node, existingNode)) {
+                edgeCreator.call(this, item, node, existingNode);
+              }
+            });
+          } else {
+            newItems.push(item);
+            let newNode = nodeCreator.call(this, item, location);
+            nodes.forEach((node) => {
+              if (!graph.getEdge(node, newNode)) {
+                edgeCreator.call(this, item, node, newNode);
+              }
+            });
+          }
+        });
+        return newItems;
+      }
+    },
+    async loadAndConnectSchemaSources(
+      items,
+      schemaEdge,
+      nodeCreator,
+      edgeCreator
+    ) {
+      let nodes = items
+        .map((item) => this.getLoadedNode(item))
+        .filter((item) => !!item);
+      let newItems = [];
+      if (nodes.length > 0) {
+        let location = nodes[0].layout.center.toPoint();
+        let graph = this.$graphComponent.graph;
+        (await loader.loadCommonSources(schemaEdge, items)).forEach((item) => {
+          let existingNode = this.getLoadedNode(item);
+          if (existingNode) {
+            nodes.forEach((node) => {
+              if (!graph.getEdge(existingNode, node)) {
+                edgeCreator.call(this, item, existingNode, node);
+              }
+            });
+          } else {
+            newItems.push(item);
+            let newNode = nodeCreator.call(this, item, location);
+            nodes.forEach((node) => {
+              if (!graph.getEdge(newNode, node)) {
+                edgeCreator.call(this, item, newNode, node);
+              }
+            });
           }
         });
         return newItems;
@@ -622,6 +798,33 @@ export default {
     },
     async loadReferencingPapersForPaper(paper) {
       await this.loadInEdges(paper, paper_paper);
+    },
+    async loadCommonAffiliationsForPapers(items) {
+      await this.loadTargets(items, paper_affiliation);
+    },
+    async loadCommonGenesForPapers(items) {
+      await this.loadTargets(items, paper_geneSymbol);
+    },
+    async loadCommonPapersForGenes(items) {
+      await this.loadSources(items, paper_geneSymbol);
+    },
+    async loadCommonPapersForAuthors(items) {
+      await this.loadSources(items, paper_author);
+    },
+    async loadCommonAuthorsForPapers(items) {
+      await this.loadTargets(items, paper_author);
+    },
+    async loadCommonReferencedPapers(items) {
+      await this.loadTargets(items, paper_paper);
+    },
+    async loadCommonReferencingPapers(items) {
+      await this.loadSources(items, paper_paper);
+    },
+    async loadCommonGenesForPatents(items) {
+      await this.loadTargets(items, patent_geneSymbol);
+    },
+    async loadCommonPatentsForGenes(items) {
+      await this.loadSources(items, patent_geneSymbol);
     },
     async searchGenes(geneSids) {
       let genes = [];
