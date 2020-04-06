@@ -661,7 +661,7 @@ export default {
 <style scoped>
 @import "~yfiles/yfiles.css";
 .graph-component-container {
-  background: #eee;
+  background: #f8f8f8;
   position: absolute;
   top: 0;
   left: 0;

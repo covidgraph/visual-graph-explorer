@@ -1,9 +1,15 @@
 <template>
   <v-app>
-    <v-navigation-drawer app left clipped width="350">
-      <detail-panel ref="detailsPanel"></detail-panel>
-    </v-navigation-drawer>
-    <v-app-bar app clipped-left clipped-right color="primary">
+    <v-app-bar
+      app
+      clipped-left
+      clipped-right
+      color="primary"
+      style="
+        box-shadow: 0 1px 15px rgba(0, 0, 0, 0.04),
+          0 1px 6px rgba(0, 0, 0, 0.04);
+      "
+    >
       <v-tooltip bottom>
         <template v-slot:activator="{ on }">
           <v-btn
@@ -34,8 +40,27 @@
         <span>About</span>
       </v-tooltip>
     </v-app-bar>
+    <v-navigation-drawer
+      app
+      left
+      clipped
+      width="350"
+      style="
+        box-shadow: 0 3px 30px rgba(0, 0, 0, 0.1), 0 3px 20px rgba(0, 0, 0, 0.1);
+      "
+    >
+      <detail-panel ref="detailsPanel"></detail-panel>
+    </v-navigation-drawer>
 
-    <v-navigation-drawer app permanent clipped right width="350">
+    <v-navigation-drawer
+      app
+      clipped
+      right
+      width="350"
+      style="
+        box-shadow: 0 1px 15px rgba(0, 0, 0, 0.1), 0 1px 6px rgba(0, 0, 0, 0.1);
+      "
+    >
       <SearchGene @search-gene="$refs.graphComponent.searchGenes($event)" />
       <SearchArticle
         @search-article="$refs.graphComponent.searchArticle($event)"
