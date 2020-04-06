@@ -1,73 +1,57 @@
 <template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
-  <v-card>
-    <v-card-title class="headline primary--text">
-      Find Article
+  <v-card class="ma-2" outlined>
+    <v-card-title class="primary--text pa-2 pb-1 subtitle-1">
+       <v-icon class="primary--text white mr-1" size="18">fas fa-book</v-icon>
+       Search for <span class="pl-1"><b>Publications</b></span>
     </v-card-title>
-    <v-card-text>
-      Find publications by title
+    <v-card-text class="pa-2 pt-0">
+      Find publications by typing keywords included in titles
     </v-card-text>
-    <v-card-text>
+    <v-card-text class="ma-0 px-2 py-0">
       <v-autocomplete
         v-model="model"
         :items="items"
         :loading="isLoading"
         :search-input.sync="search"
+        hide-details
+        full-width
+        clearable
+        solo
+        flat
+        outlined
         hide-no-data
         hide-selected
         item-text="title"
         item-value="Name"
-        label="Words in title"
-        placeholder="Start typing to Search"
-        prepend-icon="mdi-database-search"
+        placeholder="Publication title"
         return-object
       >
         <template v-slot:item="data">
-          <v-list-item-avatar>
-            <v-icon class="paper-icon">mdi-book</v-icon>
-          </v-list-item-avatar>
-          <v-list-item-content>
-            <v-list-item-title v-html="data.item.title"></v-list-item-title>
-            <v-list-item-subtitle
-              v-html="data.item.publishTime"
-            ></v-list-item-subtitle>
-          </v-list-item-content>
+          <v-list max-width="280px" three-line dense>
+            <v-list-item :title="data.item.title" class="pa-0">
+              <v-list-item-avatar size="32">
+                <v-icon class="paper-icon" color="white" size="18">fas fa-book</v-icon>
+              </v-list-item-avatar>
+              <v-list-item-content>
+                <v-list-item-subtitle v-html="data.item.title" class="primary--text"/>
+                <v-list-item-subtitle
+                  v-html="data.item.publishTime"
+                ></v-list-item-subtitle>
+              </v-list-item-content>
+            </v-list-item>
+          </v-list>
         </template>
       </v-autocomplete>
     </v-card-text>
-    <v-divider></v-divider>
-    <v-expand-transition>
-      <v-list v-if="model">
-        <v-list-item v-for="(field, i) in fields" :key="i">
-          <v-list-item-content>
-            <v-list-item-title v-text="field.value"></v-list-item-title>
-            <v-list-item-subtitle v-text="field.key"></v-list-item-subtitle>
-          </v-list-item-content>
-        </v-list-item>
-      </v-list>
-    </v-expand-transition>
-    <v-card-actions>
-      <v-spacer></v-spacer>
+    <v-card-actions class="pa-0 mt-3">
       <v-btn
-        :disabled="!model"
-        @click="model = null"
-        outlined
-        rounded
-        small
-        color="primary"
-      >
-        Clear
-        <v-icon right small>mdi-close-circle</v-icon>
-      </v-btn>
-      <v-btn
-        :disabled="!model"
+        class="pa-0 paper--background white--text"
+        block
         @click="$emit('search-article', model.id)"
-        outlined
-        rounded
-        small
-        color="primary"
+        tile
       >
-        Load Papers
-        <v-icon right small>mdi-cloud-search-outline</v-icon>
+        <v-icon left small>fas fa-book</v-icon>
+        Find Papers
       </v-btn>
     </v-card-actions>
   </v-card>
@@ -92,8 +76,8 @@ export default {
       if (!this.model) return [];
       return [
         {
-          key: "Title",
-          value: this.model["Title"] || "n/a",
+          key: "title",
+          value: this.model["title"] || "n/a",
         },
       ];
     },
@@ -144,5 +128,8 @@ export default {
 .v-icon.paper-icon {
   color: $dark-icon-color;
   background-color: $paper-color;
+}
+.paper--background {
+  background: $paper-color !important;
 }
 </style>
