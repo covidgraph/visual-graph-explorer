@@ -126,6 +126,18 @@
         >
           <v-list-item-title>Load Papers</v-list-item-title>
         </v-list-item>
+        <v-list-item
+          v-if="currentItem && selectedItems.length < 1"
+          @click="remove([currentItem])"
+        >
+          <v-list-item-title>Remove Item</v-list-item-title>
+        </v-list-item>
+        <v-list-item
+          v-if="selectedItems.length > 0 && !currentItem"
+          @click="remove(selectedItems)"
+        >
+          <v-list-item-title>Remove Items</v-list-item-title>
+        </v-list-item>
       </v-list>
     </ContextMenu>
   </div>
@@ -761,6 +773,16 @@ export default {
         });
         return newItems;
       }
+    },
+    remove(items) {
+      items
+        .slice()
+        .map((item) => this.getLoadedNode(item))
+        .filter((node) => node != null)
+        .forEach((node) => {
+          this.$graphComponent.graph.remove(node);
+          this.id2NodeMapping.delete(getId(node.tag.identity));
+        });
     },
     /** @param {function():Promise<object[]>} loader */
     async loadNodes(loader, creator) {

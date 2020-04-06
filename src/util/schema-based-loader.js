@@ -167,11 +167,13 @@ export default class SchemaBasedLoader {
   }
 
   /**
+   * @param {string[]} whereClauses
    * @param {INode} schemaNode
+   * @param {{}} params
    */
-  async loadNodes(schemaNode, whereClause, params) {
+  async loadNodes(schemaNode, whereClauses, params) {
     return await query(
-      this.createLoadNodesQuery(schemaNode, whereClause),
+      this.createLoadNodesQuery(schemaNode, whereClauses),
       params
     );
   }
