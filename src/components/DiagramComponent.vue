@@ -25,6 +25,12 @@
           <v-list-item-title>Load Common Affiliations</v-list-item-title>
         </v-list-item>
         <v-list-item
+          v-if="isMultiSelection('Affiliation')"
+          @click="loadCommonPapersForAffiliations(selectedItems)"
+        >
+          <v-list-item-title>Load Common Papers</v-list-item-title>
+        </v-list-item>
+        <v-list-item
           v-if="isMultiSelection('Paper')"
           @click="loadCommonAuthorsForPapers(selectedItems)"
         >
@@ -158,10 +164,13 @@ import {
   Size,
   Rect,
   Point,
+  Color,
   ComponentArrangementStyles,
   ComponentLayout,
   IVisualTemplate,
   RectangleIndicatorInstaller,
+  StyleDecorationZoomPolicy,
+  ShapeNodeShape,
   INode,
   PolylineEdgeStyle,
   Arrow,
@@ -169,6 +178,9 @@ import {
   Stroke,
   DefaultLabelStyle,
   SmartEdgeLabelModel,
+  NodeStyleDecorationInstaller,
+  EdgeStyleDecorationInstaller,
+  IEdge,
 } from "yfiles";
 import ContextMenu from "./ContextMenu";
 import { getId } from "../util/Neo4jGraphBuilder";
@@ -196,6 +208,65 @@ const patentNodeStyle = new VuejsNodeStyle(PatentNode);
 const authorNodeStyle = new VuejsNodeStyle(AuthorNode);
 
 const geneNodeStyle = new VuejsNodeStyle(GeneNode);
+
+/**
+ * @param {GraphComponent} graphComponent
+ */
+function initializeHighlightStyles(graphComponent) {
+  // we want to create a non-default nice highlight styling
+  // for the hover highlight, create semi transparent orange stroke first
+  const orangeRed = Color.ORANGE_RED;
+  const orangeStroke = new Stroke(
+    orangeRed.r,
+    orangeRed.g,
+    orangeRed.b,
+    220,
+    6
+  );
+  // freeze it for slightly improved performance
+  orangeStroke.freeze();
+
+  // now decorate the nodes and edges with custom hover highlight styles
+  const decorator = graphComponent.graph.decorator;
+
+  // nodes should be given a rectangular orange rectangle highlight shape
+  const highlightShape = new ShapeNodeStyle({
+    shape: ShapeNodeShape.ROUND_RECTANGLE,
+    stroke: orangeStroke,
+    fill: null,
+  });
+
+  const nodeStyleHighlight = new NodeStyleDecorationInstaller({
+    nodeStyle: highlightShape,
+    // that should be slightly larger than the real node
+    margins: 15,
+    // but have a fixed size in the view coordinates
+    zoomPolicy: StyleDecorationZoomPolicy.VIEW_COORDINATES,
+  });
+
+  // register it as the default implementation for all nodes
+  decorator.nodeDecorator.highlightDecorator.setImplementation(
+    nodeStyleHighlight
+  );
+
+  // a similar style for the edges, however cropped by the highlight's insets
+  const dummyCroppingArrow = new Arrow({
+    type: ArrowType.NONE,
+    cropLength: 15,
+  });
+  const edgeStyle = new PolylineEdgeStyle({
+    stroke: orangeStroke,
+    targetArrow: dummyCroppingArrow,
+    sourceArrow: dummyCroppingArrow,
+  });
+  const edgeStyleHighlight = new EdgeStyleDecorationInstaller({
+    edgeStyle,
+    zoomPolicy: StyleDecorationZoomPolicy.VIEW_COORDINATES,
+  });
+  decorator.edgeDecorator.highlightDecorator.setImplementation(
+    edgeStyleHighlight
+  );
+}
 
 const edgeStyle = new PolylineEdgeStyle({
   stroke: new Stroke({
@@ -365,8 +436,8 @@ export default {
     );
 
     const graph = this.$graphComponent.graph;
-    graph.decorator.nodeDecorator.selectionDecorator.hideImplementation();
-    graph.decorator.nodeDecorator.focusIndicatorDecorator.hideImplementation();
+    //graph.decorator.nodeDecorator.selectionDecorator.hideImplementation();
+
     const graphModelManager = this.$graphComponent.graphModelManager;
     graphModelManager.edgeLabelGroup.below(graphModelManager.nodeGroup);
 
@@ -382,8 +453,39 @@ export default {
         evt.showMenu = true;
       }
     );
-    viewerInputMode.clickableItems = GraphItemTypes.NODE;
+    viewerInputMode.clickableItems = GraphItemTypes.NODE | GraphItemTypes.EDGE;
+    viewerInputMode.selectableItems = GraphItemTypes.NODE;
     this.$graphComponent.inputMode = viewerInputMode;
+
+    initializeHighlightStyles(this.$graphComponent);
+
+    // we want to get reports of the mouse being hovered over nodes and edges
+    // first enable queries
+    viewerInputMode.itemHoverInputMode.enabled = true;
+    // set the items to be reported
+    viewerInputMode.itemHoverInputMode.hoverItems =
+      GraphItemTypes.EDGE | GraphItemTypes.NODE;
+    // if there are other items (most importantly labels) in front of edges or nodes
+    // they should be discarded, rather than be reported as "null"
+    viewerInputMode.itemHoverInputMode.discardInvalidItems = false;
+    // whenever the currently hovered item changes call our method
+    viewerInputMode.itemHoverInputMode.addHoveredItemChangedListener(
+      (sender, evt) => this.onHoveredItemChanged(evt.item)
+    );
+
+    viewerInputMode.addItemLeftClickedListener((sender, args) => {
+      // Zooms to the suitable point
+      if (IEdge.isInstance(args.item)) {
+        this.zoomToLocation(args.item, args.location);
+      }
+    });
+
+    this.$graphComponent.highlightGroup.above(
+      this.$graphComponent.graphModelManager.edgeGroup
+    );
+    this.$graphComponent.selectionGroup.below(
+      this.$graphComponent.highlightGroup
+    );
 
     this.$refs.contextMenu.register(this.$graphComponent);
     this.$refs.popupPanel.register(
@@ -401,9 +503,9 @@ export default {
     });
     viewerInputMode.addItemClickedListener((sender, evt) => {
       //this.$refs.popupPanel.showPopup(evt.item);
-      this.$emit("item-selected", evt.item.tag);
 
       if (INode.isInstance(evt.item)) {
+        this.$emit("item-selected", evt.item.tag);
         graphModelManager.getCanvasObject(evt.item).toFront();
       }
     });
@@ -437,6 +539,81 @@ export default {
     });
   },
   methods: {
+    onHoveredItemChanged(item) {
+      // we use the highlight manager of the GraphComponent to highlight related items
+      const manager = this.$graphComponent.highlightIndicatorManager;
+
+      // first remove previous highlights
+      manager.clearHighlights();
+      // then see where we are hovering over, now
+      const newItem = item;
+      if (newItem !== null) {
+        // we highlight the item itself
+        manager.addHighlight(newItem);
+        if (INode.isInstance(newItem)) {
+          // and if it's a node, we highlight all adjacent edges, too
+          this.$graphComponent.graph.edgesAt(newItem).forEach((edge) => {
+            manager.addHighlight(edge);
+          });
+        } else if (IEdge.isInstance(newItem)) {
+          // if it's an edge - we highlight the adjacent nodes
+          manager.addHighlight(newItem.sourceNode);
+          manager.addHighlight(newItem.targetNode);
+        }
+      }
+    },
+    getFocusPoint(item) {
+      if (IEdge.isInstance(item)) {
+        // If the source and the target node are in the view port, then zoom to the middle point of the edge
+        const targetNodeCenter = item.targetNode.layout.center;
+        const sourceNodeCenter = item.sourceNode.layout.center;
+        const viewport = this.$graphComponent.viewport;
+        if (
+          viewport.contains(targetNodeCenter) &&
+          viewport.contains(sourceNodeCenter)
+        ) {
+          return new Point(
+            (sourceNodeCenter.x + targetNodeCenter.x) / 2,
+            (sourceNodeCenter.y + targetNodeCenter.y) / 2
+          );
+        } else {
+          if (
+            viewport.center.subtract(targetNodeCenter).vectorLength <
+            viewport.center.subtract(sourceNodeCenter).vectorLength
+          ) {
+            // If the source node is out of the view port, then zoom to it
+            return sourceNodeCenter;
+          } else {
+            // Else zoom to the target node
+            return targetNodeCenter;
+          }
+        }
+      } else if (INode.isInstance(item)) {
+        return item.layout.center;
+      }
+    },
+    zoomToLocation(item, currentMouseClickLocation) {
+      // Get the point where we should zoom in
+      const location = this.getFocusPoint(item);
+      // Check the type of zooming
+      if (false) {
+        // The distance between where we clicked and the viewport center
+        const offset = currentMouseClickLocation.subtract(
+          this.$graphComponent.viewport.center
+        );
+        // Zooms to the new location of the mouse
+        this.$graphComponent.zoomToAnimated(
+          location.subtract(offset),
+          this.$graphComponent.zoom
+        );
+      } else {
+        this.$graphComponent.zoomToAnimated(
+          location,
+          this.$graphComponent.zoom
+        );
+      }
+    },
+
     registerNode(node, item) {
       this.id2NodeMapping.set(getId(item.identity), node);
       return node;
@@ -483,33 +660,35 @@ export default {
       });
     },
     loadMissingEdgesForSchemaNodes: async function (schemaNode, newItems) {
-      await Promise.all(
-        loader.schemaGraph
-          .inEdgesAt(schemaNode)
-          .toArray()
-          .map(async (schemaEdge) => {
-            const missingEdges = await loader.loadMissingEdges(
-              schemaEdge,
-              this.getLoadedItemsOfType(schemaEdge.sourceNode),
-              newItems
-            );
-            this.loadMissingEdges(missingEdges, schemaEdge);
-          })
-      );
-      await Promise.all(
-        loader.schemaGraph
-          .outEdgesAt(schemaNode)
-          .filter((e) => e.targetNode !== schemaNode)
-          .toArray()
-          .map(async (schemaEdge) => {
-            const missingEdges = await loader.loadMissingEdges(
-              schemaEdge,
-              newItems,
-              this.getLoadedItemsOfType(schemaEdge.targetNode)
-            );
-            this.loadMissingEdges(missingEdges, schemaEdge);
-          })
-      );
+      if (newItems.length > 0) {
+        await Promise.all(
+          loader.schemaGraph
+            .inEdgesAt(schemaNode)
+            .toArray()
+            .map(async (schemaEdge) => {
+              const missingEdges = await loader.loadMissingEdges(
+                schemaEdge,
+                this.getLoadedItemsOfType(schemaEdge.sourceNode),
+                newItems
+              );
+              this.loadMissingEdges(missingEdges, schemaEdge);
+            })
+        );
+        await Promise.all(
+          loader.schemaGraph
+            .outEdgesAt(schemaNode)
+            .filter((e) => e.targetNode !== schemaNode)
+            .toArray()
+            .map(async (schemaEdge) => {
+              const missingEdges = await loader.loadMissingEdges(
+                schemaEdge,
+                newItems,
+                this.getLoadedItemsOfType(schemaEdge.targetNode)
+              );
+              this.loadMissingEdges(missingEdges, schemaEdge);
+            })
+        );
+      }
     },
     async loadInEdges(item, schemaEdge) {
       this.loadAndLayout(async () => {
@@ -823,6 +1002,9 @@ export default {
     },
     async loadCommonAffiliationsForPapers(items) {
       await this.loadTargets(items, paper_affiliation);
+    },
+    async loadCommonPapersForAffiliations(items) {
+      await this.loadSources(items, paper_affiliation);
     },
     async loadCommonGenesForPapers(items) {
       await this.loadTargets(items, paper_geneSymbol);
