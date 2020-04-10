@@ -167,7 +167,6 @@ export default {
       immediate: true,
       handler: function (patent) {
         if (patent) {
-          console.log(patent.properties);
           this.patent = {
             date: `${neo4j.integer.toNumber(
               patent.properties.pub_date.year
