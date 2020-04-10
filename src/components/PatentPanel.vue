@@ -33,14 +33,14 @@
     </v-list>
     <v-expansion-panels multiple accordion flat>
       <v-expansion-panel v-if="nonPrimeTitles.length" class="mr-1">
-        <v-expansion-panel-header class="primary--text"
+        <v-expansion-panel-header class="primary--text pb-0"
           ><b>OTHER TITLES</b></v-expansion-panel-header
         >
-        <v-expansion-panel-content>
-          <v-list class="pa-0 ma-0">
-            <v-list-item-group v-for="(title, i) in nonPrimeTitles" :key="i">
-              <v-list-item class="pa-0">
-                <v-list-item-content class="pa-0 ma-0 mt-2">
+        <v-expansion-panel-content class="grey lighten-5">
+          <v-list class="pa-0 ma-0 pt-2">
+            <div v-for="(title, i) in nonPrimeTitles" :key="i">
+              <v-list-item class="pa-0 pt-2">
+                <v-list-item-content class="pa-0 ma-0">
                   <span
                     class="primary--text wrapText subtitle-2 pb-2"
                     v-text="
@@ -54,17 +54,17 @@
                 </v-list-item-content>
               </v-list-item>
               <v-divider v-if="i < nonPrimeTitles.length - 1" />
-            </v-list-item-group>
+            </div>
           </v-list>
         </v-expansion-panel-content>
       </v-expansion-panel>
       <v-expansion-panel v-if="patent.date" class="mr-1">
-        <v-expansion-panel-header class="primary--text"
+        <v-expansion-panel-header class="primary--text pb-0"
           ><b>DATE</b></v-expansion-panel-header
         >
-        <v-expansion-panel-content>
-          <v-list class="pa-0 ma-0">
-            <v-list-item-group>
+        <v-expansion-panel-content class="grey lighten-5">
+          <v-list class="pa-0 ma-0 pt-2">
+            <div>
               <v-list-item class="pa-0">
                 <v-list-item-content class="pa-0 ma-0">
                   <span
@@ -73,55 +73,49 @@
                   />
                 </v-list-item-content>
               </v-list-item>
-            </v-list-item-group>
+            </div>
           </v-list>
         </v-expansion-panel-content>
       </v-expansion-panel>
       <v-expansion-panel v-if="patent.classification_cpc.length" class="mr-1">
-        <v-expansion-panel-header class="primary--text"
+        <v-expansion-panel-header class="primary--text pb-0"
           ><b>CLASSIFICATION CPC</b></v-expansion-panel-header
         >
-        <v-expansion-panel-content>
-          <v-list class="pa-0 ma-0">
-            <v-list-item-group
-              v-for="(c, i) in patent.classification_cpc"
-              :key="i"
-            >
+        <v-expansion-panel-content class="grey lighten-5">
+          <v-list class="pa-0 ma-0 pt-2">
+            <div v-for="(c, i) in patent.classification_cpc" :key="i">
               <v-list-item class="pa-0">
                 <v-list-item-content class="pa-0 ma-0">
                   <span class="primary--text subtitle-2 wrapText" v-text="c" />
                 </v-list-item-content>
               </v-list-item>
               <v-divider v-if="i < patent.classification_cpc.length - 1" />
-            </v-list-item-group>
+            </div>
           </v-list>
         </v-expansion-panel-content>
       </v-expansion-panel>
       <v-expansion-panel v-if="patent.classification_ipc.length" class="mr-1">
-        <v-expansion-panel-header class="primary--text"
+        <v-expansion-panel-header class="primary--text pb-0"
           ><b>CLASSIFICATION IPC</b></v-expansion-panel-header
         >
-        <v-expansion-panel-content>
-          <v-list class="pa-0 ma-0">
-            <v-list-item-group
-              v-for="(c, i) in patent.classification_ipc"
-              :key="i"
-            >
+        <v-expansion-panel-content class="grey lighten-5">
+          <v-list class="pa-0 ma-0 pt-2">
+            <div v-for="(c, i) in patent.classification_ipc" :key="i">
               <v-list-item class="pa-0">
                 <v-list-item-content class="pa-0 ma-0">
                   <span class="primary--text subtitle-2 wrapText" v-text="c" />
                 </v-list-item-content>
               </v-list-item>
               <v-divider v-if="i < patent.classification_ipc.length - 1" />
-            </v-list-item-group>
+            </div>
           </v-list>
         </v-expansion-panel-content>
       </v-expansion-panel>
       <v-expansion-panel v-if="patent.classificaiton_us.length" class="mr-1">
-        <v-expansion-panel-header class="primary--text"
+        <v-expansion-panel-header class="primary--text pb-0"
           ><b>CLASSIFICATION US</b></v-expansion-panel-header
         >
-        <v-expansion-panel-content>
+        <v-expansion-panel-content class="grey lighten-5">
           <v-list class="pa-0 ma-0">
             <v-list-item-group
               v-for="(c, i) in patent.classificaiton_us"
