@@ -107,11 +107,7 @@
               v-for="(c, i) in patent.classification_ipc"
               :key="i"
             >
-              <v-list-item
-                v-for="(c, i) in patent.classification_ipc"
-                :key="i"
-                class="pa-0"
-              >
+              <v-list-item class="pa-0">
                 <v-list-item-content class="pa-0 ma-0">
                   <span class="primary--text subtitle-2 wrapText" v-text="c" />
                 </v-list-item-content>
@@ -123,19 +119,21 @@
       </v-expansion-panel>
       <v-expansion-panel v-if="patent.classificaiton_us.length" class="mr-1">
         <v-expansion-panel-header class="primary--text"
-          ><b>CLASSIFICATION IPC</b></v-expansion-panel-header
+          ><b>CLASSIFICATION US</b></v-expansion-panel-header
         >
         <v-expansion-panel-content>
           <v-list class="pa-0 ma-0">
-            <v-list-item
+            <v-list-item-group
               v-for="(c, i) in patent.classificaiton_us"
               :key="i"
-              class="pa-0 ma-0"
             >
-              <v-list-item-content>
-                <span class="primary--text subtitle-2 wrapText" v-text="c" />
-              </v-list-item-content>
-            </v-list-item>
+              <v-list-item class="pa-0 ma-0">
+                <v-list-item-content>
+                  <span class="primary--text subtitle-2 wrapText" v-text="c" />
+                </v-list-item-content>
+              </v-list-item>
+              <v-divider v-if="i < patent.classificaiton_us.length - 1" />
+            </v-list-item-group>
           </v-list>
         </v-expansion-panel-content>
       </v-expansion-panel>
@@ -169,6 +167,7 @@ export default {
       immediate: true,
       handler: function (patent) {
         if (patent) {
+          console.log(patent.properties);
           this.patent = {
             date: `${neo4j.integer.toNumber(
               patent.properties.pub_date.year
