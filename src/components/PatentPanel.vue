@@ -49,6 +49,7 @@
                   label
                   outlined
                   class="wrapText subtitle-2"
+                  large
                   v-text="
                     `${title.text
                       .charAt(0)
