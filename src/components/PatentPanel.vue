@@ -38,28 +38,23 @@
         >
         <v-expansion-panel-content>
           <v-list class="pa-0 ma-0">
-            <v-list-item
-              v-for="(title, i) in nonPrimeTitles"
-              :key="i"
-              class="pa-0"
-            >
-              <v-list-item-content class="pa-0 ma-0">
-                <v-chip
-                  color="primary"
-                  label
-                  outlined
-                  class="wrapText subtitle-2"
-                  large
-                  v-text="
-                    `${title.text
-                      .charAt(0)
-                      .toUpperCase()}${title.text
-                      .toLowerCase()
-                      .slice(1)} (${title.lang.toUpperCase()})`
-                  "
-                />
-              </v-list-item-content>
-            </v-list-item>
+            <v-list-item-group v-for="(title, i) in nonPrimeTitles" :key="i">
+              <v-list-item class="pa-0">
+                <v-list-item-content class="pa-0 ma-0 mt-2">
+                  <span
+                    class="primary--text wrapText subtitle-2 pb-2"
+                    v-text="
+                      `${title.text
+                        .charAt(0)
+                        .toUpperCase()}${title.text
+                        .toLowerCase()
+                        .slice(1)} (${title.lang.toUpperCase()})`
+                    "
+                  />
+                </v-list-item-content>
+              </v-list-item>
+              <v-divider v-if="i < nonPrimeTitles.length - 1" />
+            </v-list-item-group>
           </v-list>
         </v-expansion-panel-content>
       </v-expansion-panel>
@@ -69,17 +64,16 @@
         >
         <v-expansion-panel-content>
           <v-list class="pa-0 ma-0">
-            <v-list-item class="pa-0">
-              <v-list-item-content class="pa-0 ma-0">
-                <v-chip
-                  color="primary"
-                  label
-                  outlined
-                  class="subtitle-2 wrapText"
-                  v-text="patent.date"
-                />
-              </v-list-item-content>
-            </v-list-item>
+            <v-list-item-group>
+              <v-list-item class="pa-0">
+                <v-list-item-content class="pa-0 ma-0">
+                  <span
+                    class="primary--text subtitle-2 wrapText"
+                    v-text="patent.date"
+                  />
+                </v-list-item-content>
+              </v-list-item>
+            </v-list-item-group>
           </v-list>
         </v-expansion-panel-content>
       </v-expansion-panel>
@@ -89,21 +83,17 @@
         >
         <v-expansion-panel-content>
           <v-list class="pa-0 ma-0">
-            <v-list-item
+            <v-list-item-group
               v-for="(c, i) in patent.classification_cpc"
               :key="i"
-              class="pa-0"
             >
-              <v-list-item-content class="pa-0 ma-0">
-                <v-chip
-                  color="primary"
-                  label
-                  outlined
-                  class="wrapText subtitle-2"
-                  v-text="c"
-                />
-              </v-list-item-content>
-            </v-list-item>
+              <v-list-item class="pa-0">
+                <v-list-item-content class="pa-0 ma-0">
+                  <span class="primary--text subtitle-2 wrapText" v-text="c" />
+                </v-list-item-content>
+              </v-list-item>
+              <v-divider v-if="i < patent.classification_cpc.length - 1" />
+            </v-list-item-group>
           </v-list>
         </v-expansion-panel-content>
       </v-expansion-panel>
@@ -113,21 +103,21 @@
         >
         <v-expansion-panel-content>
           <v-list class="pa-0 ma-0">
-            <v-list-item
+            <v-list-item-group
               v-for="(c, i) in patent.classification_ipc"
               :key="i"
-              class="pa-0"
             >
-              <v-list-item-content class="pa-0 ma-0">
-                <v-chip
-                  color="primary"
-                  label
-                  outlined
-                  class="wrapText subtitle-2"
-                  v-text="c"
-                />
-              </v-list-item-content>
-            </v-list-item>
+              <v-list-item
+                v-for="(c, i) in patent.classification_ipc"
+                :key="i"
+                class="pa-0"
+              >
+                <v-list-item-content class="pa-0 ma-0">
+                  <span class="primary--text subtitle-2 wrapText" v-text="c" />
+                </v-list-item-content>
+              </v-list-item>
+              <v-divider v-if="i < patent.classification_ipc.length - 1" />
+            </v-list-item-group>
           </v-list>
         </v-expansion-panel-content>
       </v-expansion-panel>
@@ -143,10 +133,7 @@
               class="pa-0 ma-0"
             >
               <v-list-item-content>
-                <v-list-item-subtitle
-                  class="primary--text wrapText"
-                  v-text="c"
-                />
+                <span class="primary--text subtitle-2 wrapText" v-text="c" />
               </v-list-item-content>
             </v-list-item>
           </v-list>
