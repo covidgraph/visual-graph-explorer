@@ -44,7 +44,7 @@
         </template>
       </v-autocomplete>
     </v-card-text>
-    <v-card-actions>
+    <v-card-actions class="pr-4">
       <v-btn
         @click="$emit('search-author', model.id)"
         width="50%"
@@ -103,7 +103,7 @@ export default {
       // Items have already been requested
       if (this.isLoading) return;
 
-      if (val.length > 2) {
+      if (val && val.length > 2) {
         this.isLoading = true;
 
         // Lazily load input items

@@ -11,7 +11,7 @@
   <v-card v-else-if="nodeIs('GeneSymbol')">
     <GenePanel :value="model"></GenePanel>
   </v-card>
-  <v-card v-else-if="nodeIs('Patent')">
+  <v-card v-else-if="nodeIs('Patent')" flat>
     <PatentPanel :value="model"></PatentPanel>
   </v-card>
   <v-card v-else>
