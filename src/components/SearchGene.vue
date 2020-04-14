@@ -7,74 +7,69 @@
     <v-card-text class="pa-2 pt-0">
       Find publications that mention gene names
     </v-card-text>
-    <form>
-      <v-card-text class="ma-0 px-2 py-0 primary--text">
-        <v-autocomplete
-          v-model="model"
-          :items="items"
-          :loading="isLoading"
-          :search-input.sync="search"
-          hide-details
-          full-width
-          clearable
-          chips
-          multiple
-          outlined
-          hide-no-data
-          hide-selected
-          item-text="sid"
-          placeholder="Gene name"
-          return-object
-        >
-          <template v-slot:selection="data">
-            <v-chip
-              v-bind="data.attrs"
-              :input-value="data.selected"
-              close
-              @click="data.select"
-              @click:close="remove(data.item)"
-            >
-              {{ data.item.sid }}
-            </v-chip>
-          </template>
-          <template v-slot:item="data">
-            <v-list max-width="280px" dense>
-              <v-list-item :title="data.item.name" class="pa-0">
-                <v-list-item-avatar
-                  color="gene-color--background mr-2"
-                  size="32"
-                >
-                  <v-icon color="primary" size="20">mdi-dna</v-icon>
-                </v-list-item-avatar>
-                <v-list-item-content>
-                  <v-list-item-title v-html="data.item.sid" />
-                  <v-list-item-subtitle
-                    v-html="data.item.description"
-                    v-if="data.item.sid !== data.item.description"
-                  />
-                </v-list-item-content>
-              </v-list-item>
-            </v-list>
-          </template>
-        </v-autocomplete>
-      </v-card-text>
-      <v-card-actions>
-        <v-btn
-          class="paper--background white--text"
-          text
-          rounded
-          @click="
-            $emit(
-              'search-gene',
-              model.map((item) => item.sid)
-            )
-          "
-        >
-          <v-icon left small>fas fa-book</v-icon>
-          Find Papers
-        </v-btn>
-      </v-card-actions>
-    </form>
+    <v-card-text class="ma-0 px-2 py-0 primary--text">
+      <v-autocomplete
+        v-model="model"
+        :items="items"
+        :loading="isLoading"
+        :search-input.sync="search"
+        hide-details
+        full-width
+        clearable
+        chips
+        multiple
+        outlined
+        hide-no-data
+        hide-selected
+        item-text="sid"
+        placeholder="Gene name"
+        return-object
+      >
+        <template v-slot:selection="data">
+          <v-chip
+            v-bind="data.attrs"
+            :input-value="data.selected"
+            close
+            @click="data.select"
+            @click:close="remove(data.item)"
+          >
+            {{ data.item.sid }}
+          </v-chip>
+        </template>
+        <template v-slot:item="data">
+          <v-list max-width="280px" dense>
+            <v-list-item :title="data.item.name" class="pa-0">
+              <v-list-item-avatar color="gene-color--background mr-2" size="32">
+                <v-icon color="primary" size="20">mdi-dna</v-icon>
+              </v-list-item-avatar>
+              <v-list-item-content>
+                <v-list-item-title v-html="data.item.sid" />
+                <v-list-item-subtitle
+                  v-html="data.item.description"
+                  v-if="data.item.sid !== data.item.description"
+                />
+              </v-list-item-content>
+            </v-list-item>
+          </v-list>
+        </template>
+      </v-autocomplete>
+    </v-card-text>
+    <v-card-actions>
+      <v-btn
+        class="paper--background white--text"
+        text
+        rounded
+        @click="
+          $emit(
+            'search-gene',
+            model.map((item) => item.sid)
+          )
+        "
+      >
+        <v-icon left small>fas fa-book</v-icon>
+        Find Papers
+      </v-btn>
+    </v-card-actions>
   </v-card>
 </template>
 <script>
@@ -123,6 +118,9 @@ export default {
   },
 
   watch: {
+    model(val) {
+      this.search = "";
+    },
     search(val) {
       // Items have already been requested
       if (!val || this.isLoading) return;
