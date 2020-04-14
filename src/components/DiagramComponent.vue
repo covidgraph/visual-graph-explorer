@@ -354,7 +354,7 @@ function addRelationShip(
   return edge;
 }
 
-let patentType = addNodeType("Patent", patentNodeStyle, new Size(30, 40));
+let patentType = addNodeType("Patent", patentNodeStyle, new Size(40, 40));
 let paperType = addNodeType("Paper", paperNodeStyle, new Size(150, 150));
 let authorType = addNodeType("Author", authorNodeStyle, new Size(150, 150));
 let affiliationType = addNodeType(
@@ -965,19 +965,21 @@ export default {
     },
     /** @param {function():Promise<object[]>} loader */
     async loadNodes(loader, creator) {
-      this.loadAndLayout(async () =>
+      return await this.loadAndLayout(async () =>
         (await loader())
           .filter((item) => !this.getLoadedNode(item))
           .forEach((item) => creator.call(this, item))
       );
     },
     /** @param {function():Promise<object[]>} loader */
-    async loadNodesForSchema(schemaNode, whereClauses, creator) {
-      this.loadAndLayout(async () =>
-        (await loader.loadNodes(schemaNode, whereClauses))
+    async loadNodesForSchema(schemaNode, whereClauses, params) {
+      return this.loadAndLayout(async () => {
+        let nodes = await loader.loadNodes(schemaNode, whereClauses, params);
+        nodes
           .filter((item) => !this.getLoadedNode(item))
-          .forEach((item) => creator.call(this, item))
-      );
+          .forEach((item) => schemaNode.tag.creator.call(this, item));
+        return nodes;
+      });
     },
     async loadNodeForSchema(schemaNode, id) {
       return await this.loadAndLayout(async () => {
@@ -1030,17 +1032,18 @@ export default {
     async loadCommonPatentsForGenes(items) {
       await this.loadSources(items, patent_geneSymbol);
     },
-    async searchGenes(geneSids) {
-      let genes = [];
-      for (let i = 0; i < geneSids.length; i++) {
-        const fetchedGenes = await this.fetchGenes(geneSids[i]);
-        genes = genes.concat(fetchedGenes);
-      }
+    async searchGenes(geneIds) {
+      let genes = await this.loadNodesForSchema(
+        geneSymbolType,
+        ["node.sid in $geneIds"],
+        { geneIds }
+      );
+      //HLA-B", "HLA-E", "HLA-C", "MHC", "S12"
 
-      for (let i = 0; i < genes.length; i++) {
-        const g = genes[i];
-        geneSymbolType.tag.creator.call(this, g);
-        await this.loadPapersForGene(g);
+      if (genes.length > 1) {
+        await this.loadCommonPapersForGenes(genes);
+      } else if (genes.length > 0) {
+        await this.loadPapersForGene(genes[0]);
       }
     },
     async searchPatent(id) {
