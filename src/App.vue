@@ -30,6 +30,19 @@
         <span>https://covidgraph.org</span>
       </v-tooltip>
       <v-spacer></v-spacer>
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on }">
+          <v-btn
+            icon
+            rounded
+            v-on="on"
+            @click="$refs.graphComponent.clearGraph()"
+          >
+            <v-icon color="white">mdi-delete</v-icon></v-btn
+          >
+        </template>
+        <span>Clear the Graph</span>
+      </v-tooltip>
       <ConnectionStatus></ConnectionStatus>
       <v-tooltip bottom>
         <template v-slot:activator="{ on }">

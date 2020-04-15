@@ -1038,8 +1038,6 @@ export default {
         ["node.sid in $geneIds"],
         { geneIds }
       );
-      //HLA-B", "HLA-E", "HLA-C", "MHC", "S12"
-
       if (genes.length > 1) {
         await this.loadCommonPapersForGenes(genes);
       } else if (genes.length > 0) {
