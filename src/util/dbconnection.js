@@ -1,5 +1,18 @@
 import * as neo4j from "neo4j-driver/lib/browser/neo4j-web";
 
+const { url, pass, user } =
+  window.location.search && window.location.search.indexOf("db=staging") >= 0
+    ? {
+        url: "bolt://db-dev.covidgraph.org:7687",
+        user: "public",
+        pass: "corona",
+      }
+    : {
+        url: "bolt://covid.petesis.com:7687",
+        user: "public",
+        pass: "corona",
+      };
+
 /**
  * Establishes a connection to a Neo4j database.
  * @param {string} url The URL to connect to, usually through the bolt protocol (bolt://)
@@ -64,12 +77,7 @@ export default async function query(q, params = {}) {
   try {
     queryEvents.onQueryStarted();
     if (runQuery == null) {
-      runQuery = await connectToDB(
-        "bolt://covid.petesis.com:7687",
-        "public",
-        "corona",
-        true
-      );
+      runQuery = await connectToDB(url, user, pass, true);
     }
 
     const result = runQuery(q, params);
