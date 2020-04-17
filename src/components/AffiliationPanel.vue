@@ -1,5 +1,33 @@
 <template>
-  <v-card>
+  <v-card flat>
+    <v-list class="yellow lighten-5 pt-0 pb-0">
+      <v-list-item three-line>
+        <v-icon x-large color="yellow">mdi-office-building</v-icon>
+        <v-list-item-content flex-sm-column>
+          <v-list-item-title class="primary--text wrapText pl-2">
+            <div class="wrapText">
+              <h4>
+                {{ value.properties.institution }}
+              </h4>
+              <span class="caption">
+                {{ value.properties.suffix }}
+              </span>
+            </div>
+          </v-list-item-title>
+        </v-list-item-content>
+      </v-list-item>
+    </v-list>
+    <v-layout class="yellow lighten-5">
+      <v-col class="flex-row-reverse d-flex pt-0">
+        <v-card-actions class="wrap-actions">
+          <v-btn text outlined rounded color="primary" @click="loadPapers">
+            Load Papers
+          </v-btn>
+        </v-card-actions>
+      </v-col>
+    </v-layout>
+  </v-card>
+  <!-- <v-card>
     <v-list-item class="header">
       <v-icon x-large color="white">mdi-office-building</v-icon>
       <v-list-item-content>
@@ -18,7 +46,7 @@
         Load Papers
       </v-btn>
     </v-card-actions>
-  </v-card>
+  </v-card> -->
 </template>
 
 <script>
@@ -34,10 +62,8 @@ export default {
   },
 };
 </script>
-
-<style lang="scss" scoped>
-@import "../styles/colors";
-.header {
-  background-color: $author-color;
+<style scoped>
+.wrapText {
+  white-space: normal !important;
 }
 </style>

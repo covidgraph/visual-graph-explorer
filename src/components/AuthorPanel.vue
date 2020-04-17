@@ -1,30 +1,33 @@
 <template>
-  <v-card>
-    <v-list-item class="header">
-      <v-icon x-large color="white">mdi-account</v-icon>
-      <v-list-item-content>
-        <v-list-item-title style="color: white;">
-          {{ this.value.properties.first }}
-          {{ this.value.properties.middle }}
-          {{ this.value.properties.last }}
-          {{ this.value.properties.suffix }}
-        </v-list-item-title>
-        <v-list-item-subtitle style="color: #dddddd;">{{
-          this.value.properties.email
-        }}</v-list-item-subtitle>
-      </v-list-item-content>
-    </v-list-item>
-
-    <v-card-actions>
-      <v-spacer></v-spacer>
-      <v-btn text outlined rounded color="primary" @click="loadPapers">
-        Load Papers
-      </v-btn>
-    </v-card-actions>
-
-    <v-card-text>
-      This is an author
-    </v-card-text>
+  <v-card flat>
+    <v-list class="purple lighten-5 pt-0 pb-0">
+      <v-list-item three-line>
+        <v-icon x-large color="#d12eae">mdi-account</v-icon>
+        <v-list-item-content flex-sm-column>
+          <v-list-item-title class="primary--text pl-2">
+            <div class="wrapText">
+              <h4>
+                {{ value.properties.first }}
+                {{ value.properties.middle }}
+                {{ value.properties.last }}
+              </h4>
+              <span class="caption">
+                {{ value.properties.suffix }}
+              </span>
+            </div>
+          </v-list-item-title>
+        </v-list-item-content>
+      </v-list-item>
+    </v-list>
+    <v-layout class="purple lighten-5">
+      <v-col class="flex-row-reverse d-flex pt-0">
+        <v-card-actions class="wrap-actions">
+          <v-btn text outlined rounded color="primary" @click="loadPapers">
+            Load Papers
+          </v-btn>
+        </v-card-actions>
+      </v-col>
+    </v-layout>
   </v-card>
 </template>
 
@@ -42,9 +45,8 @@ export default {
 };
 </script>
 
-<style lang="scss" scoped>
-@import "../styles/colors";
-.header {
-  background-color: $author-color;
+<style scoped>
+.wrapText {
+  white-space: normal !important;
 }
 </style>

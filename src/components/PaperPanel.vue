@@ -1,94 +1,75 @@
 <template>
-  <v-card>
-    <v-list-item style="background-color: #5b9ad9; color: white;">
-      <v-icon x-large color="white">mdi-book</v-icon>
-      <v-list-item-content>
-        <v-list-item-title style="color: white;">{{
-          this.value.properties.title
-        }}</v-list-item-title>
-        <v-list-item-subtitle style="color: #dddddd;">
-          {{ this.value.properties.source_x }}
-        </v-list-item-subtitle>
-      </v-list-item-content>
-    </v-list-item>
-
-    <v-card-actions class="wrap-actions">
-      <v-spacer></v-spacer>
-      <v-btn
-        text
-        outlined
-        rounded
-        color="primary"
-        @click="loadAuthors"
-        class="action-button"
-      >
-        Load Authors
-      </v-btn>
-      <v-btn
-        text
-        outlined
-        rounded
-        color="primary"
-        @click="loadGenes"
-        class="action-button"
-      >
-        Load Genes
-      </v-btn>
-      <v-btn
-        text
-        outlined
-        rounded
-        color="primary"
-        @click="loadReferencedPapers"
-        class="action-button"
-      >
-        Load Referenced Papers
-      </v-btn>
-      <v-btn
-        text
-        outlined
-        rounded
-        color="primary"
-        @click="loadReferencingPapers"
-        class="action-button"
-      >
-        Load Referencing Papers
-      </v-btn>
-      <v-btn
-        text
-        outlined
-        rounded
-        color="primary"
-        @click="loadAffiliations"
-        class="action-button"
-      >
-        Load Affiliations
-      </v-btn>
-    </v-card-actions>
-
-    <v-expansion-panels v-model="panel" multiple accordion>
-      <v-expansion-panel>
-        <v-expansion-panel-header>Published</v-expansion-panel-header>
-        <v-expansion-panel-content>
-          {{ this.value.properties.publish_time }}
-        </v-expansion-panel-content>
-      </v-expansion-panel>
-      <v-expansion-panel>
-        <v-expansion-panel-header>Abstract</v-expansion-panel-header>
-        <v-expansion-panel-content class="overflow-content">
-          {{ abstract }}
-        </v-expansion-panel-content>
-      </v-expansion-panel>
-      <v-expansion-panel>
-        <v-expansion-panel-header>Full Text</v-expansion-panel-header>
-        <v-expansion-panel-content class="overflow-content">
-          {{ fullText }}
-        </v-expansion-panel-content>
-      </v-expansion-panel>
-      <v-expansion-panel>
-        <v-expansion-panel-header>Mentioned Genes</v-expansion-panel-header>
-        <v-expansion-panel-content class="overflow-content">
-          <v-chip-group v-for="geneSymbol in geneSymbols">
+  <v-card flat>
+    <v-list class="blue lighten-5 pt-0" two-lines>
+      <v-list-item three-line>
+        <v-icon x-large class="pr-2" color="#5b9ad9">fas fa-book</v-icon>
+        <v-list-item-content flex-sm-column>
+          <v-list-item-title class="primary--text wrapText">
+            <v-tooltip top>
+              <template v-slot:activator="{ on }">
+                <h4 v-on="on">
+                  {{ value.properties.title }}
+                </h4>
+              </template>
+              <span>{{ value.properties.title }}</span>
+            </v-tooltip>
+          </v-list-item-title>
+        </v-list-item-content>
+      </v-list-item>
+    </v-list>
+    <v-layout class="blue lighten-5">
+      <v-col class="flex-row-reverse d-flex pt-0">
+        <v-card-actions class="wrap-actions">
+          <v-menu>
+            <template v-slot:activator="{ on: menu }">
+              <v-btn outlined rounded color="primary" light v-on="{ ...menu }"
+                >LOAD MORE</v-btn
+              >
+            </template>
+            <v-list>
+              <v-list-item @click="loadAuthors">
+                <v-list-item-title class="purple--text"
+                  ><b>AUTHORS</b></v-list-item-title
+                >
+              </v-list-item>
+              <v-list-item @click="loadGenes">
+                <v-list-item-title class="green--text"
+                  ><b>GENES</b></v-list-item-title
+                >
+              </v-list-item>
+              <v-list-item @click="loadReferencedPapers">
+                <v-list-item-title class="primary--text"
+                  ><b>REFERENCED PAPERS</b></v-list-item-title
+                >
+              </v-list-item>
+              <v-list-item @click="loadReferencingPapers">
+                <v-list-item-title class="primary--text"
+                  ><b>REFERENCING PAPERS</b></v-list-item-title
+                >
+              </v-list-item>
+              <v-list-item @click="loadAffiliations">
+                <v-list-item-title class="yellow--text textStroke"
+                  ><b>AFFILIATIONS</b></v-list-item-title
+                >
+              </v-list-item>
+            </v-list>
+          </v-menu>
+        </v-card-actions>
+      </v-col>
+    </v-layout>
+    <v-expansion-panels v-model="panel" multiple accordion flat>
+      <PanelItem
+        itemTitle="Published"
+        :items="[value.properties.publish_time || 'n/a']"
+      />
+      <PanelItem itemTitle="Abstract" :items="[abstract]" />
+      <PanelItem itemTitle="Full Text" :items="[fullText]" />
+      <v-expansion-panel v-if="geneSymbols.length" class="mr-1" flat>
+        <v-expansion-panel-header class="primary--text pb-0">
+          <b>Mentioned Genes</b>
+        </v-expansion-panel-header>
+        <v-expansion-panel-content class="grey lighten-5">
+          <v-chip-group v-for="(geneSymbol, i) in geneSymbols" :key="i">
             <v-chip label>
               <v-avatar left>
                 <v-icon color="#BCD104">mdi-dna</v-icon>
@@ -98,8 +79,10 @@
           </v-chip-group>
         </v-expansion-panel-content>
       </v-expansion-panel>
-      <v-expansion-panel>
-        <v-expansion-panel-header>Authors</v-expansion-panel-header>
+      <v-expansion-panel v-if="authors.length" class="mr-1">
+        <v-expansion-panel-header class="primary--text pb-0">
+          <b>Authors</b>
+        </v-expansion-panel-header>
         <v-expansion-panel-content class="overflow-content">
           <v-chip-group column>
             <v-chip
@@ -130,18 +113,17 @@
                 <v-icon color="#D12EAE">mdi-account-circle</v-icon>
               </v-avatar>
               {{ author.properties.first }}
-              {{ author.properties.middle }}
+              {{ author.properties.middle || "" }}
               {{ author.properties.last }}
             </v-chip>
           </v-chip-group>
         </v-expansion-panel-content>
       </v-expansion-panel>
-      <v-expansion-panel>
-        <v-expansion-panel-header>License</v-expansion-panel-header>
-        <v-expansion-panel-content>
-          {{ this.value.properties.license }}
-        </v-expansion-panel-content>
-      </v-expansion-panel>
+      <PanelItem
+        itemTitle="License"
+        v-if="value.properties.license"
+        :items="[value.properties.license]"
+      />
     </v-expansion-panels>
   </v-card>
 </template>
@@ -154,9 +136,13 @@ import {
   loadBodyTextForPaper,
   loadGenesForPaper,
 } from "../util/queries";
+import PanelItem from "./shared/PanelItem";
 
 export default {
   name: "PaperPanel",
+  components: {
+    PanelItem,
+  },
   data: () => ({
     abstract: "",
     fullText: "",
@@ -236,15 +222,17 @@ export default {
 
 <style scoped>
 .overflow-content {
-  max-height: 300px;
+  max-height: 350px;
   overflow-y: auto;
 }
 .wrap-actions {
   flex-wrap: wrap;
   justify-content: flex-end;
 }
-.action-button {
-  margin-top: 5px;
-  margin-bottom: 5px;
+.wrapText {
+  white-space: normal !important;
+}
+.textStroke {
+  -webkit-text-stroke: 0.4px gray;
 }
 </style>

@@ -30,9 +30,13 @@
             v-bind="data.attrs"
             :input-value="data.selected"
             close
+            color="lime lighten-4"
             @click="data.select"
             @click:close="remove(data.item)"
           >
+            <v-avatar left>
+              <v-icon color="#BCD104">mdi-dna</v-icon>
+            </v-avatar>
             {{ data.item.sid }}
           </v-chip>
         </template>

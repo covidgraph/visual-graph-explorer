@@ -32,105 +32,35 @@
       >
     </v-list>
     <v-expansion-panels multiple accordion flat>
-      <v-expansion-panel v-if="nonPrimeTitles.length" class="mr-1">
-        <v-expansion-panel-header class="primary--text pb-0"
-          ><b>OTHER TITLES</b></v-expansion-panel-header
-        >
-        <v-expansion-panel-content class="grey lighten-5">
-          <v-list class="pa-0 ma-0 pt-2">
-            <div v-for="(title, i) in nonPrimeTitles" :key="i">
-              <v-list-item class="pa-0 pt-2">
-                <v-list-item-content class="pa-0 ma-0">
-                  <span
-                    class="primary--text wrapText subtitle-2 pb-2"
-                    v-text="
-                      `${title.text
-                        .charAt(0)
-                        .toUpperCase()}${title.text
-                        .toLowerCase()
-                        .slice(1)} (${title.lang.toUpperCase()})`
-                    "
-                  />
-                </v-list-item-content>
-              </v-list-item>
-              <v-divider v-if="i < nonPrimeTitles.length - 1" />
-            </div>
-          </v-list>
-        </v-expansion-panel-content>
-      </v-expansion-panel>
-      <v-expansion-panel v-if="patent.date" class="mr-1">
-        <v-expansion-panel-header class="primary--text pb-0"
-          ><b>DATE</b></v-expansion-panel-header
-        >
-        <v-expansion-panel-content class="grey lighten-5">
-          <v-list class="pa-0 ma-0 pt-2">
-            <div>
-              <v-list-item class="pa-0">
-                <v-list-item-content class="pa-0 ma-0">
-                  <span
-                    class="primary--text subtitle-2 wrapText"
-                    v-text="patent.date"
-                  />
-                </v-list-item-content>
-              </v-list-item>
-            </div>
-          </v-list>
-        </v-expansion-panel-content>
-      </v-expansion-panel>
-      <v-expansion-panel v-if="patent.classification_cpc.length" class="mr-1">
-        <v-expansion-panel-header class="primary--text pb-0"
-          ><b>CLASSIFICATION CPC</b></v-expansion-panel-header
-        >
-        <v-expansion-panel-content class="grey lighten-5">
-          <v-list class="pa-0 ma-0 pt-2">
-            <div v-for="(c, i) in patent.classification_cpc" :key="i">
-              <v-list-item class="pa-0">
-                <v-list-item-content class="pa-0 ma-0">
-                  <span class="primary--text subtitle-2 wrapText" v-text="c" />
-                </v-list-item-content>
-              </v-list-item>
-              <v-divider v-if="i < patent.classification_cpc.length - 1" />
-            </div>
-          </v-list>
-        </v-expansion-panel-content>
-      </v-expansion-panel>
-      <v-expansion-panel v-if="patent.classification_ipc.length" class="mr-1">
-        <v-expansion-panel-header class="primary--text pb-0"
-          ><b>CLASSIFICATION IPC</b></v-expansion-panel-header
-        >
-        <v-expansion-panel-content class="grey lighten-5">
-          <v-list class="pa-0 ma-0 pt-2">
-            <div v-for="(c, i) in patent.classification_ipc" :key="i">
-              <v-list-item class="pa-0">
-                <v-list-item-content class="pa-0 ma-0">
-                  <span class="primary--text subtitle-2 wrapText" v-text="c" />
-                </v-list-item-content>
-              </v-list-item>
-              <v-divider v-if="i < patent.classification_ipc.length - 1" />
-            </div>
-          </v-list>
-        </v-expansion-panel-content>
-      </v-expansion-panel>
-      <v-expansion-panel v-if="patent.classificaiton_us.length" class="mr-1">
-        <v-expansion-panel-header class="primary--text pb-0"
-          ><b>CLASSIFICATION US</b></v-expansion-panel-header
-        >
-        <v-expansion-panel-content class="grey lighten-5">
-          <v-list class="pa-0 ma-0">
-            <v-list-item-group
-              v-for="(c, i) in patent.classificaiton_us"
-              :key="i"
-            >
-              <v-list-item class="pa-0 ma-0">
-                <v-list-item-content>
-                  <span class="primary--text subtitle-2 wrapText" v-text="c" />
-                </v-list-item-content>
-              </v-list-item>
-              <v-divider v-if="i < patent.classificaiton_us.length - 1" />
-            </v-list-item-group>
-          </v-list>
-        </v-expansion-panel-content>
-      </v-expansion-panel>
+      <PanelItem
+        itemTitle="Other titles"
+        :items="
+          nonPrimeTitles.map(
+            (title) =>
+              `${title.text
+                .charAt(0)
+                .toUpperCase()}${title.text
+                .toLowerCase()
+                .slice(1)} (${title.lang.toUpperCase()})`
+          )
+        "
+      />
+      <PanelItem itemTitle="Date" :items="[patent.date]" />
+      <PanelItem
+        itemTitle="Classification CPC"
+        v-if="patent.classification_cpc"
+        :items="patent.classification_cpc"
+      />
+      <PanelItem
+        itemTitle="Classification IPC"
+        v-if="patent.classification_ipc"
+        :items="patent.classification_ipc"
+      />
+      <PanelItem
+        itemTitle="Classification US"
+        v-if="patent.classification_us"
+        :items="patent.classification_us"
+      />
     </v-expansion-panels>
   </v-card>
 </template>
@@ -138,9 +68,13 @@
 <script>
 import { loadTitlesForPatent } from "../util/queries";
 import * as neo4j from "neo4j-driver/lib/browser/neo4j-web";
+import PanelItem from "./shared/PanelItem";
 
 export default {
   name: "PatentPanel",
+  components: {
+    PanelItem,
+  },
   data: () => ({
     titles: [],
     patent: null,
@@ -225,6 +159,6 @@ export default {
   background-color: $patent-color !important;
 }
 .wrapText {
-  white-space: initial;
+  white-space: normal !important;
 }
 </style>

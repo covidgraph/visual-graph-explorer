@@ -1,14 +1,14 @@
 <template>
-  <v-card v-if="nodeIs('Paper')">
+  <v-card v-if="nodeIs('Paper')" flat>
     <PaperPanel :value="model"></PaperPanel>
   </v-card>
-  <v-card v-else-if="nodeIs('Author')">
+  <v-card v-else-if="nodeIs('Author')" flat>
     <AuthorPanel :value="model"></AuthorPanel>
   </v-card>
-  <v-card v-else-if="nodeIs('Affiliation')">
+  <v-card v-else-if="nodeIs('Affiliation')" flat>
     <AffiliationPanel :value="model"></AffiliationPanel>
   </v-card>
-  <v-card v-else-if="nodeIs('GeneSymbol')">
+  <v-card v-else-if="nodeIs('GeneSymbol')" flat>
     <GenePanel :value="model"></GenePanel>
   </v-card>
   <v-card v-else-if="nodeIs('Patent')" flat>
