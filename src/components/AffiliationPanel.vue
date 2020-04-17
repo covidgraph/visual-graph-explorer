@@ -10,7 +10,7 @@
                 {{ value.properties.institution }}
               </h4>
               <span class="caption">
-                {{ value.properties.suffix }}
+                {{ value.properties.laboratory }}
               </span>
             </div>
           </v-list-item-title>
@@ -27,26 +27,6 @@
       </v-col>
     </v-layout>
   </v-card>
-  <!-- <v-card>
-    <v-list-item class="header">
-      <v-icon x-large color="white">mdi-office-building</v-icon>
-      <v-list-item-content>
-        <v-list-item-title style="color: white;">
-          {{ value.properties.institution }}
-        </v-list-item-title>
-        <v-list-item-subtitle style="color: #dddddd;">
-          {{ value.properties.laboratory }}
-        </v-list-item-subtitle>
-      </v-list-item-content>
-    </v-list-item>
-
-    <v-card-actions>
-      <v-spacer></v-spacer>
-      <v-btn text outlined rounded color="primary" @click="loadPapers">
-        Load Papers
-      </v-btn>
-    </v-card-actions>
-  </v-card> -->
 </template>
 
 <script>
