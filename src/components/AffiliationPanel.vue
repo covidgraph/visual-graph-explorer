@@ -2,7 +2,9 @@
   <v-card flat>
     <v-list class="yellow lighten-5 pt-0 pb-0">
       <v-list-item three-line>
-        <v-icon x-large color="yellow">mdi-office-building</v-icon>
+        <v-icon x-large color="yellow accent-1" class="textStroke"
+          >mdi-office-building</v-icon
+        >
         <v-list-item-content flex-sm-column>
           <v-list-item-title class="primary--text wrapText pl-2">
             <div class="wrapText">
@@ -45,5 +47,8 @@ export default {
 <style scoped>
 .wrapText {
   white-space: normal !important;
+}
+.textStroke {
+  -webkit-text-stroke: 0.4px gray;
 }
 </style>
