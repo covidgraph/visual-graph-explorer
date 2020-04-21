@@ -1,12 +1,469 @@
-import { DefaultGraph, IEdge, INode } from "yfiles";
+import {
+  DefaultGraph,
+  IEdge,
+  INode,
+  GraphComponent,
+  Rect,
+  Point,
+  OrganicLayout,
+} from "yfiles";
 
 import coreQuery from "./dbconnection";
+import { getId } from "./Neo4jGraphBuilder";
+import { isOfType } from "./queries";
 
 async function query(query, args = {}, name = "result") {
   return (await coreQuery(query, args)).records.map((r) => r.get(name));
 }
 
 const limit = 200;
+
+export class IncrementalGraphLoader {
+  /**
+   * @param {GraphComponent} graphComponent
+   * @param {SchemaBasedLoader} loader
+   */
+  constructor(loader, graphComponent) {
+    this.loader = loader;
+    this.graphComponent = graphComponent;
+    /** @type {Map<any, INode>} */
+    this.id2NodeMapping = new Map();
+    this.layout = new OrganicLayout({
+      minimumNodeDistance: 100,
+    });
+  }
+
+  createNodeCreator(style, size, labels) {
+    return (item, location) => {
+      return this.registerNode(
+        this.graphComponent.graph.createNode({
+          tag: item,
+          layout: Rect.fromCenter(location || Point.ORIGIN, size),
+          style: style,
+          labels: labels(item),
+        }),
+        item
+      );
+    };
+  }
+
+  createEdgeCreator(style, labels) {
+    return (item, source, target) => {
+      this.graphComponent.graph.createEdge({
+        source,
+        target,
+        style,
+        labels: labels(item),
+        tag: item,
+      });
+    };
+  }
+
+  addNodeType(type, style, size, labels = null) {
+    let node = this.loader.addNodeType(type);
+    node.tag.creator = this.createNodeCreator(
+      style,
+      size,
+      labels || (() => [])
+    );
+    node.tag.type = type;
+    return node;
+  }
+
+  addRelationShip(
+    sourceNode,
+    targetNode,
+    style = null,
+    labels = null,
+    matchClause = null
+  ) {
+    if (matchClause === null) {
+      matchClause = `(sourceNode:${sourceNode.tag.type})-->(targetNode:${targetNode.tag.type})`;
+    }
+    if (labels === null) {
+      labels = () => [];
+    }
+    let relationShipType = sourceNode.tag.type + "->" + targetNode.tag.type;
+    let edge = this.loader.addRelationShip(
+      relationShipType,
+      sourceNode,
+      targetNode,
+      matchClause
+    );
+    edge.tag.creator = this.createEdgeCreator(style || edgeStyle, labels);
+    edge.tag.type = relationShipType;
+    return edge;
+  }
+
+  /**
+   *
+   * @param {INode} node
+   * @param item
+   * @return {INode}
+   */
+  registerNode(node, item) {
+    this.id2NodeMapping.set(getId(item.identity), node);
+    return node;
+  }
+
+  /** @return {INode} */
+  getLoadedNode(item) {
+    return this.id2NodeMapping.get(getId(item.identity));
+  }
+
+  getLoadedItemsOfType(schemaNode) {
+    return this.graphComponent.graph.nodes
+      .map((n) => n.tag)
+      .filter((t) => isOfType(t, schemaNode.tag.type))
+      .toArray();
+  }
+
+  async loadAndConnectSchemaOutEdges(
+    item,
+    schemaEdge,
+    nodeCreator,
+    edgeCreator
+  ) {
+    let node = this.getLoadedNode(item);
+    let newItems = [];
+    if (node) {
+      let location = node.layout.center.toPoint();
+      let graph = this.graphComponent.graph;
+      (await this.loader.loadOutEdges(schemaEdge, item)).forEach((item) => {
+        let existingNode = this.getLoadedNode(item);
+        if (existingNode) {
+          if (!graph.getEdge(node, existingNode)) {
+            edgeCreator(item, node, existingNode);
+          }
+        } else {
+          newItems.push(item);
+          let newNode = nodeCreator(item, location);
+          if (!graph.getEdge(node, newNode)) {
+            edgeCreator(item, node, newNode);
+          }
+        }
+      });
+      return newItems;
+    }
+  }
+
+  async loadAndConnectSchemaTargets(
+    items,
+    schemaEdge,
+    nodeCreator,
+    edgeCreator
+  ) {
+    let nodes = items
+      .map((item) => this.getLoadedNode(item))
+      .filter((item) => !!item);
+    let newItems = [];
+    if (nodes.length > 0) {
+      let location = nodes[0].layout.center.toPoint();
+      let graph = this.graphComponent.graph;
+      (await this.loader.loadCommonTargets(schemaEdge, items)).forEach(
+        (item) => {
+          let existingNode = this.getLoadedNode(item);
+          if (existingNode) {
+            nodes.forEach((node) => {
+              if (!graph.getEdge(node, existingNode)) {
+                edgeCreator(item, node, existingNode);
+              }
+            });
+          } else {
+            newItems.push(item);
+            let newNode = nodeCreator(item, location);
+            nodes.forEach((node) => {
+              if (!graph.getEdge(node, newNode)) {
+                edgeCreator(item, node, newNode);
+              }
+            });
+          }
+        }
+      );
+      return newItems;
+    }
+  }
+
+  async loadAndConnectSchemaSources(
+    items,
+    schemaEdge,
+    nodeCreator,
+    edgeCreator
+  ) {
+    let nodes = items
+      .map((item) => this.getLoadedNode(item))
+      .filter((item) => !!item);
+    let newItems = [];
+    if (nodes.length > 0) {
+      let location = nodes[0].layout.center.toPoint();
+      let graph = this.graphComponent.graph;
+      (await this.loader.loadCommonSources(schemaEdge, items)).forEach(
+        (item) => {
+          let existingNode = this.getLoadedNode(item);
+          if (existingNode) {
+            nodes.forEach((node) => {
+              if (!graph.getEdge(existingNode, node)) {
+                edgeCreator(item, existingNode, node);
+              }
+            });
+          } else {
+            newItems.push(item);
+            let newNode = nodeCreator(item, location);
+            nodes.forEach((node) => {
+              if (!graph.getEdge(newNode, node)) {
+                edgeCreator(item, newNode, node);
+              }
+            });
+          }
+        }
+      );
+      return newItems;
+    }
+  }
+
+  async loadAndConnectSchemaInEdges(
+    item,
+    schemaEdge,
+    nodeCreator,
+    edgeCreator
+  ) {
+    let node = this.getLoadedNode(item);
+    let newItems = [];
+    if (node) {
+      let location = node.layout.center.toPoint();
+      let graph = this.graphComponent.graph;
+      (await this.loader.loadInEdges(schemaEdge, item)).forEach((item) => {
+        let existingNode = this.getLoadedNode(item);
+        if (existingNode) {
+          if (!graph.getEdge(existingNode, node)) {
+            edgeCreator(item, existingNode, node);
+          }
+        } else {
+          newItems.push(item);
+          let newNode = nodeCreator(item, location);
+          if (!graph.getEdge(newNode, node)) {
+            edgeCreator(item, newNode, node);
+          }
+        }
+      });
+    }
+    return newItems;
+  }
+
+  async loadAndConnectSchemaUndirectedEdges(
+    item,
+    schemaEdge,
+    nodeCreator,
+    edgeCreator
+  ) {
+    let node = this.getLoadedNode(item);
+    let newItems = [];
+    if (node) {
+      let location = node.layout.center.toPoint();
+      let graph = this.graphComponent.graph;
+      (await this.loader.loadOutEdges(schemaEdge, item)).forEach((item) => {
+        let existingNode = this.getLoadedNode(item);
+        if (existingNode) {
+          if (
+            !graph.getEdge(existingNode, node) &&
+            !graph.getEdge(node, existingNode)
+          ) {
+            edgeCreator(item, existingNode, node);
+          }
+        } else {
+          newItems.push(item);
+          let newNode = nodeCreator(this, item, location);
+          if (!graph.getEdge(newNode, node) && !graph.getEdge(node, newNode)) {
+            edgeCreator(item, newNode, node);
+          }
+        }
+      });
+      return newItems;
+    }
+  }
+
+  remove(items) {
+    items
+      .slice()
+      .map((item) => this.getLoadedNode(item))
+      .filter((node) => node != null)
+      .forEach((node) => {
+        this.graphComponent.graph.remove(node);
+        this.id2NodeMapping.delete(getId(node.tag.identity));
+      });
+  }
+
+  async loadAndLayout(load) {
+    const oldElementCounter =
+      this.graphComponent.graph.nodes.size +
+      this.graphComponent.graph.edges.size;
+    const result = await load();
+    if (
+      this.graphComponent.graph.nodes.size +
+        this.graphComponent.graph.edges.size >
+      oldElementCounter
+    ) {
+      await this.runLayout();
+    }
+    return result;
+  }
+
+  clearGraph() {
+    this.id2NodeMapping.clear();
+    this.graphComponent.graph.clear();
+  }
+
+  /** @param {function():Promise<object[]>} loadNodesFunction */
+  async loadNodes(loadNodesFunction, creator) {
+    return await this.loadAndLayout(async () =>
+      (await loadNodesFunction())
+        .filter((item) => !this.getLoadedNode(item))
+        .forEach((item) => creator(item))
+    );
+  }
+
+  async loadNodesForSchema(schemaNode, whereClauses, params) {
+    return this.loadAndLayout(async () => {
+      let nodes = await this.loader.loadNodes(schemaNode, whereClauses, params);
+      nodes
+        .filter((item) => !this.getLoadedNode(item))
+        .forEach((item) => schemaNode.tag.creator(item));
+      return nodes;
+    });
+  }
+
+  async loadNodeForSchema(schemaNode, id) {
+    return await this.loadAndLayout(async () => {
+      let item = await this.loader.loadNodeById(schemaNode, id);
+      if (item && !this.getLoadedNode(item)) {
+        schemaNode.tag.creator(item);
+      }
+      return item;
+    });
+  }
+
+  loadMissingEdges(missingEdges, schemaEdge) {
+    let graph = this.graphComponent.graph;
+    missingEdges.forEach((missingEdge) => {
+      let sourceNode = this.getLoadedNode({
+        identity: missingEdge.sourceId,
+      });
+      let targetNode = this.getLoadedNode({
+        identity: missingEdge.targetId,
+      });
+      if (!graph.getEdge(sourceNode, targetNode)) {
+        schemaEdge.tag.creator({}, sourceNode, targetNode);
+      }
+    });
+  }
+
+  async loadMissingEdgesForSchemaNodes(schemaNode, newItems) {
+    if (newItems.length > 0) {
+      await Promise.all(
+        this.loader.schemaGraph
+          .inEdgesAt(schemaNode)
+          .toArray()
+          .map(async (schemaEdge) => {
+            const missingEdges = await this.loader.loadMissingEdges(
+              schemaEdge,
+              this.getLoadedItemsOfType(schemaEdge.sourceNode),
+              newItems
+            );
+            this.loadMissingEdges(missingEdges, schemaEdge);
+          })
+      );
+      await Promise.all(
+        this.loader.schemaGraph
+          .outEdgesAt(schemaNode)
+          .filter((e) => e.targetNode !== schemaNode)
+          .toArray()
+          .map(async (schemaEdge) => {
+            const missingEdges = await this.loader.loadMissingEdges(
+              schemaEdge,
+              newItems,
+              this.getLoadedItemsOfType(schemaEdge.targetNode)
+            );
+            this.loadMissingEdges(missingEdges, schemaEdge);
+          })
+      );
+    }
+  }
+
+  async loadInEdges(item, schemaEdge) {
+    await this.loadAndLayout(async () => {
+      const newItems = await this.loadAndConnectSchemaInEdges(
+        item,
+        schemaEdge,
+        schemaEdge.sourceNode.tag.creator,
+        schemaEdge.tag.creator
+      );
+      await this.loadMissingEdgesForSchemaNodes(
+        schemaEdge.sourceNode,
+        newItems
+      );
+    });
+  }
+
+  async loadOutEdges(item, schemaEdge) {
+    await this.loadAndLayout(async () => {
+      const newItems = await this.loadAndConnectSchemaOutEdges(
+        item,
+        schemaEdge,
+        schemaEdge.targetNode.tag.creator,
+        schemaEdge.tag.creator
+      );
+      await this.loadMissingEdgesForSchemaNodes(
+        schemaEdge.targetNode,
+        newItems
+      );
+    });
+  }
+
+  async loadTargets(items, schemaEdge) {
+    await this.loadAndLayout(async () => {
+      const newItems = await this.loadAndConnectSchemaTargets(
+        items,
+        schemaEdge,
+        schemaEdge.targetNode.tag.creator,
+        schemaEdge.tag.creator
+      );
+      await this.loadMissingEdgesForSchemaNodes(
+        schemaEdge.targetNode,
+        newItems
+      );
+    });
+  }
+
+  async loadSources(items, schemaEdge) {
+    await this.loadAndLayout(async () => {
+      const newItems = await this.loadAndConnectSchemaSources(
+        items,
+        schemaEdge,
+        schemaEdge.sourceNode.tag.creator,
+        schemaEdge.tag.creator
+      );
+      await this.loadMissingEdgesForSchemaNodes(
+        schemaEdge.sourceNode,
+        newItems
+      );
+    });
+  }
+
+  async loadEdges(item, schemaEdge) {
+    await this.loadAndLayout(() =>
+      this.loadAndConnectSchemaUndirectedEdges(
+        item,
+        schemaEdge,
+        schemaEdge.sourceNode.tag.creator,
+        schemaEdge.tag.creator
+      )
+    );
+  }
+
+  async runLayout() {
+    await this.graphComponent.morphLayout(this.layout);
+  }
+}
 
 export default class SchemaBasedLoader {
   schemaGraph = new DefaultGraph();
@@ -82,23 +539,6 @@ export default class SchemaBasedLoader {
     )}) WHERE id(sourceNode) in $sourceIds MATCH ${
       schemaEdge.tag.matchClause
     } WHERE id(targetNode) in $targetIds RETURN id(sourceNode) as sourceNodeId, id(targetNode) as targetNodeId LIMIT ${limit}`;
-  }
-
-  /** @param {IEdge[]} schemaEdges */
-  createCommonNeighborsQuery(schemaEdges) {
-    /*
-     MATCH (sourceNode:Author)-[:AUTHOR_HAS_AFFILIATION]->(targetNode:Affiliation) WHERE id(sourceNode) = 2052470 WITH collect(targetNode) as targetList
-     MATCH (sourceNode:Author)-[:AUTHOR_HAS_AFFILIATION]->(targetNode:Affiliation) WHERE id(sourceNode) = 404 AND targetNode in targetList WITH collect(targetNode) as targetList
-     RETURN targetList
-     */
-
-    return `${schemaEdges.map((edge, i) =>
-      `MATCH ${schemaEdges.tag.matchClause} WHERE ${
-        i > 0 ? "targetNode in targetList AND" : ""
-      } id(sourceNode) = $id[${i}] 
-      WITH collect(distinct(targetNode)) as targetList`.join("\n")
-    )}
-      RETURN targetList as result`;
   }
 
   /**

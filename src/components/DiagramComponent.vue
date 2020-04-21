@@ -159,16 +159,9 @@ import {
   GraphViewerInputMode,
   LayoutExecutor,
   License,
-  OrganicLayout,
   ShapeNodeStyle,
-  Size,
-  Rect,
   Point,
   Color,
-  ComponentArrangementStyles,
-  ComponentLayout,
-  IVisualTemplate,
-  RectangleIndicatorInstaller,
   StyleDecorationZoomPolicy,
   ShapeNodeShape,
   INode,
@@ -176,38 +169,26 @@ import {
   Arrow,
   ArrowType,
   Stroke,
-  DefaultLabelStyle,
-  SmartEdgeLabelModel,
   NodeStyleDecorationInstaller,
   EdgeStyleDecorationInstaller,
   IEdge,
 } from "yfiles";
 import ContextMenu from "./ContextMenu";
-import { getId } from "../util/Neo4jGraphBuilder";
 import PopupPanel from "./PopupPanel";
 import { enableWorkarounds } from "./../util/Workarounds";
-import VuejsNodeStyle from "../graph-styles/VuejsNodeStyle.js";
-import SchemaBasedLoader from "../util/schema-based-loader";
-import PaperNode from "../graph-styles/PaperNode";
-import AuthorNode from "../graph-styles/AuthorNode";
-import PatentNode from "../graph-styles/PatentNode";
-import GeneNode from "../graph-styles/GeneNode";
 import { isOfType } from "../util/queries";
-import { query } from "../util/queries";
+import {
+  CovidGraphLoader,
+  edgeStyle,
+  edgeLabelStyle,
+  edgeLabelLayoutParameter,
+} from "../util/CovidGraphLoader";
 
 License.value = licenseData;
 
 enableWorkarounds();
 
 Class.ensure(LayoutExecutor);
-
-const paperNodeStyle = new VuejsNodeStyle(PaperNode);
-
-const patentNodeStyle = new VuejsNodeStyle(PatentNode);
-
-const authorNodeStyle = new VuejsNodeStyle(AuthorNode);
-
-const geneNodeStyle = new VuejsNodeStyle(GeneNode);
 
 /**
  * @param {GraphComponent} graphComponent
@@ -268,148 +249,6 @@ function initializeHighlightStyles(graphComponent) {
   );
 }
 
-const edgeStyle = new PolylineEdgeStyle({
-  stroke: new Stroke({
-    fill: "gray",
-    thickness: 3,
-  }),
-  targetArrow: new Arrow({
-    fill: "gray",
-    type: ArrowType.TRIANGLE,
-    scale: 2,
-  }),
-});
-const wroteEdgeStyle = new PolylineEdgeStyle({
-  stroke: "2px blue",
-});
-const edgeLabelStyle = new DefaultLabelStyle({
-  textFill: "gray",
-  textSize: 20,
-});
-const edgeLabelLayoutParameter = new SmartEdgeLabelModel({
-  autoRotation: true,
-}).createParameterFromSource({
-  distance: 6,
-  segmentIndex: 0,
-  segmentRatio: 0.5,
-});
-
-function createNodeCreator(style, size, labels) {
-  return function (item, location) {
-    return this.registerNode(
-      this.$graphComponent.graph.createNode({
-        tag: item,
-        layout: Rect.fromCenter(location || Point.ORIGIN, size),
-        style: style,
-        labels: labels(item),
-      }),
-      item
-    );
-  };
-}
-
-function createEdgeCreator(style, labels) {
-  return function (item, source, target) {
-    this.$graphComponent.graph.createEdge({
-      source,
-      target,
-      style,
-      labels: labels(item),
-      tag: item,
-    });
-  };
-}
-
-let loader = new SchemaBasedLoader();
-
-function addNodeType(type, style, size, labels = null) {
-  let node = loader.addNodeType(type);
-  node.tag.creator = createNodeCreator(style, size, labels || (() => []));
-  node.tag.type = type;
-  return node;
-}
-
-function addRelationShip(
-  sourceNode,
-  targetNode,
-  style = null,
-  labels = null,
-  matchClause = null
-) {
-  if (matchClause === null) {
-    matchClause = `(sourceNode:${sourceNode.tag.type})-->(targetNode:${targetNode.tag.type})`;
-  }
-  if (labels === null) {
-    labels = () => [];
-  }
-  let relationShipType = sourceNode.tag.type + "->" + targetNode.tag.type;
-  let edge = loader.addRelationShip(
-    relationShipType,
-    sourceNode,
-    targetNode,
-    matchClause
-  );
-  edge.tag.creator = createEdgeCreator(style || edgeStyle, labels);
-  edge.tag.type = relationShipType;
-  return edge;
-}
-
-let patentType = addNodeType("Patent", patentNodeStyle, new Size(40, 40));
-let paperType = addNodeType("Paper", paperNodeStyle, new Size(150, 150));
-let authorType = addNodeType("Author", authorNodeStyle, new Size(150, 150));
-let affiliationType = addNodeType(
-  "Affiliation",
-  new ShapeNodeStyle({ stroke: null, fill: "yellow", shape: "ellipse" }),
-  new Size(50, 50),
-  (affiliation) => [affiliation.properties.institution || "untitled"]
-);
-let geneSymbolType = addNodeType(
-  "GeneSymbol",
-  geneNodeStyle,
-  new Size(150, 150)
-);
-
-let paper_author = addRelationShip(
-  paperType,
-  authorType,
-  wroteEdgeStyle,
-  () => [],
-  "(sourceNode:Paper)-[:PAPER_HAS_METADATA]->(m:Metadata)-[:METADATA_HAS_AUTHOR]->(:Author:CollectionHub)-[:AUTHOR_HAS_AUTHOR]->(targetNode:Author)"
-);
-
-let paper_affiliation = addRelationShip(
-  paperType,
-  affiliationType,
-  wroteEdgeStyle,
-  () => [],
-  "(sourceNode:Paper)-[:PAPER_HAS_METADATA]->(m:Metadata)-[:METADATA_HAS_AUTHOR]->(:Author:CollectionHub)-[:AUTHOR_HAS_AUTHOR]->(:Author)-[:AUTHOR_HAS_AFFILIATION]->(targetNode:Affiliation)"
-);
-
-let paper_geneSymbol = addRelationShip(
-  paperType,
-  geneSymbolType,
-  edgeStyle,
-  () => [],
-  //"(sourceNode:Paper)-[:PAPER_HAS_ABSTRACT]->(:Abstract:CollectionHub)-[:ABSTRACT_HAS_ABSTRACT]->(:Abstract)-[:HAS_FRAGMENT]->(f)-[:MENTIONS]->(targetNode:GeneSymbol)"
-  "(sourceNode:Paper)-[:PAPER_HAS_BODY_TEXT]->(:Body_text:CollectionHub)-[:BODY_TEXT_HAS_BODY_TEXT]->(:Body_text)-[:HAS_FRAGMENT]->(f)-[:MENTIONS]->(targetNode:GeneSymbol)"
-);
-
-let patent_geneSymbol = addRelationShip(
-  patentType,
-  geneSymbolType,
-  edgeStyle,
-  () => [],
-  "(sourceNode:Patent)-[:HAS_DESCRIPTION]->(:PatentDescription)-[:HAS_FRAGMENT]->(f)-[:MENTIONS]->(targetNode:GeneSymbol)"
-);
-
-let paper_paper = addRelationShip(
-  paperType,
-  paperType,
-  edgeStyle,
-  () => [],
-  "(sourceNode:Paper)-[:PAPER_HAS_BIB_ENTRIES]->(:Bib_entries)-[:BIB_ENTRIES_HAS_BIBREF]->(:Bibref)-[:BIBREF_HAS_OTHER_IDS]->(:Other_ids)-->(:CollectionHub)-->(paperId)<-[:PAPERID_COLLECTION_HAS_PAPERID]-(:CollectionHub:PaperID)<-[:PAPER_HAS_PAPERID_COLLECTION]-(targetNode:Paper)"
-);
-
 export default {
   name: "DiagramComponent",
   components: {
@@ -436,7 +275,8 @@ export default {
     );
 
     const graph = this.$graphComponent.graph;
-    //graph.decorator.nodeDecorator.selectionDecorator.hideImplementation();
+
+    this.loader = new CovidGraphLoader(this.$graphComponent);
 
     const graphModelManager = this.$graphComponent.graphModelManager;
     graphModelManager.edgeLabelGroup.below(graphModelManager.nodeGroup);
@@ -445,7 +285,6 @@ export default {
     graph.edgeDefaults.labels.style = edgeLabelStyle;
     graph.edgeDefaults.labels.layoutParameter = edgeLabelLayoutParameter;
 
-    this.id2NodeMapping = new Map();
     let viewerInputMode = new GraphViewerInputMode();
     viewerInputMode.contextMenuItems = GraphItemTypes.NODE;
     viewerInputMode.contextMenuInputMode.addPopulateMenuListener(
@@ -453,6 +292,7 @@ export default {
         evt.showMenu = true;
       }
     );
+
     viewerInputMode.clickableItems = GraphItemTypes.NODE | GraphItemTypes.EDGE;
     viewerInputMode.selectableItems = GraphItemTypes.NODE;
     this.$graphComponent.inputMode = viewerInputMode;
@@ -613,173 +453,6 @@ export default {
         );
       }
     },
-
-    registerNode(node, item) {
-      this.id2NodeMapping.set(getId(item.identity), node);
-      return node;
-    },
-    getLoadedNode(item) {
-      return this.id2NodeMapping.get(getId(item.identity));
-    },
-    getLoadedItemsOfType(schemaNode) {
-      return this.$graphComponent.graph.nodes
-        .map((n) => n.tag)
-        .filter((t) => isOfType(t, schemaNode.tag.type))
-        .toArray();
-    },
-    async loadAndLayout(load) {
-      const oldElementCounter =
-        this.$graphComponent.graph.nodes.size +
-        this.$graphComponent.graph.edges.size;
-      const result = await load();
-      if (
-        this.$graphComponent.graph.nodes.size +
-          this.$graphComponent.graph.edges.size >
-        oldElementCounter
-      ) {
-        await this.runLayout();
-      }
-      return result;
-    },
-    clearGraph() {
-      this.id2NodeMapping.clear();
-      this.$graphComponent.graph.clear();
-    },
-    loadMissingEdges: function (missingEdges, schemaEdge) {
-      let graph = this.$graphComponent.graph;
-      missingEdges.forEach((missingEdge) => {
-        let sourceNode = this.getLoadedNode({
-          identity: missingEdge.sourceId,
-        });
-        let targetNode = this.getLoadedNode({
-          identity: missingEdge.targetId,
-        });
-        if (!graph.getEdge(sourceNode, targetNode)) {
-          schemaEdge.tag.creator.call(this, {}, sourceNode, targetNode);
-        }
-      });
-    },
-    loadMissingEdgesForSchemaNodes: async function (schemaNode, newItems) {
-      if (newItems.length > 0) {
-        await Promise.all(
-          loader.schemaGraph
-            .inEdgesAt(schemaNode)
-            .toArray()
-            .map(async (schemaEdge) => {
-              const missingEdges = await loader.loadMissingEdges(
-                schemaEdge,
-                this.getLoadedItemsOfType(schemaEdge.sourceNode),
-                newItems
-              );
-              this.loadMissingEdges(missingEdges, schemaEdge);
-            })
-        );
-        await Promise.all(
-          loader.schemaGraph
-            .outEdgesAt(schemaNode)
-            .filter((e) => e.targetNode !== schemaNode)
-            .toArray()
-            .map(async (schemaEdge) => {
-              const missingEdges = await loader.loadMissingEdges(
-                schemaEdge,
-                newItems,
-                this.getLoadedItemsOfType(schemaEdge.targetNode)
-              );
-              this.loadMissingEdges(missingEdges, schemaEdge);
-            })
-        );
-      }
-    },
-    async loadInEdges(item, schemaEdge) {
-      this.loadAndLayout(async () => {
-        const newItems = await this.loadAndConnectSchemaInEdges(
-          item,
-          schemaEdge,
-          schemaEdge.sourceNode.tag.creator.bind(this),
-          schemaEdge.tag.creator.bind(this)
-        );
-        await this.loadMissingEdgesForSchemaNodes(
-          schemaEdge.sourceNode,
-          newItems
-        );
-      });
-    },
-    async loadOutEdges(item, schemaEdge) {
-      this.loadAndLayout(async () => {
-        const newItems = await this.loadAndConnectSchemaOutEdges(
-          item,
-          schemaEdge,
-          schemaEdge.targetNode.tag.creator.bind(this),
-          schemaEdge.tag.creator.bind(this)
-        );
-        await this.loadMissingEdgesForSchemaNodes(
-          schemaEdge.targetNode,
-          newItems
-        );
-      });
-    },
-    async loadTargets(items, schemaEdge) {
-      this.loadAndLayout(async () => {
-        const newItems = await this.loadAndConnectSchemaTargets(
-          items,
-          schemaEdge,
-          schemaEdge.targetNode.tag.creator.bind(this),
-          schemaEdge.tag.creator.bind(this)
-        );
-        await this.loadMissingEdgesForSchemaNodes(
-          schemaEdge.targetNode,
-          newItems
-        );
-      });
-    },
-    async loadSources(items, schemaEdge) {
-      this.loadAndLayout(async () => {
-        const newItems = await this.loadAndConnectSchemaSources(
-          items,
-          schemaEdge,
-          schemaEdge.sourceNode.tag.creator.bind(this),
-          schemaEdge.tag.creator.bind(this)
-        );
-        await this.loadMissingEdgesForSchemaNodes(
-          schemaEdge.sourceNode,
-          newItems
-        );
-      });
-    },
-    async loadEdges(item, schemaEdge) {
-      this.loadAndLayout(() =>
-        this.loadAndConnectSchemaUndirectedEdges(
-          item,
-          schemaEdge,
-          schemaEdge.sourceNode.tag.creator.bind(this),
-          schemaEdge.tag.creator.bind(this)
-        )
-      );
-    },
-    async loadPapersForAuthor(author) {
-      await this.loadInEdges(author, paper_author);
-    },
-    async loadGenesForPaper(paper) {
-      await this.loadOutEdges(paper, paper_geneSymbol);
-    },
-    async loadGenesForPatent(patent) {
-      await this.loadOutEdges(patent, patent_geneSymbol);
-    },
-    async loadPapersForGene(gene) {
-      await this.loadInEdges(gene, paper_geneSymbol);
-    },
-    async loadPatentsForGene(gene) {
-      await this.loadInEdges(gene, patent_geneSymbol);
-    },
-    async loadAuthorsForPaper(paper) {
-      await this.loadOutEdges(paper, paper_author);
-    },
-    async loadAffiliationsForPaper(paper) {
-      await this.loadOutEdges(paper, paper_affiliation);
-    },
-    async loadPapersForAffiliation(affiliation) {
-      await this.loadInEdges(affiliation, paper_affiliation);
-    },
     currentItemIs(type) {
       return isOfType(this.currentItem, type);
     },
@@ -795,246 +468,75 @@ export default {
         this.selectedItems.every((item) => isOfType(item, type))
       );
     },
-    async loadAndConnectSchemaOutEdges(
-      item,
-      schemaEdge,
-      nodeCreator,
-      edgeCreator
-    ) {
-      let node = this.getLoadedNode(item);
-      let newItems = [];
-      if (node) {
-        let location = node.layout.center.toPoint();
-        let graph = this.$graphComponent.graph;
-        (await loader.loadOutEdges(schemaEdge, item)).forEach((item) => {
-          let existingNode = this.getLoadedNode(item);
-          if (existingNode) {
-            if (!graph.getEdge(node, existingNode)) {
-              edgeCreator.call(this, item, node, existingNode);
-            }
-          } else {
-            newItems.push(item);
-            let newNode = nodeCreator.call(this, item, location);
-            if (!graph.getEdge(node, newNode)) {
-              edgeCreator.call(this, item, node, newNode);
-            }
-          }
-        });
-        return newItems;
-      }
-    },
-    async loadAndConnectSchemaTargets(
-      items,
-      schemaEdge,
-      nodeCreator,
-      edgeCreator
-    ) {
-      let nodes = items
-        .map((item) => this.getLoadedNode(item))
-        .filter((item) => !!item);
-      let newItems = [];
-      if (nodes.length > 0) {
-        let location = nodes[0].layout.center.toPoint();
-        let graph = this.$graphComponent.graph;
-        (await loader.loadCommonTargets(schemaEdge, items)).forEach((item) => {
-          let existingNode = this.getLoadedNode(item);
-          if (existingNode) {
-            nodes.forEach((node) => {
-              if (!graph.getEdge(node, existingNode)) {
-                edgeCreator.call(this, item, node, existingNode);
-              }
-            });
-          } else {
-            newItems.push(item);
-            let newNode = nodeCreator.call(this, item, location);
-            nodes.forEach((node) => {
-              if (!graph.getEdge(node, newNode)) {
-                edgeCreator.call(this, item, node, newNode);
-              }
-            });
-          }
-        });
-        return newItems;
-      }
-    },
-    async loadAndConnectSchemaSources(
-      items,
-      schemaEdge,
-      nodeCreator,
-      edgeCreator
-    ) {
-      let nodes = items
-        .map((item) => this.getLoadedNode(item))
-        .filter((item) => !!item);
-      let newItems = [];
-      if (nodes.length > 0) {
-        let location = nodes[0].layout.center.toPoint();
-        let graph = this.$graphComponent.graph;
-        (await loader.loadCommonSources(schemaEdge, items)).forEach((item) => {
-          let existingNode = this.getLoadedNode(item);
-          if (existingNode) {
-            nodes.forEach((node) => {
-              if (!graph.getEdge(existingNode, node)) {
-                edgeCreator.call(this, item, existingNode, node);
-              }
-            });
-          } else {
-            newItems.push(item);
-            let newNode = nodeCreator.call(this, item, location);
-            nodes.forEach((node) => {
-              if (!graph.getEdge(newNode, node)) {
-                edgeCreator.call(this, item, newNode, node);
-              }
-            });
-          }
-        });
-        return newItems;
-      }
-    },
-    async loadAndConnectSchemaInEdges(
-      item,
-      schemaEdge,
-      nodeCreator,
-      edgeCreator
-    ) {
-      let node = this.getLoadedNode(item);
-      let newItems = [];
-      if (node) {
-        let location = node.layout.center.toPoint();
-        let graph = this.$graphComponent.graph;
-        (await loader.loadInEdges(schemaEdge, item)).forEach((item) => {
-          let existingNode = this.getLoadedNode(item);
-          if (existingNode) {
-            if (!graph.getEdge(existingNode, node)) {
-              edgeCreator.call(this, item, existingNode, node);
-            }
-          } else {
-            newItems.push(item);
-            let newNode = nodeCreator.call(this, item, location);
-            if (!graph.getEdge(newNode, node)) {
-              edgeCreator.call(this, item, newNode, node);
-            }
-          }
-        });
-      }
-      return newItems;
-    },
-    async loadAndConnectSchemaUndirectedEdges(
-      item,
-      schemaEdge,
-      nodeCreator,
-      edgeCreator
-    ) {
-      let node = this.getLoadedNode(item);
-      let newItems = [];
-      if (node) {
-        let location = node.layout.center.toPoint();
-        let graph = this.$graphComponent.graph;
-        (await loader.loadOutEdges(schemaEdge, item)).forEach((item) => {
-          let existingNode = this.getLoadedNode(item);
-          if (existingNode) {
-            if (
-              !graph.getEdge(existingNode, node) &&
-              !graph.getEdge(node, existingNode)
-            ) {
-              edgeCreator.call(this, item, existingNode, node);
-            }
-          } else {
-            newItems.push(item);
-            let newNode = nodeCreator.call(this, item, location);
-            if (
-              !graph.getEdge(newNode, node) &&
-              !graph.getEdge(node, newNode)
-            ) {
-              edgeCreator.call(this, item, newNode, node);
-            }
-          }
-        });
-        return newItems;
-      }
+    clearGraph() {
+      this.loader.clearGraph();
     },
     remove(items) {
-      items
-        .slice()
-        .map((item) => this.getLoadedNode(item))
-        .filter((node) => node != null)
-        .forEach((node) => {
-          this.$graphComponent.graph.remove(node);
-          this.id2NodeMapping.delete(getId(node.tag.identity));
-        });
+      this.loader.remove(items);
     },
-    /** @param {function():Promise<object[]>} loader */
-    async loadNodes(loader, creator) {
-      return await this.loadAndLayout(async () =>
-        (await loader())
-          .filter((item) => !this.getLoadedNode(item))
-          .forEach((item) => creator.call(this, item))
-      );
+    async loadPapersForAuthor(author) {
+      await this.loader.loadInEdges(author, this.loader.paper_author);
     },
-    /** @param {function():Promise<object[]>} loader */
-    async loadNodesForSchema(schemaNode, whereClauses, params) {
-      return this.loadAndLayout(async () => {
-        let nodes = await loader.loadNodes(schemaNode, whereClauses, params);
-        nodes
-          .filter((item) => !this.getLoadedNode(item))
-          .forEach((item) => schemaNode.tag.creator.call(this, item));
-        return nodes;
-      });
+    async loadGenesForPaper(paper) {
+      await this.loader.loadOutEdges(paper, this.loader.paper_geneSymbol);
     },
-    async loadNodeForSchema(schemaNode, id) {
-      return await this.loadAndLayout(async () => {
-        let item = await loader.loadNodeById(schemaNode, id);
-        if (item && !this.getLoadedNode(item)) {
-          schemaNode.tag.creator.call(this, item);
-        }
-        return item;
-      });
+    async loadGenesForPatent(patent) {
+      await this.loader.loadOutEdges(patent, this.loader.patent_geneSymbol);
     },
-    async runLayout() {
-      let organicLayout = new OrganicLayout({
-        minimumNodeDistance: 100,
-      });
-      await this.$graphComponent.morphLayout(organicLayout);
+    async loadPapersForGene(gene) {
+      await this.loader.loadInEdges(gene, this.loader.paper_geneSymbol);
+    },
+    async loadPatentsForGene(gene) {
+      await this.loader.loadInEdges(gene, this.loader.patent_geneSymbol);
+    },
+    async loadAuthorsForPaper(paper) {
+      await this.loader.loadOutEdges(paper, this.loader.paper_author);
+    },
+    async loadAffiliationsForPaper(paper) {
+      await this.loader.loadOutEdges(paper, this.loader.paper_affiliation);
+    },
+    async loadPapersForAffiliation(affiliation) {
+      await this.loader.loadInEdges(affiliation, this.loader.paper_affiliation);
     },
     async loadReferencedPapersForPaper(paper) {
-      await this.loadOutEdges(paper, paper_paper);
+      await this.loader.loadOutEdges(paper, this.loader.paper_paper);
     },
     async loadReferencingPapersForPaper(paper) {
-      await this.loadInEdges(paper, paper_paper);
+      await this.loader.loadInEdges(paper, this.loader.paper_paper);
     },
     async loadCommonAffiliationsForPapers(items) {
-      await this.loadTargets(items, paper_affiliation);
+      await this.loader.loadTargets(items, this.loader.paper_affiliation);
     },
     async loadCommonPapersForAffiliations(items) {
-      await this.loadSources(items, paper_affiliation);
+      await this.loader.loadSources(items, this.loader.paper_affiliation);
     },
     async loadCommonGenesForPapers(items) {
-      await this.loadTargets(items, paper_geneSymbol);
+      await this.loader.loadTargets(items, this.loader.paper_geneSymbol);
     },
     async loadCommonPapersForGenes(items) {
-      await this.loadSources(items, paper_geneSymbol);
+      await this.loader.loadSources(items, this.loader.paper_geneSymbol);
     },
     async loadCommonPapersForAuthors(items) {
-      await this.loadSources(items, paper_author);
+      await this.loader.loadSources(items, this.loader.paper_author);
     },
     async loadCommonAuthorsForPapers(items) {
-      await this.loadTargets(items, paper_author);
+      await this.loader.loadTargets(items, this.loader.paper_author);
     },
     async loadCommonReferencedPapers(items) {
-      await this.loadTargets(items, paper_paper);
+      await this.loader.loadTargets(items, this.loader.paper_paper);
     },
     async loadCommonReferencingPapers(items) {
-      await this.loadSources(items, paper_paper);
+      await this.loader.loadSources(items, this.loader.paper_paper);
     },
     async loadCommonGenesForPatents(items) {
-      await this.loadTargets(items, patent_geneSymbol);
+      await this.loader.loadTargets(items, this.loader.patent_geneSymbol);
     },
     async loadCommonPatentsForGenes(items) {
-      await this.loadSources(items, patent_geneSymbol);
+      await this.loader.loadSources(items, this.loader.patent_geneSymbol);
     },
     async searchGenes(geneIds) {
-      let genes = await this.loadNodesForSchema(
-        geneSymbolType,
+      let genes = await this.loader.loadNodesForSchema(
+        this.loader.geneSymbolType,
         ["node.sid in $geneIds"],
         { geneIds }
       );
@@ -1045,22 +547,20 @@ export default {
       }
     },
     async searchPatent(id) {
-      await this.loadNodeForSchema(patentType, id);
+      await this.loader.loadNodeForSchema(this.loader.patentType, id);
     },
     async searchArticle(id) {
-      await this.loadNodeForSchema(paperType, id);
+      await this.loader.loadNodeForSchema(this.loader.paperType, id);
     },
     async searchAuthor(id) {
-      await this.loadNodeForSchema(authorType, id);
+      await this.loader.loadNodeForSchema(this.loader.authorType, id);
     },
     async searchAuthorPapers(id) {
-      const author = await this.loadNodeForSchema(authorType, id);
-      await this.loadInEdges(author, paper_author);
-    },
-    async fetchGenes(geneName) {
-      return await loader.loadNodes(geneSymbolType, ["node.sid = $geneName"], {
-        geneName,
-      });
+      const author = await this.loader.loadNodeForSchema(
+        this.loader.authorType,
+        id
+      );
+      await this.loader.loadInEdges(author, this.loader.paper_author);
     },
   },
 };

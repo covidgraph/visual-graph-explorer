@@ -1,17 +1,22 @@
 import * as neo4j from "neo4j-driver/lib/browser/neo4j-web";
 
-const { url, pass, user } =
-  window.location.search && window.location.search.indexOf("db=staging") >= 0
-    ? {
-        url: "bolt://db-dev.covidgraph.org:7687",
-        user: "public",
-        pass: "corona",
-      }
-    : {
-        url: "bolt://covid.petesis.com:7687",
-        user: "public",
-        pass: "corona",
-      };
+export function isStagingDb() {
+  return (
+    window.location.search && window.location.search.indexOf("db=staging") >= 0
+  );
+}
+
+const { url, pass, user } = isStagingDb()
+  ? {
+      url: "bolt://db-dev.covidgraph.org:7687",
+      user: "public",
+      pass: "corona",
+    }
+  : {
+      url: "bolt://covid.petesis.com:7687",
+      user: "public",
+      pass: "corona",
+    };
 
 /**
  * Establishes a connection to a Neo4j database.
