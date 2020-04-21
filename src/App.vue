@@ -122,6 +122,9 @@ export default {
     SearchAuthor,
     SearchPatent,
   },
+  mounted() {
+    setTimeout(() => this.showAboutDialog(), 500);
+  },
   methods: {
     showAboutDialog() {
       this.eventBus.$emit("show-about-dialog");
