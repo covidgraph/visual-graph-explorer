@@ -4,14 +4,15 @@
       <v-btn
         :text="isConnected"
         :icon="isConnected"
-        :color="isConnected ? '#28a745' : '#dc3545'"
         :loading="loading"
+        color="white"
         rounded
         large
         v-on="on"
         @click="retryQuery"
         ><span v-if="!isConnected">Connection failed - Retry</span
-        ><v-icon class="ok">mdi-power</v-icon></v-btn
+        ><v-icon v-if="isConnected">mdi-power-plug</v-icon
+        ><v-icon v-else>mdi-power-plug-off</v-icon></v-btn
       >
     </template>
     <span v-if="isConnected">Database Connected</span>
