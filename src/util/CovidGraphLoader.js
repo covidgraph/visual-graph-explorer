@@ -16,6 +16,7 @@ import {
 import SchemaBasedLoader, {
   IncrementalGraphLoader,
 } from "./schema-based-loader";
+import { isStagingDb } from "./dbconnection";
 
 export const edgeStyle = new PolylineEdgeStyle({
   stroke: new Stroke({
@@ -81,12 +82,16 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       stroke: "2px blue",
     });
 
+    let staging = isStagingDb();
+
     this.paper_author = this.addRelationShip(
       this.paperType,
       this.authorType,
       wroteEdgeStyle,
       () => [],
-      "(sourceNode:Paper)-[:PAPER_HAS_METADATA]->(m:Metadata)-[:METADATA_HAS_AUTHOR]->(:Author:CollectionHub)-[:AUTHOR_HAS_AUTHOR]->(targetNode:Author)"
+      staging
+        ? "(sourceNode:Paper)-[:PAPER_HAS_AUTHORCOLLECTION]->(:AuthorCollection)-[:AUTHORCOLLECTION_HAS_AUTHOR]->(targetNode:Author)"
+        : "(sourceNode:Paper)-[:PAPER_HAS_METADATA]->(m:Metadata)-[:METADATA_HAS_AUTHOR]->(:Author:CollectionHub)-[:AUTHOR_HAS_AUTHOR]->(targetNode:Author)"
     );
 
     this.paper_affiliation = this.addRelationShip(
@@ -94,7 +99,9 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       this.affiliationType,
       wroteEdgeStyle,
       () => [],
-      "(sourceNode:Paper)-[:PAPER_HAS_METADATA]->(m:Metadata)-[:METADATA_HAS_AUTHOR]->(:Author:CollectionHub)-[:AUTHOR_HAS_AUTHOR]->(:Author)-[:AUTHOR_HAS_AFFILIATION]->(targetNode:Affiliation)"
+      staging
+        ? "(sourceNode:Paper)-[:PAPER_HAS_AUTHORCOLLECTION]->(:AuthorCollection)-[:AUTHORCOLLECTION_HAS_AUTHOR]->(:Author)-[:AUTHOR_HAS_AFFILIATION]->(targetNode:Affiliation)"
+        : "(sourceNode:Paper)-[:PAPER_HAS_METADATA]->(m:Metadata)-[:METADATA_HAS_AUTHOR]->(:Author:CollectionHub)-[:AUTHOR_HAS_AUTHOR]->(:Author)-[:AUTHOR_HAS_AFFILIATION]->(targetNode:Affiliation)"
     );
 
     this.paper_geneSymbol = this.addRelationShip(
@@ -102,8 +109,9 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       this.geneSymbolType,
       edgeStyle,
       () => [],
-      //"(sourceNode:Paper)-[:PAPER_HAS_ABSTRACT]->(:Abstract:CollectionHub)-[:ABSTRACT_HAS_ABSTRACT]->(:Abstract)-[:HAS_FRAGMENT]->(f)-[:MENTIONS]->(targetNode:GeneSymbol)"
-      "(sourceNode:Paper)-[:PAPER_HAS_BODY_TEXT]->(:Body_text:CollectionHub)-[:BODY_TEXT_HAS_BODY_TEXT]->(:Body_text)-[:HAS_FRAGMENT]->(f)-[:MENTIONS]->(targetNode:GeneSymbol)"
+      staging
+        ? "(sourceNode:Paper)-[:PAPER_HAS_BODYTEXTCOLLECTION]->(:BodyTextCollection)-[:BODYTEXTCOLLECTION_HAS_BODYTEXT]->(:BodyText)-[:MENTIONS]->(targetNode:GeneSymbol)"
+        : "(sourceNode:Paper)-[:PAPER_HAS_BODY_TEXT]->(:Body_text:CollectionHub)-[:BODY_TEXT_HAS_BODY_TEXT]->(:Body_text)-[:HAS_FRAGMENT]->(f)-[:MENTIONS]->(targetNode:GeneSymbol)"
     );
 
     this.patent_geneSymbol = this.addRelationShip(
@@ -111,7 +119,9 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       this.geneSymbolType,
       edgeStyle,
       () => [],
-      "(sourceNode:Patent)-[:HAS_DESCRIPTION]->(:PatentDescription)-[:HAS_FRAGMENT]->(f)-[:MENTIONS]->(targetNode:GeneSymbol)"
+      staging
+        ? "(sourceNode:Patent)-[:PATENT_HAS_PATENTDESCRIPTION]->(:PatentDescription)-[:MENTIONS]->(targetNode:GeneSymbol)"
+        : "(sourceNode:Patent)-[:HAS_DESCRIPTION]->(:PatentDescription)-[:HAS_FRAGMENT]->(f)-[:MENTIONS]->(targetNode:GeneSymbol)"
     );
 
     this.paper_paper = this.addRelationShip(
@@ -119,7 +129,9 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       this.paperType,
       edgeStyle,
       () => [],
-      "(sourceNode:Paper)-[:PAPER_HAS_BIB_ENTRIES]->(:Bib_entries)-[:BIB_ENTRIES_HAS_BIBREF]->(:Bibref)-[:BIBREF_HAS_OTHER_IDS]->(:Other_ids)-->(:CollectionHub)-->(paperId)<-[:PAPERID_COLLECTION_HAS_PAPERID]-(:CollectionHub:PaperID)<-[:PAPER_HAS_PAPERID_COLLECTION]-(targetNode:Paper)"
+      staging
+        ? "(sourceNode:Paper)-[:PAPER_HAS_REFERENCECOLLECTION]->(:ReferenceCollection)-[:REFERENCECOLLECTION_HAS_REFERENCE]->(:Reference)-[:REFERENCE_HAS_PAPERID]->(:PaperID)<-[:PAPER_HAS_PAPERID]-(targetNode:Paper)"
+        : "(sourceNode:Paper)-[:PAPER_HAS_BIB_ENTRIES]->(:Bib_entries)-[:BIB_ENTRIES_HAS_BIBREF]->(:Bibref)-[:BIBREF_HAS_OTHER_IDS]->(:Other_ids)-->(:CollectionHub)-->(paperId)<-[:PAPERID_COLLECTION_HAS_PAPERID]-(:CollectionHub:PaperID)<-[:PAPER_HAS_PAPERID_COLLECTION]-(targetNode:Paper)"
     );
   }
 }

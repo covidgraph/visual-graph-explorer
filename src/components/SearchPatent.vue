@@ -61,6 +61,7 @@
 
 <script>
 import query from "../util/dbconnection";
+import { findPatents } from "../util/queries";
 
 export default {
   name: "SearchPatent",
@@ -95,16 +96,7 @@ export default {
       if (val && val.length > 2) {
         this.isLoading = true;
         // Lazily load input items
-        query(
-          `call db.index.fulltext.queryNodes("patents", $searchtext)
-yield node,score match (node)--(p:Patent)-[:HAS_TITLE]->(pt:PatentTitle)
-return distinct(id(p)) as id, collect(pt.text) as titles, labels(node)[0] as found_type, node.lang as found_in_lang, score
-order by score
-desc limit 10`,
-          {
-            searchtext: val,
-          }
-        )
+        findPatents(val)
           .then((res) => {
             this.entries = res.records.map((record) => ({
               id: record.get("id"),
