@@ -5,8 +5,13 @@ import {
   GraphComponent,
   Rect,
   Point,
+  License,
   OrganicLayout,
 } from "yfiles";
+
+import licenseData from "../../yfiles-license.json";
+
+License.value = licenseData;
 
 import coreQuery from "./dbconnection";
 import { getId } from "./Neo4jGraphBuilder";
@@ -21,10 +26,10 @@ const limit = 200;
 export class IncrementalGraphLoader {
   /**
    * @param {GraphComponent} graphComponent
-   * @param {SchemaBasedLoader} loader
+   * @param {SchemaBasedQueryBuilder} queryBuilder
    */
-  constructor(loader, graphComponent) {
-    this.loader = loader;
+  constructor(queryBuilder, graphComponent) {
+    this.queryBuilder = queryBuilder;
     this.graphComponent = graphComponent;
     /** @type {Map<any, INode>} */
     this.id2NodeMapping = new Map();
@@ -60,7 +65,7 @@ export class IncrementalGraphLoader {
   }
 
   addNodeType(type, style, size, labels = null) {
-    let node = this.loader.addNodeType(type);
+    let node = this.queryBuilder.addNodeType(type);
     node.tag.creator = this.createNodeCreator(
       style,
       size,
@@ -84,7 +89,7 @@ export class IncrementalGraphLoader {
       labels = () => [];
     }
     let relationShipType = sourceNode.tag.type + "->" + targetNode.tag.type;
-    let edge = this.loader.addRelationShip(
+    let edge = this.queryBuilder.addRelationShip(
       relationShipType,
       sourceNode,
       targetNode,
@@ -129,20 +134,22 @@ export class IncrementalGraphLoader {
     if (node) {
       let location = node.layout.center.toPoint();
       let graph = this.graphComponent.graph;
-      (await this.loader.loadOutEdges(schemaEdge, item)).forEach((item) => {
-        let existingNode = this.getLoadedNode(item);
-        if (existingNode) {
-          if (!graph.getEdge(node, existingNode)) {
-            edgeCreator(item, node, existingNode);
-          }
-        } else {
-          newItems.push(item);
-          let newNode = nodeCreator(item, location);
-          if (!graph.getEdge(node, newNode)) {
-            edgeCreator(item, node, newNode);
+      (await this.queryBuilder.loadOutEdges(schemaEdge, item)).forEach(
+        (item) => {
+          let existingNode = this.getLoadedNode(item);
+          if (existingNode) {
+            if (!graph.getEdge(node, existingNode)) {
+              edgeCreator(item, node, existingNode);
+            }
+          } else {
+            newItems.push(item);
+            let newNode = nodeCreator(item, location);
+            if (!graph.getEdge(node, newNode)) {
+              edgeCreator(item, node, newNode);
+            }
           }
         }
-      });
+      );
       return newItems;
     }
   }
@@ -160,7 +167,7 @@ export class IncrementalGraphLoader {
     if (nodes.length > 0) {
       let location = nodes[0].layout.center.toPoint();
       let graph = this.graphComponent.graph;
-      (await this.loader.loadCommonTargets(schemaEdge, items)).forEach(
+      (await this.queryBuilder.loadCommonTargets(schemaEdge, items)).forEach(
         (item) => {
           let existingNode = this.getLoadedNode(item);
           if (existingNode) {
@@ -197,7 +204,7 @@ export class IncrementalGraphLoader {
     if (nodes.length > 0) {
       let location = nodes[0].layout.center.toPoint();
       let graph = this.graphComponent.graph;
-      (await this.loader.loadCommonSources(schemaEdge, items)).forEach(
+      (await this.queryBuilder.loadCommonSources(schemaEdge, items)).forEach(
         (item) => {
           let existingNode = this.getLoadedNode(item);
           if (existingNode) {
@@ -232,20 +239,22 @@ export class IncrementalGraphLoader {
     if (node) {
       let location = node.layout.center.toPoint();
       let graph = this.graphComponent.graph;
-      (await this.loader.loadInEdges(schemaEdge, item)).forEach((item) => {
-        let existingNode = this.getLoadedNode(item);
-        if (existingNode) {
-          if (!graph.getEdge(existingNode, node)) {
-            edgeCreator(item, existingNode, node);
-          }
-        } else {
-          newItems.push(item);
-          let newNode = nodeCreator(item, location);
-          if (!graph.getEdge(newNode, node)) {
-            edgeCreator(item, newNode, node);
+      (await this.queryBuilder.loadInEdges(schemaEdge, item)).forEach(
+        (item) => {
+          let existingNode = this.getLoadedNode(item);
+          if (existingNode) {
+            if (!graph.getEdge(existingNode, node)) {
+              edgeCreator(item, existingNode, node);
+            }
+          } else {
+            newItems.push(item);
+            let newNode = nodeCreator(item, location);
+            if (!graph.getEdge(newNode, node)) {
+              edgeCreator(item, newNode, node);
+            }
           }
         }
-      });
+      );
     }
     return newItems;
   }
@@ -261,23 +270,28 @@ export class IncrementalGraphLoader {
     if (node) {
       let location = node.layout.center.toPoint();
       let graph = this.graphComponent.graph;
-      (await this.loader.loadOutEdges(schemaEdge, item)).forEach((item) => {
-        let existingNode = this.getLoadedNode(item);
-        if (existingNode) {
-          if (
-            !graph.getEdge(existingNode, node) &&
-            !graph.getEdge(node, existingNode)
-          ) {
-            edgeCreator(item, existingNode, node);
-          }
-        } else {
-          newItems.push(item);
-          let newNode = nodeCreator(this, item, location);
-          if (!graph.getEdge(newNode, node) && !graph.getEdge(node, newNode)) {
-            edgeCreator(item, newNode, node);
+      (await this.queryBuilder.loadOutEdges(schemaEdge, item)).forEach(
+        (item) => {
+          let existingNode = this.getLoadedNode(item);
+          if (existingNode) {
+            if (
+              !graph.getEdge(existingNode, node) &&
+              !graph.getEdge(node, existingNode)
+            ) {
+              edgeCreator(item, existingNode, node);
+            }
+          } else {
+            newItems.push(item);
+            let newNode = nodeCreator(this, item, location);
+            if (
+              !graph.getEdge(newNode, node) &&
+              !graph.getEdge(node, newNode)
+            ) {
+              edgeCreator(item, newNode, node);
+            }
           }
         }
-      });
+      );
       return newItems;
     }
   }
@@ -324,7 +338,11 @@ export class IncrementalGraphLoader {
 
   async loadNodesForSchema(schemaNode, whereClauses, params) {
     return this.loadAndLayout(async () => {
-      let nodes = await this.loader.loadNodes(schemaNode, whereClauses, params);
+      let nodes = await this.queryBuilder.loadNodes(
+        schemaNode,
+        whereClauses,
+        params
+      );
       nodes
         .filter((item) => !this.getLoadedNode(item))
         .forEach((item) => schemaNode.tag.creator(item));
@@ -334,9 +352,20 @@ export class IncrementalGraphLoader {
 
   async loadNodeForSchema(schemaNode, id) {
     return await this.loadAndLayout(async () => {
-      let item = await this.loader.loadNodeById(schemaNode, id);
+      let item = await this.queryBuilder.loadNodeById(schemaNode, id);
       if (item && !this.getLoadedNode(item)) {
         schemaNode.tag.creator(item);
+      }
+      return item;
+    });
+  }
+
+  async loadAndConnectNodeForSchema(schemaNode, id) {
+    return await this.loadAndLayout(async () => {
+      let item = await this.queryBuilder.loadNodeById(schemaNode, id);
+      if (item && !this.getLoadedNode(item)) {
+        schemaNode.tag.creator(item);
+        await this.loadMissingEdgesForSchemaNodes(schemaNode, [item]);
       }
       return item;
     });
@@ -360,11 +389,11 @@ export class IncrementalGraphLoader {
   async loadMissingEdgesForSchemaNodes(schemaNode, newItems) {
     if (newItems.length > 0) {
       await Promise.all(
-        this.loader.schemaGraph
+        this.queryBuilder.schemaGraph
           .inEdgesAt(schemaNode)
           .toArray()
           .map(async (schemaEdge) => {
-            const missingEdges = await this.loader.loadMissingEdges(
+            const missingEdges = await this.queryBuilder.loadMissingEdges(
               schemaEdge,
               this.getLoadedItemsOfType(schemaEdge.sourceNode),
               newItems
@@ -373,12 +402,12 @@ export class IncrementalGraphLoader {
           })
       );
       await Promise.all(
-        this.loader.schemaGraph
+        this.queryBuilder.schemaGraph
           .outEdgesAt(schemaNode)
           .filter((e) => e.targetNode !== schemaNode)
           .toArray()
           .map(async (schemaEdge) => {
-            const missingEdges = await this.loader.loadMissingEdges(
+            const missingEdges = await this.queryBuilder.loadMissingEdges(
               schemaEdge,
               newItems,
               this.getLoadedItemsOfType(schemaEdge.targetNode)
@@ -465,7 +494,7 @@ export class IncrementalGraphLoader {
   }
 }
 
-export default class SchemaBasedLoader {
+export default class SchemaBasedQueryBuilder {
   schemaGraph = new DefaultGraph();
 
   /**

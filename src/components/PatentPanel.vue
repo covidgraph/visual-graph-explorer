@@ -61,23 +61,39 @@
         v-if="patent.classification_us"
         :items="patent.classification_us"
       />
+      <v-expansion-panel v-if="geneSymbols.length" class="mr-1" flat>
+        <v-expansion-panel-header class="primary--text pb-0">
+          <b>Mentioned Genes</b>
+        </v-expansion-panel-header>
+        <v-expansion-panel-content class="grey lighten-5">
+          <gene-symbol-list :geneSymbols="geneSymbols" />
+        </v-expansion-panel-content>
+      </v-expansion-panel>
     </v-expansion-panels>
   </v-card>
 </template>
 
 <script>
-import { loadTitlesForPatent } from "../util/queries";
+import {
+  loadGenesForPaper,
+  loadGenesForPatent,
+  loadTitlesForPatent,
+} from "../util/queries";
 import * as neo4j from "neo4j-driver/lib/browser/neo4j-web";
 import PanelItem from "./shared/PanelItem";
+
+import GeneSymbolList from "./shared/GeneSymbolList";
 
 export default {
   name: "PatentPanel",
   components: {
     PanelItem,
+    GeneSymbolList,
   },
   data: () => ({
     titles: [],
     patent: null,
+    geneSymbols: [],
   }),
   props: {
     value: {
@@ -103,6 +119,13 @@ export default {
             )}-${neo4j.integer.toNumber(patent.properties.pub_date.day)}`,
             ...patent.properties,
           };
+          loadGenesForPatent(patent)
+            .then((genes) => {
+              this.geneSymbols = genes;
+            })
+            .catch((reason) => {
+              this.geneSymbols = [];
+            });
           loadTitlesForPatent(patent)
             .then((nodes) => {
               let titles = nodes.map((node) => ({

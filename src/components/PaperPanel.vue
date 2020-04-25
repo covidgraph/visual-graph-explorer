@@ -69,14 +69,7 @@
           <b>Mentioned Genes</b>
         </v-expansion-panel-header>
         <v-expansion-panel-content class="grey lighten-5">
-          <v-chip-group v-for="(geneSymbol, i) in geneSymbols" :key="i">
-            <v-chip label>
-              <v-avatar left>
-                <v-icon color="#BCD104">mdi-dna</v-icon>
-              </v-avatar>
-              {{ geneSymbol }}
-            </v-chip>
-          </v-chip-group>
+          <gene-symbol-list :geneSymbols="geneSymbols" />
         </v-expansion-panel-content>
       </v-expansion-panel>
       <v-expansion-panel v-if="authors.length" class="mr-1">
@@ -85,37 +78,43 @@
         </v-expansion-panel-header>
         <v-expansion-panel-content class="overflow-content">
           <v-chip-group column>
-            <v-chip
-              link
-              v-for="author in authors"
-              :key="author.id"
-              :href="'mailto\:' + author.properties.email"
-              v-if="author.properties.email"
-            >
-              <v-avatar left>
-                <v-icon color="#D12EAE">mdi-account-circle</v-icon>
-              </v-avatar>
-              {{ author.properties.first }}
-              {{ author.properties.middle }}
-              {{ author.properties.last }}
-              <v-icon right>
-                mdi-email-outline
-              </v-icon>
-            </v-chip>
-            <v-chip
-              pill
-              :ripple="false"
-              v-for="author in authors"
-              :key="author.id"
-              v-else
-            >
-              <v-avatar left>
-                <v-icon color="#D12EAE">mdi-account-circle</v-icon>
-              </v-avatar>
-              {{ author.properties.first }}
-              {{ author.properties.middle || "" }}
-              {{ author.properties.last }}
-            </v-chip>
+            <template v-for="author in authors">
+              <v-chip
+                link
+                close
+                :key="getId(author)"
+                close-icon="mdi-download"
+                :href="'mailto\:' + author.properties.email"
+                @click:close="loadAuthor(author.identity)"
+                v-if="author.properties.email"
+              >
+                <v-avatar left>
+                  <v-icon color="#D12EAE">mdi-account-circle</v-icon>
+                </v-avatar>
+                {{ author.properties.first }}
+                {{ author.properties.middle }}
+                {{ author.properties.last }}
+                <v-icon right>
+                  mdi-email-outline
+                </v-icon>
+              </v-chip>
+              <v-chip
+                pill
+                close
+                :key="getId(author)"
+                close-icon="mdi-download"
+                :ripple="false"
+                @click:close="loadAuthor(author.identity)"
+                v-else
+              >
+                <v-avatar left>
+                  <v-icon color="#D12EAE">mdi-account-circle</v-icon>
+                </v-avatar>
+                {{ author.properties.first }}
+                {{ author.properties.middle || "" }}
+                {{ author.properties.last }}
+              </v-chip>
+            </template>
           </v-chip-group>
         </v-expansion-panel-content>
       </v-expansion-panel>
@@ -137,10 +136,13 @@ import {
   loadGenesForPaper,
 } from "../util/queries";
 import PanelItem from "./shared/PanelItem";
+import { getId } from "../util/Neo4jGraphBuilder";
+import GeneSymbolList from "./shared/GeneSymbolList";
 
 export default {
   name: "PaperPanel",
   components: {
+    GeneSymbolList,
     PanelItem,
   },
   data: () => ({
@@ -178,13 +180,10 @@ export default {
             });
           loadGenesForPaper(paper)
             .then((genes) => {
-              this.geneSymbols =
-                genes.length > 0
-                  ? genes.map((g) => g.properties.sid)
-                  : ["none"];
+              this.geneSymbols = genes;
             })
             .catch((reason) => {
-              this.geneSymbols = ["Failed to load " + reason];
+              this.geneSymbols = [];
             });
           loadAuthorsForPaper(paper)
             .then((authors) => {
@@ -201,6 +200,15 @@ export default {
     },
   },
   methods: {
+    getId(item) {
+      return getId(item.identity);
+    },
+    loadAuthor(authorId) {
+      this.eventBus.$emit("load-author", authorId);
+    },
+    loadGeneSymbol(id) {
+      this.eventBus.$emit("load-geneSymbol", id);
+    },
     loadReferencedPapers() {
       this.eventBus.$emit("load-referenced-papers-for-paper", this.value);
     },

@@ -1,6 +1,9 @@
 import coreQuery, { isStagingDb } from "./dbconnection";
+import { CovidGraphLoader } from "./CovidGraphLoader";
 
 let staging = isStagingDb();
+
+const loader = new CovidGraphLoader(null);
 
 export function isOfType(item, type) {
   if (item && item.labels && item.labels.length > 0) {
@@ -17,24 +20,17 @@ export async function query(query, args = {}, name = "result") {
 }
 
 export async function loadGenesForPaper(paper) {
-  return await query(
-    staging
-      ? `MATCH (p:Paper) WHERE id(p) = $paperId MATCH (p:Paper)-[:PAPER_HAS_BODYTEXTCOLLECTION]->(:BodyTextCollection)-[:BODYTEXTCOLLECTION_HAS_BODYTEXT]->(:BodyText)-[:MENTIONS]->(g:GeneSymbol) 
-    RETURN g as result ORDER BY g.sid`
-      : `MATCH (p:Paper) WHERE id(p) = $paperId MATCH (p:Paper)-[:PAPER_HAS_BODY_TEXT]->(:Body_text:CollectionHub)-[:BODY_TEXT_HAS_BODY_TEXT]->(:Body_text)-[:HAS_FRAGMENT]->(f)-[:MENTIONS]->(g:GeneSymbol) 
-    RETURN g as result ORDER BY g.sid`,
-    { paperId: paper.identity }
-  );
+  return await loader.queryBuilder.loadOutEdges(loader.paper_geneSymbol, paper);
 }
 
 export async function loadAuthorsForPaper(paper) {
-  return await query(
-    staging
-      ? `MATCH (p:Paper) WHERE id(p) = $paperId MATCH (p:Paper)-[:PAPER_HAS_AUTHORCOLLECTION]->(:AuthorCollection)-[:AUTHORCOLLECTION_HAS_AUTHOR]->(result:Author) 
-    RETURN result LIMIT 50`
-      : `MATCH (p:Paper) WHERE id(p) = $paperId MATCH (p)-[:PAPER_HAS_METADATA]->(m:Metadata)-[:METADATA_HAS_AUTHOR]->(:Author:CollectionHub)-[:AUTHOR_HAS_AUTHOR]->(result:Author) 
-    RETURN result LIMIT 50`,
-    { paperId: paper.identity }
+  return await loader.queryBuilder.loadOutEdges(loader.paper_author, paper);
+}
+
+export async function loadGenesForPatent(patent) {
+  return await loader.queryBuilder.loadOutEdges(
+    loader.patent_geneSymbol,
+    patent
   );
 }
 

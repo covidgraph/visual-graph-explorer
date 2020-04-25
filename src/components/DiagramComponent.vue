@@ -320,13 +320,6 @@ export default {
       }
     });
 
-    this.$graphComponent.highlightGroup.above(
-      this.$graphComponent.graphModelManager.edgeGroup
-    );
-    this.$graphComponent.selectionGroup.below(
-      this.$graphComponent.highlightGroup
-    );
-
     this.$refs.contextMenu.register(this.$graphComponent);
     this.$refs.popupPanel.register(
       this.$graphComponent,
@@ -352,6 +345,12 @@ export default {
 
     this.eventBus.$on("load-papers-for-gene", (gene) => {
       this.loadPapersForGene(gene);
+    });
+    this.eventBus.$on("load-author", (authorId) => {
+      this.loader.loadAndConnectNodeForSchema(this.loader.authorType, authorId);
+    });
+    this.eventBus.$on("load-geneSymbol", (id) => {
+      this.loader.loadAndConnectNodeForSchema(this.loader.geneSymbolType, id);
     });
     this.eventBus.$on("load-patents-for-gene", (gene) => {
       this.loadPatentsForGene(gene);

@@ -13,9 +13,9 @@ import {
   SmartEdgeLabelModel,
   Stroke,
 } from "yfiles";
-import SchemaBasedLoader, {
+import SchemaBasedQueryBuilder, {
   IncrementalGraphLoader,
-} from "./schema-based-loader";
+} from "./schema-based-query-builder";
 import { isStagingDb } from "./dbconnection";
 
 export const edgeStyle = new PolylineEdgeStyle({
@@ -45,7 +45,7 @@ export const edgeLabelLayoutParameter = new SmartEdgeLabelModel({
 
 export class CovidGraphLoader extends IncrementalGraphLoader {
   constructor(graphComponent) {
-    super(new SchemaBasedLoader(), graphComponent);
+    super(new SchemaBasedQueryBuilder(), graphComponent);
 
     this.patentType = this.addNodeType(
       "Patent",
