@@ -101,6 +101,7 @@ module.exports = {
                 "edgeCount",
                 "DASH",
                 "merge",
+                "getId",
               ],
             }),
           ],
