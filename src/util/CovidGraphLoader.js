@@ -78,6 +78,24 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       new Size(150, 150)
     );
 
+    this.proteinType = this.addNodeType(
+      "Protein",
+      new ShapeNodeStyle(),
+      new Size(50, 50)
+    );
+
+    this.transcriptType = this.addNodeType(
+      "Transcript",
+      new ShapeNodeStyle(),
+      new Size(50, 50)
+    );
+
+    this.entityType = this.addNodeType(
+      "Entity",
+      new ShapeNodeStyle(),
+      new Size(50, 50)
+    );
+
     const wroteEdgeStyle = new PolylineEdgeStyle({
       stroke: "2px blue",
     });
@@ -133,5 +151,33 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
         ? "(sourceNode:Paper)-[:PAPER_HAS_REFERENCECOLLECTION]->(:ReferenceCollection)-[:REFERENCECOLLECTION_HAS_REFERENCE]->(:Reference)-[:REFERENCE_HAS_PAPERID]->(:PaperID)<-[:PAPER_HAS_PAPERID]-(targetNode:Paper)"
         : "(sourceNode:Paper)-[:PAPER_HAS_BIB_ENTRIES]->(:Bib_entries)-[:BIB_ENTRIES_HAS_BIBREF]->(:Bibref)-[:BIBREF_HAS_OTHER_IDS]->(:Other_ids)-->(:CollectionHub)-->(paperId)<-[:PAPERID_COLLECTION_HAS_PAPERID]-(:CollectionHub:PaperID)<-[:PAPER_HAS_PAPERID_COLLECTION]-(targetNode:Paper)"
     );
+
+    this.protein_geneSymbol = this.addRelationShip(
+      this.proteinType,
+      this.geneSymbolType,
+      edgeStyle,
+      () => [],
+      "(targetNode:GeneSymbol)<-[:MAPS]-(:Gene)-[:CODES]->(:Transcript)-[:CODES]->(sourceNode:Protein)"
+    );
+
+    this.patent_owner_entity = this.addRelationShip(
+      this.patentType,
+      this.entityType,
+      edgeStyle,
+      () => ["OWNED BY"],
+      "(sourceNode:Patent)-[:OWNER]->(targetNode:Entity)"
+    );
+
+    if (staging) {
+      this.patent_patent = this.addRelationShip(
+        this.patentType,
+        this.patentType,
+        edgeStyle,
+        () => [],
+        staging
+          ? "(sourceNode:Patent)-[:PATENT_HAS_PATENTCITATIONCOLLECTION]->(:PatentCitationCollection)-[:PATENTCITATIONCOLLECTION_HAS_PATENTLITERATURECITATION]->(:PatentLiteratureCitation)-[:PATENTLITERATURECITATION_HAS_PATENTNUMBER]->(:PatentNumber)<-[:PATENT_HAS_PATENTNUMBER]-(targetNode:Patent)"
+          : ""
+      );
+    }
   }
 }

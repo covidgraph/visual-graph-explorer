@@ -19,6 +19,12 @@
           <v-list-item-title>Load Referenced Papers</v-list-item-title>
         </v-list-item>
         <v-list-item
+          v-if="currentItemIs('Entity')"
+          @click="loadPatentsForOwner(currentItem)"
+        >
+          <v-list-item-title>Load Patents</v-list-item-title>
+        </v-list-item>
+        <v-list-item
           v-if="isMultiSelection('Paper')"
           @click="loadCommonAffiliationsForPapers(selectedItems)"
         >
@@ -59,6 +65,18 @@
           @click="loadCommonGenesForPatents(selectedItems)"
         >
           <v-list-item-title>Load Common Genes</v-list-item-title>
+        </v-list-item>
+        <v-list-item
+          v-if="isMultiSelection('Patent')"
+          @click="loadCommonOwnersForPatents(selectedItems)"
+        >
+          <v-list-item-title>Load Common Owners</v-list-item-title>
+        </v-list-item>
+        <v-list-item
+          v-if="isMultiSelection('Entity')"
+          @click="loadCommonPatentsForOwners(selectedItems)"
+        >
+          <v-list-item-title>Load Common Patents</v-list-item-title>
         </v-list-item>
         <v-list-item
           v-if="isMultiSelection('GeneSymbol')"
@@ -109,10 +127,40 @@
           <v-list-item-title>Load Genes</v-list-item-title>
         </v-list-item>
         <v-list-item
+          v-if="currentItemIs('Patent')"
+          @click="loadOwnersForPatent(currentItem)"
+        >
+          <v-list-item-title>Load Owners</v-list-item-title>
+        </v-list-item>
+        <v-list-item
+          v-if="currentItemIs('Patent') && isStaging"
+          @click="loadReferencedPatentsForPatent(currentItem)"
+        >
+          <v-list-item-title>Load Genes</v-list-item-title>
+        </v-list-item>
+        <v-list-item
           v-if="currentItemIs('GeneSymbol')"
           @click="loadPapersForGene(currentItem)"
         >
           <v-list-item-title>Load Papers</v-list-item-title>
+        </v-list-item>
+        <v-list-item
+          v-if="currentItemIs('Protein')"
+          @click="loadGenesForProteins(currentItem)"
+        >
+          <v-list-item-title>Load Genes</v-list-item-title>
+        </v-list-item>
+        <v-list-item
+          v-if="currentItemIs('GeneSymbol')"
+          @click="loadProteinsForGene(currentItem)"
+        >
+          <v-list-item-title>Load Proteins</v-list-item-title>
+        </v-list-item>
+        <v-list-item
+          v-if="isMultiSelection('GeneSymbol')"
+          @click="loadCommonProteinsForGenes(selectedItems)"
+        >
+          <v-list-item-title>Load Common Proteins</v-list-item-title>
         </v-list-item>
         <v-list-item
           v-if="currentItemIs('GeneSymbol')"
@@ -139,7 +187,7 @@
           <v-list-item-title>Remove Item</v-list-item-title>
         </v-list-item>
         <v-list-item
-          v-if="selectedItems.length > 0 && !currentItem"
+          v-if="selectedItems.length > 0"
           @click="remove(selectedItems)"
         >
           <v-list-item-title>Remove Items</v-list-item-title>
@@ -183,8 +231,11 @@ import {
   edgeLabelStyle,
   edgeLabelLayoutParameter,
 } from "../util/CovidGraphLoader";
+import { isStagingDb } from "../util/dbconnection";
 
 License.value = licenseData;
+
+let isStaging = isStagingDb();
 
 enableWorkarounds();
 
@@ -258,6 +309,7 @@ export default {
   data: () => ({
     currentItem: null,
     selectedItems: [],
+    isStaging: isStaging,
   }),
   mounted() {
     this.$graphComponent = new GraphComponent(this.$refs.GraphComponentElement);
@@ -366,6 +418,15 @@ export default {
     });
     this.eventBus.$on("load-authors-for-paper", (paper) => {
       this.loadAuthorsForPaper(paper);
+    });
+    this.eventBus.$on("load-referencing-patents-for-patent", (patent) => {
+      this.loadReferencingPatentsForPatent(patent);
+    });
+    this.eventBus.$on("load-owners-on-patent", (patent) => {
+      this.loadOwnersForPatent(patent);
+    });
+    this.eventBus.$on("load-patents-on-owners", (owner) => {
+      this.loadPatentsForOwner(owner);
     });
     this.eventBus.$on("load-affiliations-for-paper", (paper) => {
       this.loadAffiliationsForPaper(paper);
@@ -485,11 +546,38 @@ export default {
     async loadPapersForGene(gene) {
       await this.loader.loadInEdges(gene, this.loader.paper_geneSymbol);
     },
+    async loadProteinsForGene(gene) {
+      await this.loader.loadInEdges(gene, this.loader.protein_geneSymbol);
+    },
+    async loadCommonProteinsForGenes(genes) {
+      await this.loader.loadSources(genes, this.loader.protein_geneSymbol);
+    },
+    async loadGenesForProteins(protein) {
+      await this.loader.loadOutEdges(protein, this.loader.protein_geneSymbol);
+    },
     async loadPatentsForGene(gene) {
       await this.loader.loadInEdges(gene, this.loader.patent_geneSymbol);
     },
     async loadAuthorsForPaper(paper) {
       await this.loader.loadOutEdges(paper, this.loader.paper_author);
+    },
+    async loadOwnersForPatent(patent) {
+      await this.loader.loadOutEdges(patent, this.loader.patent_owner_entity);
+    },
+    async loadReferencedPatentsForPatent(patent) {
+      await this.loader.loadOutEdges(patent, this.loader.patent_patent);
+    },
+    async loadReferencingPatentsForPatent(patent) {
+      await this.loader.loadInEdges(patent, this.loader.patent_patent);
+    },
+    async loadPatentsForOwner(owner) {
+      await this.loader.loadInEdges(owner, this.loader.patent_owner_entity);
+    },
+    async loadCommonOwnersForPatents(patents) {
+      await this.loader.loadTargets(patents, this.loader.patent_owner_entity);
+    },
+    async loadCommonPatentsForOwners(owners) {
+      await this.loader.loadSources(owners, this.loader.patent_owner_entity);
     },
     async loadAffiliationsForPaper(paper) {
       await this.loader.loadOutEdges(paper, this.loader.paper_affiliation);
@@ -523,6 +611,12 @@ export default {
     },
     async loadCommonReferencedPapers(items) {
       await this.loader.loadTargets(items, this.loader.paper_paper);
+    },
+    async loadCommonReferencedPatents(items) {
+      await this.loader.loadTargets(items, this.loader.patent_patent);
+    },
+    async loadCommonReferencingPatents(items) {
+      await this.loader.loadSources(items, this.loader.patent_patent);
     },
     async loadCommonReferencingPapers(items) {
       await this.loader.loadSources(items, this.loader.paper_paper);
