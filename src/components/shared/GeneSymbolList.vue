@@ -32,7 +32,7 @@ export default {
       return getId(item.identity);
     },
     loadGeneSymbol(id) {
-      this.eventBus.$emit("load-geneSymbol", id);
+      this.eventBus.$emit("load-GeneSymbol", id);
     },
   },
 };

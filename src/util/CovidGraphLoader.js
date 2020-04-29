@@ -47,6 +47,8 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
   constructor(graphComponent) {
     super(new SchemaBasedQueryBuilder(), graphComponent);
 
+    let staging = isStagingDb();
+
     this.patentType = this.addNodeType(
       "Patent",
       new VuejsNodeStyle(PatentNode),
@@ -75,7 +77,10 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
     this.geneSymbolType = this.addNodeType(
       "GeneSymbol",
       new VuejsNodeStyle(GeneNode),
-      new Size(150, 150)
+      new Size(150, 150),
+      null,
+      "gene",
+      "genes"
     );
 
     this.proteinType = this.addNodeType(
@@ -93,14 +98,26 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
     this.entityType = this.addNodeType(
       "Entity",
       new ShapeNodeStyle(),
-      new Size(50, 50)
+      new Size(50, 50),
+      null,
+      "entity",
+      "entities"
     );
+
+    if (staging) {
+      this.gTexTissueType = this.addNodeType(
+        "GtexTissue",
+        new ShapeNodeStyle(),
+        new Size(50, 50),
+        null,
+        "tissue",
+        "tissues"
+      );
+    }
 
     const wroteEdgeStyle = new PolylineEdgeStyle({
       stroke: "2px blue",
     });
-
-    let staging = isStagingDb();
 
     this.paper_author = this.addRelationShip(
       this.paperType,
@@ -119,7 +136,9 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       () => [],
       staging
         ? "(sourceNode:Paper)-[:PAPER_HAS_AUTHORCOLLECTION]->(:AuthorCollection)-[:AUTHORCOLLECTION_HAS_AUTHOR]->(:Author)-[:AUTHOR_HAS_AFFILIATION]->(targetNode:Affiliation)"
-        : "(sourceNode:Paper)-[:PAPER_HAS_METADATA]->(m:Metadata)-[:METADATA_HAS_AUTHOR]->(:Author:CollectionHub)-[:AUTHOR_HAS_AUTHOR]->(:Author)-[:AUTHOR_HAS_AFFILIATION]->(targetNode:Affiliation)"
+        : "(sourceNode:Paper)-[:PAPER_HAS_METADATA]->(m:Metadata)-[:METADATA_HAS_AUTHOR]->(:Author:CollectionHub)-[:AUTHOR_HAS_AUTHOR]->(:Author)-[:AUTHOR_HAS_AFFILIATION]->(targetNode:Affiliation)",
+      "authoring",
+      "submitted"
     );
 
     this.paper_geneSymbol = this.addRelationShip(
@@ -128,9 +147,13 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       edgeStyle,
       () => [],
       staging
-        ? "(sourceNode:Paper)-[:PAPER_HAS_BODYTEXTCOLLECTION]->(:BodyTextCollection)-[:BODYTEXTCOLLECTION_HAS_BODYTEXT]->(:BodyText)-[:MENTIONS]->(targetNode:GeneSymbol)"
-        : "(sourceNode:Paper)-[:PAPER_HAS_BODY_TEXT]->(:Body_text:CollectionHub)-[:BODY_TEXT_HAS_BODY_TEXT]->(:Body_text)-[:HAS_FRAGMENT]->(f)-[:MENTIONS]->(targetNode:GeneSymbol)"
+        ? "(sourceNode:Paper)-[:PAPER_HAS_BODYTEXTCOLLECTION|PAPER_HAS_ABSTRACTCOLLECTION]->()-[:BODYTEXTCOLLECTION_HAS_BODYTEXT|ABSTRACTCOLLECTION_HAS_ABSTRACT]->()-[:HAS_FRAGMENT]->(:Fragment)-[:MENTIONS]->(targetNode:GeneSymbol)"
+        : "(sourceNode:Paper)-[:PAPER_HAS_BODY_TEXT]->(:Body_text:CollectionHub)-[:BODY_TEXT_HAS_BODY_TEXT]->(:Body_text)-[:HAS_FRAGMENT]->(f)-[:MENTIONS]->(targetNode:GeneSymbol)",
+      "mentioned",
+      "mentioning"
     );
+
+    //
 
     this.patent_geneSymbol = this.addRelationShip(
       this.patentType,
@@ -138,8 +161,10 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       edgeStyle,
       () => [],
       staging
-        ? "(sourceNode:Patent)-[:PATENT_HAS_PATENTDESCRIPTION]->(:PatentDescription)-[:MENTIONS]->(targetNode:GeneSymbol)"
-        : "(sourceNode:Patent)-[:HAS_DESCRIPTION]->(:PatentDescription)-[:HAS_FRAGMENT]->(f)-[:MENTIONS]->(targetNode:GeneSymbol)"
+        ? "(sourceNode:Patent)-[:PATENT_HAS_PATENTABSTRACT|PATENT_HAS_PATENTTITLE|PATENT_HAS_PATENTDESCRIPTION|PATENT_HAS_PATENTCLAIM]->()-[:HAS_FRAGMENT]->(:Fragment)-[:MENTIONS]->(targetNode:GeneSymbol)"
+        : "(sourceNode:Patent)-[:HAS_DESCRIPTION]->(:PatentDescription)-[:HAS_FRAGMENT]->(f)-[:MENTIONS]->(targetNode:GeneSymbol)",
+      "mentioned",
+      "mentioning"
     );
 
     this.paper_paper = this.addRelationShip(
@@ -149,7 +174,9 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       () => [],
       staging
         ? "(sourceNode:Paper)-[:PAPER_HAS_REFERENCECOLLECTION]->(:ReferenceCollection)-[:REFERENCECOLLECTION_HAS_REFERENCE]->(:Reference)-[:REFERENCE_HAS_PAPERID]->(:PaperID)<-[:PAPER_HAS_PAPERID]-(targetNode:Paper)"
-        : "(sourceNode:Paper)-[:PAPER_HAS_BIB_ENTRIES]->(:Bib_entries)-[:BIB_ENTRIES_HAS_BIBREF]->(:Bibref)-[:BIBREF_HAS_OTHER_IDS]->(:Other_ids)-->(:CollectionHub)-->(paperId)<-[:PAPERID_COLLECTION_HAS_PAPERID]-(:CollectionHub:PaperID)<-[:PAPER_HAS_PAPERID_COLLECTION]-(targetNode:Paper)"
+        : "(sourceNode:Paper)-[:PAPER_HAS_BIB_ENTRIES]->(:Bib_entries)-[:BIB_ENTRIES_HAS_BIBREF]->(:Bibref)-[:BIBREF_HAS_OTHER_IDS]->(:Other_ids)-->(:CollectionHub)-->(paperId)<-[:PAPERID_COLLECTION_HAS_PAPERID]-(:CollectionHub:PaperID)<-[:PAPER_HAS_PAPERID_COLLECTION]-(targetNode:Paper)",
+      "referenced",
+      "referencing"
     );
 
     this.protein_geneSymbol = this.addRelationShip(
@@ -157,7 +184,9 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       this.geneSymbolType,
       edgeStyle,
       () => [],
-      "(targetNode:GeneSymbol)<-[:MAPS]-(:Gene)-[:CODES]->(:Transcript)-[:CODES]->(sourceNode:Protein)"
+      "(targetNode:GeneSymbol)<-[:MAPS]-(:Gene)-[:CODES]->(:Transcript)-[:CODES]->(sourceNode:Protein)",
+      "encoding",
+      "encoded"
     );
 
     this.patent_owner_entity = this.addRelationShip(
@@ -165,19 +194,57 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       this.entityType,
       edgeStyle,
       () => ["OWNED BY"],
-      "(sourceNode:Patent)-[:OWNER]->(targetNode:Entity)"
+      "(sourceNode:Patent)-[:APPLICANT|INVENTOR|OWNER]->(targetNode:Entity)",
+      "owning",
+      "owned"
     );
 
     if (staging) {
+      this.geneSymbol_gTexTissue = this.addRelationShip(
+        this.geneSymbolType,
+        this.gTexTissueType,
+        edgeStyle,
+        () => [],
+        "(sourceNode:GeneSymbol)<-[:MAPS]-(:Gene)-[:EXPRESSED]->(:GtexDetailedTissue)<-[:PARENT]-(targetNode:GtexTissue)",
+        "expressed",
+        "expressing"
+      );
       this.patent_patent = this.addRelationShip(
         this.patentType,
         this.patentType,
         edgeStyle,
         () => [],
-        staging
-          ? "(sourceNode:Patent)-[:PATENT_HAS_PATENTCITATIONCOLLECTION]->(:PatentCitationCollection)-[:PATENTCITATIONCOLLECTION_HAS_PATENTLITERATURECITATION]->(:PatentLiteratureCitation)-[:PATENTLITERATURECITATION_HAS_PATENTNUMBER]->(:PatentNumber)<-[:PATENT_HAS_PATENTNUMBER]-(targetNode:Patent)"
-          : ""
+        "(sourceNode:Patent)-[:PATENT_HAS_PATENTCITATIONCOLLECTION]->(:PatentCitationCollection)-[:PATENTCITATIONCOLLECTION_HAS_PATENTLITERATURECITATION]->(:PatentLiteratureCitation)-[:PATENTLITERATURECITATION_HAS_PATENTNUMBER]->(:PatentNumber)<-[:PATENT_HAS_PATENTNUMBER]-(targetNode:Patent)",
+        "referenced",
+        "referencing"
       );
     }
+  }
+
+  registerEvents(eventBus) {
+    this.queryBuilder.schemaGraph.edges.forEach((schemaEdge) => {
+      let eventNameOut = `load-target-${schemaEdge.targetNode.tag.type}-for-${schemaEdge.sourceNode.tag.type}`;
+      eventBus.$on(eventNameOut, (item) => this.loadOutEdges(item, schemaEdge));
+
+      let commonEventNameOut = `load-common-target-${schemaEdge.targetNode.tag.type}-for-${schemaEdge.sourceNode.tag.type}`;
+      eventBus.$on(commonEventNameOut, (items) =>
+        this.loadCommonTargets(items, schemaEdge)
+      );
+
+      let eventNameIn = `load-source-${schemaEdge.sourceNode.tag.type}-for-${schemaEdge.targetNode.tag.type}`;
+      eventBus.$on(eventNameIn, (item) => this.loadInEdges(item, schemaEdge));
+
+      let commonEventNameIn = `load-common-source-${schemaEdge.sourceNode.tag.type}-for-${schemaEdge.targetNode.tag.type}`;
+      eventBus.$on(commonEventNameIn, (items) =>
+        this.loadCommonSources(items, schemaEdge)
+      );
+    });
+
+    this.queryBuilder.schemaGraph.nodes.forEach((schemaNode) => {
+      let commonEventNameIn = `load-${schemaNode.tag.type}`;
+      eventBus.$on(commonEventNameIn, (id) =>
+        this.loadAndConnectNodeForSchema(schemaNode, id)
+      );
+    });
   }
 }

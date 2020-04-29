@@ -204,25 +204,25 @@ export default {
       return getId(item.identity);
     },
     loadAuthor(authorId) {
-      this.eventBus.$emit("load-author", authorId);
+      this.eventBus.$emit("load-Author", authorId);
     },
     loadGeneSymbol(id) {
-      this.eventBus.$emit("load-geneSymbol", id);
+      this.eventBus.$emit("load-GeneSymbol", id);
     },
     loadReferencedPapers() {
-      this.eventBus.$emit("load-referenced-papers-for-paper", this.value);
+      this.eventBus.$emit("load-target-Paper-for-Paper", this.value);
     },
     loadReferencingPapers() {
-      this.eventBus.$emit("load-referencing-papers-for-paper", this.value);
+      this.eventBus.$emit("load-source-Paper-for-Paper", this.value);
     },
     loadAffiliations() {
-      this.eventBus.$emit("load-affiliations-for-paper", this.value);
+      this.eventBus.$emit("load-target-Affiliation-for-Paper", this.value);
     },
     loadAuthors() {
-      this.eventBus.$emit("load-authors-for-paper", this.value);
+      this.eventBus.$emit("load-target-Author-for-Paper", this.value);
     },
     loadGenes() {
-      this.eventBus.$emit("load-genes-for-paper", this.value);
+      this.eventBus.$emit("load-target-GeneSymbol-for-Paper", this.value);
     },
   },
 };

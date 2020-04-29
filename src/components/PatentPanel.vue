@@ -45,11 +45,11 @@
           )
         "
       />
-      <PanelItem itemTitle="Date" :items="[patent.date]" />
+      <PanelItem itemTitle="Date" :items="[value.properties.pub_date]" />
       <PanelItem
         itemTitle="Classification CPC"
-        v-if="patent.classification_cpc"
-        :items="patent.classification_cpc"
+        v-if="value.properties.patent.classification_cpc"
+        :items="value.properties.patent.classification_cpc"
       />
       <PanelItem
         itemTitle="Classification IPC"
@@ -74,11 +74,7 @@
 </template>
 
 <script>
-import {
-  loadGenesForPaper,
-  loadGenesForPatent,
-  loadTitlesForPatent,
-} from "../util/queries";
+import { loadGenesForPatent, loadTitlesForPatent } from "../util/queries";
 import * as neo4j from "neo4j-driver/lib/browser/neo4j-web";
 import PanelItem from "./shared/PanelItem";
 
@@ -111,14 +107,7 @@ export default {
       immediate: true,
       handler: function (patent) {
         if (patent) {
-          this.patent = {
-            date: `${neo4j.integer.toNumber(
-              patent.properties.pub_date.year
-            )}-${neo4j.integer.toNumber(
-              patent.properties.pub_date.month
-            )}-${neo4j.integer.toNumber(patent.properties.pub_date.day)}`,
-            ...patent.properties,
-          };
+          this.patent = { ...patent.properties };
           loadGenesForPatent(patent)
             .then((genes) => {
               this.geneSymbols = genes;

@@ -13,172 +13,11 @@
     >
       <v-list>
         <v-list-item
-          v-if="currentItemIs('Paper')"
-          @click="loadReferencedPapersForPaper(currentItem)"
+          v-for="action in actions"
+          :key="action.title"
+          @click="action.action()"
         >
-          <v-list-item-title>Load Referenced Papers</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="currentItemIs('Entity')"
-          @click="loadPatentsForOwner(currentItem)"
-        >
-          <v-list-item-title>Load Patents</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="isMultiSelection('Paper')"
-          @click="loadCommonAffiliationsForPapers(selectedItems)"
-        >
-          <v-list-item-title>Load Common Affiliations</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="isMultiSelection('Affiliation')"
-          @click="loadCommonPapersForAffiliations(selectedItems)"
-        >
-          <v-list-item-title>Load Common Papers</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="isMultiSelection('Paper')"
-          @click="loadCommonAuthorsForPapers(selectedItems)"
-        >
-          <v-list-item-title>Load Common Authors</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="isMultiSelection('Paper')"
-          @click="loadCommonReferencedPapers(selectedItems)"
-        >
-          <v-list-item-title>Load Common References</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="isMultiSelection('Paper')"
-          @click="loadCommonReferencingPapers(selectedItems)"
-        >
-          <v-list-item-title>Load Common Referencing Papers</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="isMultiSelection('Paper')"
-          @click="loadCommonGenesForPapers(selectedItems)"
-        >
-          <v-list-item-title>Load Common Genes</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="isMultiSelection('Patent')"
-          @click="loadCommonGenesForPatents(selectedItems)"
-        >
-          <v-list-item-title>Load Common Genes</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="isMultiSelection('Patent')"
-          @click="loadCommonOwnersForPatents(selectedItems)"
-        >
-          <v-list-item-title>Load Common Owners</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="isMultiSelection('Entity')"
-          @click="loadCommonPatentsForOwners(selectedItems)"
-        >
-          <v-list-item-title>Load Common Patents</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="isMultiSelection('GeneSymbol')"
-          @click="loadCommonPatentsForGenes(selectedItems)"
-        >
-          <v-list-item-title>Load Common Patents</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="isMultiSelection('GeneSymbol')"
-          @click="loadCommonPapersForGenes(selectedItems)"
-        >
-          <v-list-item-title>Load Common Papers</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="isMultiSelection('Author')"
-          @click="loadCommonPapersForAuthors(selectedItems)"
-        >
-          <v-list-item-title>Load Common Papers</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="currentItemIs('Paper')"
-          @click="loadReferencingPapersForPaper(currentItem)"
-        >
-          <v-list-item-title>Load Referencing Papers</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="currentItemIs('Paper')"
-          @click="loadAuthorsForPaper(currentItem)"
-        >
-          <v-list-item-title>Load Authors</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="currentItemIs('Paper')"
-          @click="loadAffiliationsForPaper(currentItem)"
-        >
-          <v-list-item-title>Load Affiliations</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="currentItemIs('Paper')"
-          @click="loadGenesForPaper(currentItem)"
-        >
-          <v-list-item-title>Load Genes</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="currentItemIs('Patent')"
-          @click="loadGenesForPatent(currentItem)"
-        >
-          <v-list-item-title>Load Genes</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="currentItemIs('Patent')"
-          @click="loadOwnersForPatent(currentItem)"
-        >
-          <v-list-item-title>Load Owners</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="currentItemIs('Patent') && isStaging"
-          @click="loadReferencedPatentsForPatent(currentItem)"
-        >
-          <v-list-item-title>Load Genes</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="currentItemIs('GeneSymbol')"
-          @click="loadPapersForGene(currentItem)"
-        >
-          <v-list-item-title>Load Papers</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="currentItemIs('Protein')"
-          @click="loadGenesForProteins(currentItem)"
-        >
-          <v-list-item-title>Load Genes</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="currentItemIs('GeneSymbol')"
-          @click="loadProteinsForGene(currentItem)"
-        >
-          <v-list-item-title>Load Proteins</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="isMultiSelection('GeneSymbol')"
-          @click="loadCommonProteinsForGenes(selectedItems)"
-        >
-          <v-list-item-title>Load Common Proteins</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="currentItemIs('GeneSymbol')"
-          @click="loadPatentsForGene(currentItem)"
-        >
-          <v-list-item-title>Load Patents</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="currentItemIs('Author')"
-          @click="loadPapersForAuthor(currentItem)"
-        >
-          <v-list-item-title>Load Papers</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="currentItemIs('Affiliation')"
-          @click="loadPapersForAffiliation(currentItem)"
-        >
-          <v-list-item-title>Load Papers</v-list-item-title>
+          <v-list-item-title>{{ action.title }}</v-list-item-title>
         </v-list-item>
         <v-list-item
           v-if="currentItem && selectedItems.length < 1"
@@ -394,49 +233,19 @@ export default {
         graphModelManager.getCanvasObject(evt.item).toFront();
       }
     });
-
-    this.eventBus.$on("load-papers-for-gene", (gene) => {
-      this.loadPapersForGene(gene);
-    });
-    this.eventBus.$on("load-author", (authorId) => {
-      this.loader.loadAndConnectNodeForSchema(this.loader.authorType, authorId);
-    });
-    this.eventBus.$on("load-geneSymbol", (id) => {
-      this.loader.loadAndConnectNodeForSchema(this.loader.geneSymbolType, id);
-    });
-    this.eventBus.$on("load-patents-for-gene", (gene) => {
-      this.loadPatentsForGene(gene);
-    });
-    this.eventBus.$on("load-papers-for-author", (author) => {
-      this.loadPapersForAuthor(author);
-    });
-    this.eventBus.$on("load-referenced-papers-for-paper", (paper) => {
-      this.loadReferencedPapersForPaper(paper);
-    });
-    this.eventBus.$on("load-referencing-papers-for-paper", (paper) => {
-      this.loadReferencingPapersForPaper(paper);
-    });
-    this.eventBus.$on("load-authors-for-paper", (paper) => {
-      this.loadAuthorsForPaper(paper);
-    });
-    this.eventBus.$on("load-referencing-patents-for-patent", (patent) => {
-      this.loadReferencingPatentsForPatent(patent);
-    });
-    this.eventBus.$on("load-owners-on-patent", (patent) => {
-      this.loadOwnersForPatent(patent);
-    });
-    this.eventBus.$on("load-patents-on-owners", (owner) => {
-      this.loadPatentsForOwner(owner);
-    });
-    this.eventBus.$on("load-affiliations-for-paper", (paper) => {
-      this.loadAffiliationsForPaper(paper);
-    });
-    this.eventBus.$on("load-papers-for-affiliation", (paper) => {
-      this.loadPapersForAffiliation(paper);
-    });
-    this.eventBus.$on("load-genes-for-paper", (paper) => {
-      this.loadGenesForPaper(paper);
-    });
+    this.loader.registerEvents(this.eventBus);
+  },
+  computed: {
+    actions: function () {
+      if (this.loader !== null) {
+        if (this.selectedItems.length > 1) {
+          return this.loader.findCommonActions(this.selectedItems);
+        } else if (this.currentItem !== null) {
+          return this.loader.findActions(this.currentItem);
+        }
+      }
+      return [];
+    },
   },
   methods: {
     onHoveredItemChanged(item) {
@@ -534,98 +343,11 @@ export default {
     remove(items) {
       this.loader.remove(items);
     },
-    async loadPapersForAuthor(author) {
-      await this.loader.loadInEdges(author, this.loader.paper_author);
-    },
-    async loadGenesForPaper(paper) {
-      await this.loader.loadOutEdges(paper, this.loader.paper_geneSymbol);
-    },
-    async loadGenesForPatent(patent) {
-      await this.loader.loadOutEdges(patent, this.loader.patent_geneSymbol);
-    },
     async loadPapersForGene(gene) {
       await this.loader.loadInEdges(gene, this.loader.paper_geneSymbol);
     },
-    async loadProteinsForGene(gene) {
-      await this.loader.loadInEdges(gene, this.loader.protein_geneSymbol);
-    },
-    async loadCommonProteinsForGenes(genes) {
-      await this.loader.loadSources(genes, this.loader.protein_geneSymbol);
-    },
-    async loadGenesForProteins(protein) {
-      await this.loader.loadOutEdges(protein, this.loader.protein_geneSymbol);
-    },
-    async loadPatentsForGene(gene) {
-      await this.loader.loadInEdges(gene, this.loader.patent_geneSymbol);
-    },
-    async loadAuthorsForPaper(paper) {
-      await this.loader.loadOutEdges(paper, this.loader.paper_author);
-    },
-    async loadOwnersForPatent(patent) {
-      await this.loader.loadOutEdges(patent, this.loader.patent_owner_entity);
-    },
-    async loadReferencedPatentsForPatent(patent) {
-      await this.loader.loadOutEdges(patent, this.loader.patent_patent);
-    },
-    async loadReferencingPatentsForPatent(patent) {
-      await this.loader.loadInEdges(patent, this.loader.patent_patent);
-    },
-    async loadPatentsForOwner(owner) {
-      await this.loader.loadInEdges(owner, this.loader.patent_owner_entity);
-    },
-    async loadCommonOwnersForPatents(patents) {
-      await this.loader.loadTargets(patents, this.loader.patent_owner_entity);
-    },
-    async loadCommonPatentsForOwners(owners) {
-      await this.loader.loadSources(owners, this.loader.patent_owner_entity);
-    },
-    async loadAffiliationsForPaper(paper) {
-      await this.loader.loadOutEdges(paper, this.loader.paper_affiliation);
-    },
-    async loadPapersForAffiliation(affiliation) {
-      await this.loader.loadInEdges(affiliation, this.loader.paper_affiliation);
-    },
-    async loadReferencedPapersForPaper(paper) {
-      await this.loader.loadOutEdges(paper, this.loader.paper_paper);
-    },
-    async loadReferencingPapersForPaper(paper) {
-      await this.loader.loadInEdges(paper, this.loader.paper_paper);
-    },
-    async loadCommonAffiliationsForPapers(items) {
-      await this.loader.loadTargets(items, this.loader.paper_affiliation);
-    },
-    async loadCommonPapersForAffiliations(items) {
-      await this.loader.loadSources(items, this.loader.paper_affiliation);
-    },
-    async loadCommonGenesForPapers(items) {
-      await this.loader.loadTargets(items, this.loader.paper_geneSymbol);
-    },
     async loadCommonPapersForGenes(items) {
-      await this.loader.loadSources(items, this.loader.paper_geneSymbol);
-    },
-    async loadCommonPapersForAuthors(items) {
-      await this.loader.loadSources(items, this.loader.paper_author);
-    },
-    async loadCommonAuthorsForPapers(items) {
-      await this.loader.loadTargets(items, this.loader.paper_author);
-    },
-    async loadCommonReferencedPapers(items) {
-      await this.loader.loadTargets(items, this.loader.paper_paper);
-    },
-    async loadCommonReferencedPatents(items) {
-      await this.loader.loadTargets(items, this.loader.patent_patent);
-    },
-    async loadCommonReferencingPatents(items) {
-      await this.loader.loadSources(items, this.loader.patent_patent);
-    },
-    async loadCommonReferencingPapers(items) {
-      await this.loader.loadSources(items, this.loader.paper_paper);
-    },
-    async loadCommonGenesForPatents(items) {
-      await this.loader.loadTargets(items, this.loader.patent_geneSymbol);
-    },
-    async loadCommonPatentsForGenes(items) {
-      await this.loader.loadSources(items, this.loader.patent_geneSymbol);
+      await this.loader.loadCommonSources(items, this.loader.paper_geneSymbol);
     },
     async searchGenes(geneIds) {
       let genes = await this.loader.loadNodesForSchema(

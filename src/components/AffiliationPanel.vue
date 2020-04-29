@@ -39,7 +39,7 @@ export default {
   },
   methods: {
     loadPapers() {
-      this.eventBus.$emit("load-papers-for-affiliation", this.value);
+      this.eventBus.$emit("load-source-Paper-for-Affiliation", this.value);
     },
   },
 };

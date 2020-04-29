@@ -17,11 +17,44 @@ import coreQuery from "./dbconnection";
 import { getId } from "./Neo4jGraphBuilder";
 import { isOfType } from "./queries";
 
+/**
+ * @param {String} query
+ * @param {Object} args
+ * @param {String} name?
+ * @return {Promise<*[]>}
+ */
 async function query(query, args = {}, name = "result") {
   return (await coreQuery(query, args)).records.map((r) => r.get(name));
 }
 
+/**
+ *
+ * @param {String} query
+ * @param {Object} args
+ * @param {String[]} names
+ * @return {Promise<{}[]>}
+ */
+async function mapQuery(query, args = {}, names = ["result"]) {
+  return (await coreQuery(query, args)).records.map((r) => {
+    let result = {};
+    for (let i = 0; i < names.length; i++) {
+      result[name] = r.get(name);
+    }
+    return result;
+  });
+}
+
 const limit = 200;
+
+/**
+ *
+ * @param {Object[]} items
+ * @param {String} type
+ * @return {boolean}
+ */
+function isMultiSelection(items, type) {
+  return items.length > 1 && items.every((item) => isOfType(item, type));
+}
 
 export class IncrementalGraphLoader {
   /**
@@ -64,7 +97,14 @@ export class IncrementalGraphLoader {
     };
   }
 
-  addNodeType(type, style, size, labels = null) {
+  addNodeType(
+    type,
+    style,
+    size,
+    labels = null,
+    singularName = null,
+    pluralName = null
+  ) {
     let node = this.queryBuilder.addNodeType(type);
     node.tag.creator = this.createNodeCreator(
       style,
@@ -72,6 +112,8 @@ export class IncrementalGraphLoader {
       labels || (() => [])
     );
     node.tag.type = type;
+    node.tag.singularName = singularName || type.toLowerCase();
+    node.tag.pluralName = pluralName || type.toLowerCase() + "s";
     return node;
   }
 
@@ -80,7 +122,9 @@ export class IncrementalGraphLoader {
     targetNode,
     style = null,
     labels = null,
-    matchClause = null
+    matchClause = null,
+    relatedVerb = null,
+    relatingVerb = null
   ) {
     if (matchClause === null) {
       matchClause = `(sourceNode:${sourceNode.tag.type})-->(targetNode:${targetNode.tag.type})`;
@@ -93,11 +137,65 @@ export class IncrementalGraphLoader {
       relationShipType,
       sourceNode,
       targetNode,
-      matchClause
+      matchClause,
+      relatedVerb || "related",
+      relatingVerb || "relating"
     );
     edge.tag.creator = this.createEdgeCreator(style || edgeStyle, labels);
     edge.tag.type = relationShipType;
     return edge;
+  }
+
+  /**
+   * @param item
+   * @return {{action: (function(): *), title: string}[]}
+   */
+  findActions(item) {
+    return this.queryBuilder.schemaGraph.nodes
+      .filter((schemaNode) => isOfType(item, schemaNode.tag.type))
+      .flatMap((schemaNode) =>
+        this.queryBuilder.schemaGraph
+          .outEdgesAt(schemaNode)
+          .map((schemaEdge) => ({
+            action: () => this.loadOutEdges(item, schemaEdge),
+            title: `Load ${schemaEdge.tag.relatedVerb} ${schemaEdge.targetNode.tag.pluralName}`,
+          }))
+          .concat(
+            this.queryBuilder.schemaGraph
+              .inEdgesAt(schemaNode)
+              .map((schemaEdge) => ({
+                action: () => this.loadInEdges(item, schemaEdge),
+                title: `Load ${schemaEdge.tag.relatingVerb} ${schemaEdge.sourceNode.tag.pluralName}`,
+              }))
+          )
+      )
+      .toArray();
+  }
+
+  /**
+   * @param {Object[]} items
+   * @return {{action: (function(): *), title: string}[]}
+   */
+  findCommonActions(items) {
+    return this.queryBuilder.schemaGraph.nodes
+      .filter((schemaNode) => isMultiSelection(items, schemaNode.tag.type))
+      .flatMap((schemaNode) =>
+        this.queryBuilder.schemaGraph
+          .outEdgesAt(schemaNode)
+          .map((schemaEdge) => ({
+            action: () => this.loadCommonTargets(items, schemaEdge),
+            title: `Load common ${schemaEdge.tag.relatedVerb} ${schemaEdge.targetNode.tag.pluralName}`,
+          }))
+          .concat(
+            this.queryBuilder.schemaGraph
+              .inEdgesAt(schemaNode)
+              .map((schemaEdge) => ({
+                action: () => this.loadCommonSources(items, schemaEdge),
+                title: `Load common ${schemaEdge.tag.relatingVerb} ${schemaEdge.sourceNode.tag.pluralName}`,
+              }))
+          )
+      )
+      .toArray();
   }
 
   /**
@@ -134,7 +232,7 @@ export class IncrementalGraphLoader {
     if (node) {
       let location = node.layout.center.toPoint();
       let graph = this.graphComponent.graph;
-      (await this.queryBuilder.loadOutEdges(schemaEdge, item)).forEach(
+      (await this.queryBuilder.loadTargetNodes(schemaEdge, item)).forEach(
         (item) => {
           let existingNode = this.getLoadedNode(item);
           if (existingNode) {
@@ -239,7 +337,7 @@ export class IncrementalGraphLoader {
     if (node) {
       let location = node.layout.center.toPoint();
       let graph = this.graphComponent.graph;
-      (await this.queryBuilder.loadInEdges(schemaEdge, item)).forEach(
+      (await this.queryBuilder.loadSourceNodes(schemaEdge, item)).forEach(
         (item) => {
           let existingNode = this.getLoadedNode(item);
           if (existingNode) {
@@ -270,7 +368,7 @@ export class IncrementalGraphLoader {
     if (node) {
       let location = node.layout.center.toPoint();
       let graph = this.graphComponent.graph;
-      (await this.queryBuilder.loadOutEdges(schemaEdge, item)).forEach(
+      (await this.queryBuilder.loadTargetNodes(schemaEdge, item)).forEach(
         (item) => {
           let existingNode = this.getLoadedNode(item);
           if (existingNode) {
@@ -448,7 +546,7 @@ export class IncrementalGraphLoader {
     });
   }
 
-  async loadTargets(items, schemaEdge) {
+  async loadCommonTargets(items, schemaEdge) {
     await this.loadAndLayout(async () => {
       const newItems = await this.loadAndConnectSchemaTargets(
         items,
@@ -463,7 +561,7 @@ export class IncrementalGraphLoader {
     });
   }
 
-  async loadSources(items, schemaEdge) {
+  async loadCommonSources(items, schemaEdge) {
     await this.loadAndLayout(async () => {
       const newItems = await this.loadAndConnectSchemaSources(
         items,
@@ -517,18 +615,32 @@ export default class SchemaBasedQueryBuilder {
    * @param {INode} sourceNodeType
    * @param {INode} targetNodeType
    * @param {String} matchClause
+   * @param {string} relatedVerb
+   * @param {string} relatingVerb
    * @return {IEdge}
    */
   addRelationShip(
     relationShipType,
     sourceNodeType,
     targetNodeType,
-    matchClause
+    matchClause,
+    relatedVerb,
+    relatingVerb
   ) {
+    let relation = false;
+    if (matchClause.indexOf("[relation:") > 0) {
+      relation = true;
+    }
     return this.schemaGraph.createEdge({
       source: sourceNodeType,
       target: targetNodeType,
-      tag: { matchClause, relationShipType },
+      tag: {
+        matchClause,
+        hasRelation: relation,
+        relationShipType,
+        relatedVerb,
+        relatingVerb,
+      },
     });
   }
 
@@ -549,7 +661,25 @@ export default class SchemaBasedQueryBuilder {
       ":"
     )}) WHERE id(sourceNode) = $sourceId MATCH ${
       schemaEdge.tag.matchClause
+    } RETURN distinct(targetNode) as targetNode,relation LIMIT ${limit}`;
+  }
+
+  /** @param {IEdge} schemaEdge */
+  createTargetNodesQuery(schemaEdge) {
+    return `MATCH (sourceNode:${schemaEdge.sourceNode.tag.nodeLabels.join(
+      ":"
+    )}) WHERE id(sourceNode) = $sourceId MATCH ${
+      schemaEdge.tag.matchClause
     } RETURN distinct(targetNode) as result LIMIT ${limit}`;
+  }
+
+  /** @param {IEdge} schemaEdge */
+  createSourceNodesQuery(schemaEdge) {
+    return `MATCH (targetNode:${schemaEdge.targetNode.tag.nodeLabels.join(
+      ":"
+    )}) WHERE id(targetNode) = $targetId MATCH ${
+      schemaEdge.tag.matchClause
+    } RETURN distinct(sourceNode) as result LIMIT ${limit}`;
   }
 
   /** @param {IEdge} schemaEdge */
@@ -558,7 +688,7 @@ export default class SchemaBasedQueryBuilder {
       ":"
     )}) WHERE id(targetNode) = $targetId MATCH ${
       schemaEdge.tag.matchClause
-    } RETURN distinct(sourceNode) as result LIMIT ${limit}`;
+    } RETURN distinct(sourceNode) as sourceNode, relation LIMIT ${limit}`;
   }
 
   /** @param {IEdge} schemaEdge */
@@ -574,10 +704,38 @@ export default class SchemaBasedQueryBuilder {
    * @param {{identity:string}} item
    * @param {IEdge} schemaEdge
    */
-  async loadOutEdges(schemaEdge, item) {
-    return await query(this.createOutEdgeQuery(schemaEdge), {
+  async loadTargetNodes(schemaEdge, item) {
+    return await query(this.createTargetNodesQuery(schemaEdge), {
       sourceId: item.identity,
     });
+  }
+
+  /**
+   * @param {{identity:string}} item
+   * @param {IEdge} schemaEdge
+   */
+  async loadOutEdges(schemaEdge, item) {
+    return await mapQuery(
+      this.createOutEdgeQuery(schemaEdge),
+      {
+        sourceId: item.identity,
+      },
+      ["targetNode", "relation"]
+    );
+  }
+
+  /**
+   * @param {{identity:string}} item
+   * @param {IEdge} schemaEdge
+   */
+  async loadInEdges(schemaEdge, item) {
+    return await mapQuery(
+      this.createInEdgeQuery(schemaEdge),
+      {
+        sourceId: item.identity,
+      },
+      ["sourceNode", "relation"]
+    );
   }
 
   /**
@@ -629,10 +787,23 @@ export default class SchemaBasedQueryBuilder {
   /**
    * @param {IEdge} schemaEdge
    */
-  async loadInEdges(schemaEdge, item) {
-    return await query(this.createInEdgeQuery(schemaEdge), {
+  async loadSourceNodes(schemaEdge, item) {
+    return await query(this.createSourceNodesQuery(schemaEdge), {
       targetId: item.identity,
     });
+  }
+
+  /**
+   * @param {IEdge} schemaEdge
+   */
+  async loadInEdges(schemaEdge, item) {
+    return await mapQuery(
+      this.createInEdgeQuery(schemaEdge),
+      {
+        targetId: item.identity,
+      },
+      ["relation", "sourceNode"]
+    );
   }
 
   /**
@@ -672,6 +843,7 @@ export default class SchemaBasedQueryBuilder {
       })
     ).records.map((r) => ({
       sourceId: r.get("sourceNodeId"),
+      relationShip: schemaEdge.tag.hasRelation ? r.get("relation") : null,
       targetId: r.get("targetNodeId"),
     }));
   }

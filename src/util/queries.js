@@ -20,15 +20,18 @@ export async function query(query, args = {}, name = "result") {
 }
 
 export async function loadGenesForPaper(paper) {
-  return await loader.queryBuilder.loadOutEdges(loader.paper_geneSymbol, paper);
+  return await loader.queryBuilder.loadTargetNodes(
+    loader.paper_geneSymbol,
+    paper
+  );
 }
 
 export async function loadAuthorsForPaper(paper) {
-  return await loader.queryBuilder.loadOutEdges(loader.paper_author, paper);
+  return await loader.queryBuilder.loadTargetNodes(loader.paper_author, paper);
 }
 
 export async function loadGenesForPatent(patent) {
-  return await loader.queryBuilder.loadOutEdges(
+  return await loader.queryBuilder.loadTargetNodes(
     loader.patent_geneSymbol,
     patent
   );
