@@ -55,10 +55,10 @@ export default {
 
   methods: {
     loadPapers() {
-      this.eventBus.$emit("load-target-Paper-for-GeneSymbol", this.value);
+      this.eventBus.$emit("load-source-Paper-for-GeneSymbol", this.value);
     },
     loadPatents() {
-      this.eventBus.$emit("load-target-GeneSymbol-for-Patent", this.value);
+      this.eventBus.$emit("load-source-Patent-for-GeneSymbol", this.value);
     },
   },
 };

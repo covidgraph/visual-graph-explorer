@@ -16,7 +16,6 @@ import {
 import SchemaBasedQueryBuilder, {
   IncrementalGraphLoader,
 } from "./schema-based-query-builder";
-import { isStagingDb } from "./dbconnection";
 
 export const edgeStyle = new PolylineEdgeStyle({
   stroke: new Stroke({
@@ -46,8 +45,6 @@ export const edgeLabelLayoutParameter = new SmartEdgeLabelModel({
 export class CovidGraphLoader extends IncrementalGraphLoader {
   constructor(graphComponent) {
     super(new SchemaBasedQueryBuilder(), graphComponent);
-
-    let staging = isStagingDb();
 
     this.patentType = this.addNodeType(
       "Patent",
@@ -106,16 +103,14 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       "entities"
     );
 
-    if (staging) {
-      this.gTexTissueType = this.addNodeType(
-        "GtexTissue",
-        new ShapeNodeStyle(),
-        new Size(50, 50),
-        (entity) => [entity.properties.sid || "untitled"],
-        "tissue",
-        "tissues"
-      );
-    }
+    this.gTexTissueType = this.addNodeType(
+      "GtexTissue",
+      new ShapeNodeStyle(),
+      new Size(50, 50),
+      (entity) => [entity.properties.sid || "untitled"],
+      "tissue",
+      "tissues"
+    );
 
     const wroteEdgeStyle = new PolylineEdgeStyle({
       stroke: "2px blue",
@@ -126,9 +121,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       this.authorType,
       wroteEdgeStyle,
       () => [],
-      staging
-        ? "(sourceNode:Paper)-[:PAPER_HAS_AUTHORCOLLECTION]->(:AuthorCollection)-[:AUTHORCOLLECTION_HAS_AUTHOR]->(targetNode:Author)"
-        : "(sourceNode:Paper)-[:PAPER_HAS_METADATA]->(m:Metadata)-[:METADATA_HAS_AUTHOR]->(:Author:CollectionHub)-[:AUTHOR_HAS_AUTHOR]->(targetNode:Author)"
+      "(sourceNode:Paper)-[:PAPER_HAS_AUTHORCOLLECTION]->(:AuthorCollection)-[:AUTHORCOLLECTION_HAS_AUTHOR]->(targetNode:Author)"
     );
 
     this.paper_affiliation = this.addRelationShip(
@@ -136,9 +129,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       this.affiliationType,
       wroteEdgeStyle,
       () => [],
-      staging
-        ? "(sourceNode:Paper)-[:PAPER_HAS_AUTHORCOLLECTION]->(:AuthorCollection)-[:AUTHORCOLLECTION_HAS_AUTHOR]->(:Author)-[:AUTHOR_HAS_AFFILIATION]->(targetNode:Affiliation)"
-        : "(sourceNode:Paper)-[:PAPER_HAS_METADATA]->(m:Metadata)-[:METADATA_HAS_AUTHOR]->(:Author:CollectionHub)-[:AUTHOR_HAS_AUTHOR]->(:Author)-[:AUTHOR_HAS_AFFILIATION]->(targetNode:Affiliation)",
+      "(sourceNode:Paper)-[:PAPER_HAS_AUTHORCOLLECTION]->(:AuthorCollection)-[:AUTHORCOLLECTION_HAS_AUTHOR]->(:Author)-[:AUTHOR_HAS_AFFILIATION]->(targetNode:Affiliation)",
       "authoring",
       "submitted"
     );
@@ -148,9 +139,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       this.geneSymbolType,
       edgeStyle,
       () => [],
-      staging
-        ? "(sourceNode:Paper)-[:PAPER_HAS_BODYTEXTCOLLECTION|PAPER_HAS_ABSTRACTCOLLECTION]->()-[:BODYTEXTCOLLECTION_HAS_BODYTEXT|ABSTRACTCOLLECTION_HAS_ABSTRACT]->()-[:HAS_FRAGMENT]->(:Fragment)-[:MENTIONS]->(targetNode:GeneSymbol)"
-        : "(sourceNode:Paper)-[:PAPER_HAS_BODY_TEXT]->(:Body_text:CollectionHub)-[:BODY_TEXT_HAS_BODY_TEXT]->(:Body_text)-[:HAS_FRAGMENT]->(f)-[:MENTIONS]->(targetNode:GeneSymbol)",
+      "(sourceNode:Paper)-[:PAPER_HAS_BODYTEXTCOLLECTION|PAPER_HAS_ABSTRACTCOLLECTION]->()-[:BODYTEXTCOLLECTION_HAS_BODYTEXT|ABSTRACTCOLLECTION_HAS_ABSTRACT]->()-[:HAS_FRAGMENT]->(:Fragment)-[:MENTIONS]->(targetNode:GeneSymbol)",
       "mentioned",
       "mentioning"
     );
@@ -162,9 +151,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       this.geneSymbolType,
       edgeStyle,
       () => [],
-      staging
-        ? "(sourceNode:Patent)-[:PATENT_HAS_PATENTABSTRACT|PATENT_HAS_PATENTTITLE|PATENT_HAS_PATENTDESCRIPTION|PATENT_HAS_PATENTCLAIM]->()-[:HAS_FRAGMENT]->(:Fragment)-[:MENTIONS]->(targetNode:GeneSymbol)"
-        : "(sourceNode:Patent)-[:HAS_DESCRIPTION]->(:PatentDescription)-[:HAS_FRAGMENT]->(f)-[:MENTIONS]->(targetNode:GeneSymbol)",
+      "(sourceNode:Patent)-[:PATENT_HAS_PATENTABSTRACT|PATENT_HAS_PATENTTITLE|PATENT_HAS_PATENTDESCRIPTION|PATENT_HAS_PATENTCLAIM]->()-[:HAS_FRAGMENT]->(:Fragment)-[:MENTIONS]->(targetNode:GeneSymbol)",
       "mentioned",
       "mentioning"
     );
@@ -174,9 +161,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       this.paperType,
       edgeStyle,
       () => [],
-      staging
-        ? "(sourceNode:Paper)-[:PAPER_HAS_REFERENCECOLLECTION]->(:ReferenceCollection)-[:REFERENCECOLLECTION_HAS_REFERENCE]->(:Reference)-[:REFERENCE_HAS_PAPERID]->(:PaperID)<-[:PAPER_HAS_PAPERID]-(targetNode:Paper)"
-        : "(sourceNode:Paper)-[:PAPER_HAS_BIB_ENTRIES]->(:Bib_entries)-[:BIB_ENTRIES_HAS_BIBREF]->(:Bibref)-[:BIBREF_HAS_OTHER_IDS]->(:Other_ids)-->(:CollectionHub)-->(paperId)<-[:PAPERID_COLLECTION_HAS_PAPERID]-(:CollectionHub:PaperID)<-[:PAPER_HAS_PAPERID_COLLECTION]-(targetNode:Paper)",
+      "(sourceNode:Paper)-[:PAPER_HAS_REFERENCECOLLECTION]->(:ReferenceCollection)-[:REFERENCECOLLECTION_HAS_REFERENCE]->(:Reference)-[:REFERENCE_HAS_PAPERID]->(:PaperID)<-[:PAPER_HAS_PAPERID]-(targetNode:Paper)",
       "referenced",
       "referencing"
     );
@@ -201,26 +186,25 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       "owned"
     );
 
-    if (staging) {
-      this.geneSymbol_gTexTissue = this.addRelationShip(
-        this.geneSymbolType,
-        this.gTexTissueType,
-        edgeStyle,
-        () => [],
-        "(sourceNode:GeneSymbol)<-[:MAPS]-(:Gene)-[:EXPRESSED]->(:GtexDetailedTissue)<-[:PARENT]-(targetNode:GtexTissue)",
-        "expressed",
-        "expressing"
-      );
-      this.patent_patent = this.addRelationShip(
-        this.patentType,
-        this.patentType,
-        edgeStyle,
-        () => [],
-        "(sourceNode:Patent)-[:PATENT_HAS_PATENTCITATIONCOLLECTION]->(:PatentCitationCollection)-[:PATENTCITATIONCOLLECTION_HAS_PATENTLITERATURECITATION]->(:PatentLiteratureCitation)-[:PATENTLITERATURECITATION_HAS_PATENTNUMBER]->(:PatentNumber)<-[:PATENT_HAS_PATENTNUMBER]-(targetNode:Patent)",
-        "referenced",
-        "referencing"
-      );
-    }
+    this.geneSymbol_gTexTissue = this.addRelationShip(
+      this.geneSymbolType,
+      this.gTexTissueType,
+      edgeStyle,
+      () => [],
+      "(sourceNode:GeneSymbol)<-[:MAPS]-(:Gene)-[:EXPRESSED]->(:GtexDetailedTissue)<-[:PARENT]-(targetNode:GtexTissue)",
+      "expressed",
+      "expressing"
+    );
+
+    this.patent_patent = this.addRelationShip(
+      this.patentType,
+      this.patentType,
+      edgeStyle,
+      () => [],
+      "(sourceNode:Patent)-[:PATENT_HAS_PATENTCITATIONCOLLECTION]->(:PatentCitationCollection)-[:PATENTCITATIONCOLLECTION_HAS_PATENTLITERATURECITATION]->(:PatentLiteratureCitation)-[:PATENTLITERATURECITATION_HAS_PATENTNUMBER]->(:PatentNumber)<-[:PATENT_HAS_PATENTNUMBER]-(targetNode:Patent)",
+      "referenced",
+      "referencing"
+    );
   }
 
   registerEvents(eventBus) {
