@@ -86,20 +86,22 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
     this.proteinType = this.addNodeType(
       "Protein",
       new ShapeNodeStyle(),
-      new Size(50, 50)
+      new Size(50, 50),
+      (entity) => [entity.properties.sid || "untitled"]
     );
 
     this.transcriptType = this.addNodeType(
       "Transcript",
       new ShapeNodeStyle(),
-      new Size(50, 50)
+      new Size(50, 50),
+      (entity) => [entity.properties.sid || "untitled"]
     );
 
     this.entityType = this.addNodeType(
       "Entity",
       new ShapeNodeStyle(),
       new Size(50, 50),
-      null,
+      (entity) => [entity.properties.name || "untitled"],
       "entity",
       "entities"
     );
@@ -109,7 +111,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
         "GtexTissue",
         new ShapeNodeStyle(),
         new Size(50, 50),
-        null,
+        (entity) => [entity.properties.sid || "untitled"],
         "tissue",
         "tissues"
       );

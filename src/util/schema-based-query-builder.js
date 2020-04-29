@@ -248,8 +248,8 @@ export class IncrementalGraphLoader {
           }
         }
       );
-      return newItems;
     }
+    return newItems;
   }
 
   async loadAndConnectSchemaTargets(
@@ -285,8 +285,8 @@ export class IncrementalGraphLoader {
           }
         }
       );
-      return newItems;
     }
+    return newItems;
   }
 
   async loadAndConnectSchemaSources(
@@ -322,8 +322,8 @@ export class IncrementalGraphLoader {
           }
         }
       );
-      return newItems;
     }
+    return newItems;
   }
 
   async loadAndConnectSchemaInEdges(
@@ -390,8 +390,8 @@ export class IncrementalGraphLoader {
           }
         }
       );
-      return newItems;
     }
+    return newItems;
   }
 
   remove(items) {

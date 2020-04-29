@@ -48,8 +48,8 @@
       <PanelItem itemTitle="Date" :items="[value.properties.pub_date]" />
       <PanelItem
         itemTitle="Classification CPC"
-        v-if="value.properties.patent.classification_cpc"
-        :items="value.properties.patent.classification_cpc"
+        v-if="value.properties.classification_cpc"
+        :items="value.properties.classification_cpc"
       />
       <PanelItem
         itemTitle="Classification IPC"
@@ -75,7 +75,6 @@
 
 <script>
 import { loadGenesForPatent, loadTitlesForPatent } from "../util/queries";
-import * as neo4j from "neo4j-driver/lib/browser/neo4j-web";
 import PanelItem from "./shared/PanelItem";
 
 import GeneSymbolList from "./shared/GeneSymbolList";
@@ -88,7 +87,7 @@ export default {
   },
   data: () => ({
     titles: [],
-    patent: null,
+    patent: {},
     geneSymbols: [],
   }),
   props: {

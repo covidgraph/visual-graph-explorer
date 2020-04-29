@@ -64,7 +64,7 @@ export async function loadTitlesForPatent(patent) {
 export async function findPatents(searchText) {
   return coreQuery(
     staging
-      ? `call db.index.fulltext.queryNodes("patents", $searchText)
+      ? `call db.index.fulltext.queryNodes("PatentsFulltextIndex", $searchText)
 yield node,score match (node)--(p:Patent)-[:PATENT_HAS_PATENTTITLE]->(pt:PatentTitle)
 return distinct(id(p)) as id, collect(pt.text) as titles, labels(node)[0] as found_type, node.lang as found_in_lang, score
 order by score

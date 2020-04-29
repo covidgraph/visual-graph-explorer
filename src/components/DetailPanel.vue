@@ -14,6 +14,12 @@
   <v-card v-else-if="nodeIs('Patent')" flat>
     <PatentPanel :value="model"></PatentPanel>
   </v-card>
+  <v-card v-else-if="nodeIs('Protein')" flat>
+    <ProteinPanel :value="model"></ProteinPanel>
+  </v-card>
+  <v-card v-else-if="nodeIs('Entity')" flat>
+    <EntityPanel :value="model"></EntityPanel>
+  </v-card>
   <v-card v-else>
     <v-card-text>
       Nothing Selected
@@ -28,10 +34,14 @@ import GenePanel from "./GenePanel";
 import PatentPanel from "./PatentPanel";
 import AffiliationPanel from "./AffiliationPanel";
 import { isOfType } from "../util/queries";
+import ProteinPanel from "./ProteinPanel";
+import EntityPanel from "./EntityPanel";
 
 export default {
   name: "DetailPanel",
   components: {
+    EntityPanel,
+    ProteinPanel,
     PaperPanel,
     AuthorPanel,
     GenePanel,
