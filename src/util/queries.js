@@ -35,6 +35,13 @@ export async function loadGenesForPatent(patent) {
   );
 }
 
+export async function loadChildPathways(pathway) {
+  return await loader.queryBuilder.loadTargetNodes(
+    loader.pathway_pathway,
+    pathway
+  );
+}
+
 export async function loadAbstractsForPaper(paper) {
   return await query(
     `MATCH (n:Paper)-[r:PAPER_HAS_ABSTRACTCOLLECTION]->(ach:AbstractCollection)-[r2:ABSTRACTCOLLECTION_HAS_ABSTRACT]->(a:Abstract) WHERE id(n) = $paperId 

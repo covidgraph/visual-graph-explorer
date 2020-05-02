@@ -2,7 +2,7 @@
   <v-card flat>
     <v-list class="lime lighten-5 pt-0 pb-0">
       <v-list-item three-line>
-        <v-icon x-large class="Protein-color--text pb-1">mdi-dna</v-icon>
+        <v-icon x-large class="Pathway-color--text pb-1">mdi-dna</v-icon>
         <v-list-item-content flex-sm-column>
           <v-list-item-title class="primary--text pl-2">
             <div class="wrapText">
@@ -20,7 +20,7 @@
         </v-list-item-content>
       </v-list-item>
     </v-list>
-    <v-layout class="lime lighten-5">
+    <!--v-layout class="lime lighten-5">
       <v-col class="flex-row-reverse d-flex pt-0">
         <v-card-actions class="wrap-actions">
           <v-menu>
@@ -39,34 +39,76 @@
           </v-menu>
         </v-card-actions>
       </v-col>
-    </v-layout>
+    </v-layout-->
     <v-expansion-panels>
       <PanelItem
-        itemTitle="Category"
-        v-if="value.properties.category"
-        :items="[value.properties.category]"
+        itemTitle="Organism"
+        v-if="value.properties.org"
+        :items="[value.properties.org]"
       />
       <PanelItem
         itemTitle="Description"
         v-if="value.properties.desc"
         :items="[value.properties.desc]"
       />
+      <PanelItem
+        item-title="Child Pathways"
+        v-if="children && children.length > 0"
+        :items="children"
+        v-slot:default="item"
+      >
+        <v-chip
+          label
+          close
+          close-icon="mdi-download"
+          @click:close="loadChildPathway(item.item)"
+        >
+          <v-avatar left>
+            <v-icon color="#BCD104">mdi-dna</v-icon>
+          </v-avatar>
+          {{ item.item.properties.name }}
+        </v-chip>
+      </PanelItem>
     </v-expansion-panels>
   </v-card>
 </template>
 
 <script>
 import PanelItem from "./shared/PanelItem";
+import { loadChildPathways } from "../util/queries";
 export default {
-  name: "ProteinPanel",
+  name: "PathwayPanel",
   components: { PanelItem },
   props: {
     value: null,
   },
-
+  data: () => ({
+    children: [],
+  }),
   methods: {
+    loadChildPathway(child) {
+      this.eventBus.$emit("load-Pathway", child.identity);
+    },
     loadGenes() {
-      this.eventBus.$emit("load-source-GeneSymbol-for-Protein", this.value);
+      this.eventBus.$emit("load-source-GeneSymbol-for-Pathway", this.value);
+    },
+  },
+  watch: {
+    value: {
+      immediate: true,
+      handler: function (pathway) {
+        if (pathway) {
+          loadChildPathways(pathway)
+            .then((pathways) => {
+              this.children = pathways;
+            })
+            .catch((reason) => {
+              this.children = [];
+            });
+        } else {
+          this.children = [];
+        }
+      },
     },
   },
 };
@@ -74,8 +116,8 @@ export default {
 
 <style lang="scss" scoped>
 @import "../styles/colors";
-.Protein-color--text {
-  color: $protein-color !important;
+.Pathway-color--text {
+  color: $pathway-color !important;
 }
 .wrapText {
   white-space: normal !important;

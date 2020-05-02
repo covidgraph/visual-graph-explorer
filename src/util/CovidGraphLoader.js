@@ -103,6 +103,15 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       "entities"
     );
 
+    this.pathwayType = this.addNodeType(
+      "Pathway",
+      new ShapeNodeStyle(),
+      new Size(50, 50),
+      (entity) => [entity.properties.name || "untitled"],
+      "pathway",
+      "pathways"
+    );
+
     this.gTexTissueType = this.addNodeType(
       "GtexTissue",
       new ShapeNodeStyle(),
@@ -180,10 +189,30 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       this.patentType,
       this.entityType,
       edgeStyle,
-      () => ["OWNED BY"],
-      "(sourceNode:Patent)-[:APPLICANT|INVENTOR|OWNER]->(targetNode:Entity)",
+      (relation) => relation.type,
+      "(sourceNode:Patent)-[relation:INVENTOR|OWNER]->(targetNode:Entity)",
       "owning",
       "owned"
+    );
+
+    this.patent_applicant = this.addRelationShip(
+      this.patentType,
+      this.entityType,
+      edgeStyle,
+      (relation) => relation.type,
+      "(sourceNode:Patent)-[relation:APPLICANT]->(targetNode:Entity)",
+      "applying",
+      "owned"
+    );
+
+    this.applicant_protein = this.addRelationShip(
+      this.entityType,
+      this.proteinType,
+      edgeStyle,
+      (relation) => relation.type,
+      "(sourceNode:Entity)<-[:APPLICANT|OWNER|INVENTOR]-(:Patent)-[:PATENT_HAS_PATENTABSTRACT|PATENT_HAS_PATENTTITLE|PATENT_HAS_PATENTDESCRIPTION|PATENT_HAS_PATENTCLAIM]->()-[:HAS_FRAGMENT]->(:Fragment)-[:MENTIONS]->(:GeneSymbol)-[:SYNONYM]->(:GeneSymbol)<-[:MAPS]-(g:Gene)-[:CODES]->(:Transcript)-[:CODES]->(targetNode:Protein)",
+      "related",
+      "related"
     );
 
     this.geneSymbol_gTexTissue = this.addRelationShip(
@@ -194,6 +223,26 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       "(sourceNode:GeneSymbol)<-[:MAPS]-(:Gene)-[:EXPRESSED]->(:GtexDetailedTissue)<-[:PARENT]-(targetNode:GtexTissue)",
       "expressed",
       "expressing"
+    );
+
+    this.geneSymbol_pathway = this.addRelationShip(
+      this.geneSymbolType,
+      this.pathwayType,
+      edgeStyle,
+      () => [],
+      "(sourceNode:GeneSymbol)<-[:MAPS]-(:Gene)-[:MEMBER]->(targetNode:Pathway)",
+      "related",
+      "related"
+    );
+
+    this.pathway_pathway = this.addRelationShip(
+      this.pathwayType,
+      this.pathwayType,
+      edgeStyle,
+      () => ["Child"],
+      "(sourceNode:Pathway)-[:CHILD]->(targetNode:Pathway)",
+      "child",
+      "parent"
     );
 
     this.patent_patent = this.addRelationShip(

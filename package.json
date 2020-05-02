@@ -1,6 +1,6 @@
 {
   "name": "coronagraph-visual-graph-explorer",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "author": "yWorks GmbH <yfileshtml@yworks.com>",
   "scripts": {
@@ -12,6 +12,20 @@
     "hooks": {
       "pre-commit": "pretty-quick --staged"
     }
+  },
+  "browserslist": {
+    "production": [
+      "IE 11",
+      "last 2 Chrome versions",
+      "last 2 firefox versions"
+    ],
+    "development": [
+      "last 1 version"
+    ],
+    "modern": [
+      "last 1 chrome version",
+      "last 1 firefox version"
+    ]
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.13.0",

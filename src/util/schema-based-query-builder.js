@@ -1,8 +1,12 @@
 import {
   DefaultGraph,
   IEdge,
+  IGraph,
   INode,
+  IEdgeStyle,
   GraphComponent,
+  Size,
+  INodeStyle,
   Rect,
   Point,
   License,
@@ -38,7 +42,7 @@ async function mapQuery(query, args = {}, names = ["result"]) {
   return (await coreQuery(query, args)).records.map((r) => {
     let result = {};
     for (let i = 0; i < names.length; i++) {
-      result[name] = r.get(name);
+      result[names[i]] = r.get(names[i]);
     }
     return result;
   });
@@ -56,6 +60,33 @@ function isMultiSelection(items, type) {
   return items.length > 1 && items.every((item) => isOfType(item, type));
 }
 
+/**
+ * @param {IGraph} graph
+ * @param {INode} sourceNode
+ * @param {INode} targetNode
+ * @param {IEdge} schemaEdge
+ * @param relation?
+ */
+function createRelation(graph, sourceNode, targetNode, schemaEdge, relation) {
+  if (schemaEdge.tag.hasRelation) {
+    if (
+      !graph
+        .outEdgesAt(sourceNode)
+        .filter((outEdge) => outEdge.targetNode === targetNode)
+        .some(
+          (existingEdge) =>
+            existingEdge.tag.schemaType === schemaEdge.tag.schemaType
+        )
+    ) {
+      schemaEdge.tag.creator(relation, sourceNode, targetNode);
+    }
+  } else {
+    if (!graph.getEdge(sourceNode, targetNode)) {
+      schemaEdge.tag.creator({}, sourceNode, targetNode);
+    }
+  }
+}
+
 export class IncrementalGraphLoader {
   /**
    * @param {GraphComponent} graphComponent
@@ -64,6 +95,7 @@ export class IncrementalGraphLoader {
   constructor(queryBuilder, graphComponent) {
     this.queryBuilder = queryBuilder;
     this.graphComponent = graphComponent;
+    this.schemaTypeCounter = 0;
     /** @type {Map<any, INode>} */
     this.id2NodeMapping = new Map();
     this.layout = new OrganicLayout({
@@ -85,6 +117,11 @@ export class IncrementalGraphLoader {
     };
   }
 
+  /**
+   * @param {IEdgeStyle} style
+   * @param {function(item):string[]} labels
+   * @return {function(item:Object, source:INode, target:INode):IEdge}
+   */
   createEdgeCreator(style, labels) {
     return (item, source, target) => {
       this.graphComponent.graph.createEdge({
@@ -97,6 +134,16 @@ export class IncrementalGraphLoader {
     };
   }
 
+  /**
+   *
+   * @param {string} type
+   * @param {INodeStyle} style
+   * @param {Size} size
+   * @param {function(item):string[]} labels
+   * @param {string|null} singularName?
+   * @param {string|null} pluralName?
+   * @return {INode}
+   */
   addNodeType(
     type,
     style,
@@ -117,6 +164,16 @@ export class IncrementalGraphLoader {
     return node;
   }
 
+  /**
+   * @param {INode} sourceNode
+   * @param {INode} targetNode
+   * @param {IEdgeStyle} style
+   * @param {function(item:object):string[]} labels
+   * @param {string} matchClause
+   * @param {string|null} relatedVerb?
+   * @param {string|null} relatingVerb?
+   * @return {IEdge}
+   */
   addRelationShip(
     sourceNode,
     targetNode,
@@ -126,6 +183,7 @@ export class IncrementalGraphLoader {
     relatedVerb = null,
     relatingVerb = null
   ) {
+    this.schemaTypeCounter++;
     if (matchClause === null) {
       matchClause = `(sourceNode:${sourceNode.tag.type})-->(targetNode:${targetNode.tag.type})`;
     }
@@ -141,9 +199,28 @@ export class IncrementalGraphLoader {
       relatedVerb || "related",
       relatingVerb || "relating"
     );
-    edge.tag.creator = this.createEdgeCreator(style || edgeStyle, labels);
+    edge.tag.schemaType = this.schemaTypeCounter;
+    edge.tag.creator = this.wrapCreatorWithSchemaType(
+      this.createEdgeCreator(style || edgeStyle, labels),
+      this.schemaTypeCounter
+    );
     edge.tag.type = relationShipType;
     return edge;
+  }
+
+  /**
+   * @template {T}
+   * @param {function(item:object, ...):T} creatorFunction
+   * @param schemaType
+   * @return {function(item:object, ...args):T}
+   */
+  wrapCreatorWithSchemaType(creatorFunction, schemaType) {
+    return function () {
+      if (arguments[0]) {
+        arguments[0].schemaType = schemaType;
+      }
+      creatorFunction.apply(this, arguments);
+    };
   }
 
   /**
@@ -221,33 +298,35 @@ export class IncrementalGraphLoader {
       .toArray();
   }
 
-  async loadAndConnectSchemaOutEdges(
-    item,
-    schemaEdge,
-    nodeCreator,
-    edgeCreator
-  ) {
-    let node = this.getLoadedNode(item);
+  async loadAndConnectSchemaOutEdges(item, schemaEdge, nodeCreator) {
+    let sourceNode = this.getLoadedNode(item);
     let newItems = [];
-    if (node) {
-      let location = node.layout.center.toPoint();
+    if (sourceNode) {
+      let location = sourceNode.layout.center.toPoint();
       let graph = this.graphComponent.graph;
-      (await this.queryBuilder.loadTargetNodes(schemaEdge, item)).forEach(
-        (item) => {
-          let existingNode = this.getLoadedNode(item);
-          if (existingNode) {
-            if (!graph.getEdge(node, existingNode)) {
-              edgeCreator(item, node, existingNode);
+      if (schemaEdge.tag.hasRelation) {
+        (await this.queryBuilder.loadOutEdges(schemaEdge, item)).forEach(
+          ({ targetNode: targetItem, relation }) => {
+            let targetNode = this.getLoadedNode(targetItem);
+            if (!targetNode) {
+              newItems.push(targetItem);
+              targetNode = nodeCreator(targetItem, location);
             }
-          } else {
-            newItems.push(item);
-            let newNode = nodeCreator(item, location);
-            if (!graph.getEdge(node, newNode)) {
-              edgeCreator(item, node, newNode);
-            }
+            createRelation(graph, sourceNode, targetNode, schemaEdge, relation);
           }
-        }
-      );
+        );
+      } else {
+        (await this.queryBuilder.loadTargetNodes(schemaEdge, item)).forEach(
+          (targetItem) => {
+            let targetNode = this.getLoadedNode(targetItem);
+            if (!targetNode) {
+              newItems.push(targetItem);
+              targetNode = nodeCreator(targetItem, location);
+            }
+            createRelation(graph, sourceNode, targetNode, schemaEdge);
+          }
+        );
+      }
     }
     return newItems;
   }
@@ -326,70 +405,35 @@ export class IncrementalGraphLoader {
     return newItems;
   }
 
-  async loadAndConnectSchemaInEdges(
-    item,
-    schemaEdge,
-    nodeCreator,
-    edgeCreator
-  ) {
-    let node = this.getLoadedNode(item);
+  async loadAndConnectSchemaInEdges(item, schemaEdge, nodeCreator) {
+    let targetNode = this.getLoadedNode(item);
     let newItems = [];
-    if (node) {
-      let location = node.layout.center.toPoint();
+    if (targetNode) {
+      let location = targetNode.layout.center.toPoint();
       let graph = this.graphComponent.graph;
-      (await this.queryBuilder.loadSourceNodes(schemaEdge, item)).forEach(
-        (item) => {
-          let existingNode = this.getLoadedNode(item);
-          if (existingNode) {
-            if (!graph.getEdge(existingNode, node)) {
-              edgeCreator(item, existingNode, node);
+      if (schemaEdge.tag.hasRelation) {
+        (await this.queryBuilder.loadInEdges(schemaEdge, item)).forEach(
+          ({ sourceNode: sourceItem, relation }) => {
+            let sourceNode = this.getLoadedNode(sourceItem);
+            if (!sourceNode) {
+              newItems.push(sourceItem);
+              sourceNode = nodeCreator(sourceItem, location);
             }
-          } else {
-            newItems.push(item);
-            let newNode = nodeCreator(item, location);
-            if (!graph.getEdge(newNode, node)) {
-              edgeCreator(item, newNode, node);
-            }
+            createRelation(graph, sourceNode, targetNode, schemaEdge, relation);
           }
-        }
-      );
-    }
-    return newItems;
-  }
-
-  async loadAndConnectSchemaUndirectedEdges(
-    item,
-    schemaEdge,
-    nodeCreator,
-    edgeCreator
-  ) {
-    let node = this.getLoadedNode(item);
-    let newItems = [];
-    if (node) {
-      let location = node.layout.center.toPoint();
-      let graph = this.graphComponent.graph;
-      (await this.queryBuilder.loadTargetNodes(schemaEdge, item)).forEach(
-        (item) => {
-          let existingNode = this.getLoadedNode(item);
-          if (existingNode) {
-            if (
-              !graph.getEdge(existingNode, node) &&
-              !graph.getEdge(node, existingNode)
-            ) {
-              edgeCreator(item, existingNode, node);
+        );
+      } else {
+        (await this.queryBuilder.loadSourceNodes(schemaEdge, item)).forEach(
+          (sourceItem) => {
+            let sourceNode = this.getLoadedNode(sourceItem);
+            if (!sourceNode) {
+              newItems.push(sourceItem);
+              sourceNode = nodeCreator(sourceItem, location);
             }
-          } else {
-            newItems.push(item);
-            let newNode = nodeCreator(this, item, location);
-            if (
-              !graph.getEdge(newNode, node) &&
-              !graph.getEdge(node, newNode)
-            ) {
-              edgeCreator(item, newNode, node);
-            }
+            createRelation(graph, sourceNode, targetNode, schemaEdge);
           }
-        }
-      );
+        );
+      }
     }
     return newItems;
   }
@@ -469,7 +513,11 @@ export class IncrementalGraphLoader {
     });
   }
 
-  loadMissingEdges(missingEdges, schemaEdge) {
+  /**
+   * @param {{sourceId:integer, targetId:integer, relation:object?}[]} missingEdges
+   * @param {IEdge} schemaEdge
+   */
+  createMissingEdges(missingEdges, schemaEdge) {
     let graph = this.graphComponent.graph;
     missingEdges.forEach((missingEdge) => {
       let sourceNode = this.getLoadedNode({
@@ -478,9 +526,13 @@ export class IncrementalGraphLoader {
       let targetNode = this.getLoadedNode({
         identity: missingEdge.targetId,
       });
-      if (!graph.getEdge(sourceNode, targetNode)) {
-        schemaEdge.tag.creator({}, sourceNode, targetNode);
-      }
+      createRelation(
+        graph,
+        sourceNode,
+        targetNode,
+        schemaEdge,
+        missingEdge.relation
+      );
     });
   }
 
@@ -496,22 +548,22 @@ export class IncrementalGraphLoader {
               this.getLoadedItemsOfType(schemaEdge.sourceNode),
               newItems
             );
-            this.loadMissingEdges(missingEdges, schemaEdge);
+            this.createMissingEdges(missingEdges, schemaEdge);
           })
-      );
-      await Promise.all(
-        this.queryBuilder.schemaGraph
-          .outEdgesAt(schemaNode)
-          .filter((e) => e.targetNode !== schemaNode)
-          .toArray()
-          .map(async (schemaEdge) => {
-            const missingEdges = await this.queryBuilder.loadMissingEdges(
-              schemaEdge,
-              newItems,
-              this.getLoadedItemsOfType(schemaEdge.targetNode)
-            );
-            this.loadMissingEdges(missingEdges, schemaEdge);
-          })
+          .concat(
+            this.queryBuilder.schemaGraph
+              .outEdgesAt(schemaNode)
+              .filter((e) => e.targetNode !== schemaNode)
+              .toArray()
+              .map(async (schemaEdge) => {
+                const missingEdges = await this.queryBuilder.loadMissingEdges(
+                  schemaEdge,
+                  newItems,
+                  this.getLoadedItemsOfType(schemaEdge.targetNode)
+                );
+                this.createMissingEdges(missingEdges, schemaEdge);
+              })
+          )
       );
     }
   }
@@ -521,8 +573,7 @@ export class IncrementalGraphLoader {
       const newItems = await this.loadAndConnectSchemaInEdges(
         item,
         schemaEdge,
-        schemaEdge.sourceNode.tag.creator,
-        schemaEdge.tag.creator
+        schemaEdge.sourceNode.tag.creator
       );
       await this.loadMissingEdgesForSchemaNodes(
         schemaEdge.sourceNode,
@@ -536,8 +587,7 @@ export class IncrementalGraphLoader {
       const newItems = await this.loadAndConnectSchemaOutEdges(
         item,
         schemaEdge,
-        schemaEdge.targetNode.tag.creator,
-        schemaEdge.tag.creator
+        schemaEdge.targetNode.tag.creator
       );
       await this.loadMissingEdgesForSchemaNodes(
         schemaEdge.targetNode,
@@ -574,17 +624,6 @@ export class IncrementalGraphLoader {
         newItems
       );
     });
-  }
-
-  async loadEdges(item, schemaEdge) {
-    await this.loadAndLayout(() =>
-      this.loadAndConnectSchemaUndirectedEdges(
-        item,
-        schemaEdge,
-        schemaEdge.sourceNode.tag.creator,
-        schemaEdge.tag.creator
-      )
-    );
   }
 
   async runLayout() {
@@ -697,7 +736,9 @@ export default class SchemaBasedQueryBuilder {
       ":"
     )}) WHERE id(sourceNode) in $sourceIds MATCH ${
       schemaEdge.tag.matchClause
-    } WHERE id(targetNode) in $targetIds RETURN id(sourceNode) as sourceNodeId, id(targetNode) as targetNodeId LIMIT ${limit}`;
+    } WHERE id(targetNode) in $targetIds RETURN id(sourceNode) as sourceNodeId, id(targetNode) as targetNodeId ${
+      schemaEdge.tag.hasRelation ? ",relation " : ""
+    } LIMIT ${limit}`;
   }
 
   /**
@@ -713,6 +754,7 @@ export default class SchemaBasedQueryBuilder {
   /**
    * @param {{identity:string}} item
    * @param {IEdge} schemaEdge
+   * @return {Promise<{targetNode:object,relation:object}[]>}
    */
   async loadOutEdges(schemaEdge, item) {
     return await mapQuery(
@@ -727,12 +769,13 @@ export default class SchemaBasedQueryBuilder {
   /**
    * @param {{identity:string}} item
    * @param {IEdge} schemaEdge
+   * @return {Promise<{sourceNode:object,relation:object}[]>}
    */
   async loadInEdges(schemaEdge, item) {
     return await mapQuery(
       this.createInEdgeQuery(schemaEdge),
       {
-        sourceId: item.identity,
+        targetId: item.identity,
       },
       ["sourceNode", "relation"]
     );
@@ -794,19 +837,6 @@ export default class SchemaBasedQueryBuilder {
   }
 
   /**
-   * @param {IEdge} schemaEdge
-   */
-  async loadInEdges(schemaEdge, item) {
-    return await mapQuery(
-      this.createInEdgeQuery(schemaEdge),
-      {
-        targetId: item.identity,
-      },
-      ["relation", "sourceNode"]
-    );
-  }
-
-  /**
    * @param {string[]} whereClauses
    * @param {INode} schemaNode
    * @param {{}} params
@@ -833,7 +863,7 @@ export default class SchemaBasedQueryBuilder {
    * @param {IEdge} schemaEdge
    * @param {object[]} sourceObjects
    * @param {object[]} targetObjects
-   * @return {Promise<{sourceId:integer, targetId:integer}[]>}
+   * @return {Promise<{sourceId:integer, targetId:integer, relation:object?}[]>}
    */
   async loadMissingEdges(schemaEdge, sourceObjects, targetObjects) {
     return (
@@ -843,7 +873,7 @@ export default class SchemaBasedQueryBuilder {
       })
     ).records.map((r) => ({
       sourceId: r.get("sourceNodeId"),
-      relationShip: schemaEdge.tag.hasRelation ? r.get("relation") : null,
+      relation: schemaEdge.tag.hasRelation ? r.get("relation") : null,
       targetId: r.get("targetNodeId"),
     }));
   }
