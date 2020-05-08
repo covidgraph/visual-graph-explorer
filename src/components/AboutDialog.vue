@@ -27,7 +27,7 @@
         panel allows for finding specific genes, authors, articles, and patents
         which are loaded into the graph which is visualized with
         <a
-          href="https://www.yworks.com/products/yfiles-for-html"
+          href="https://www.yworks.com/yfileshtml?ref=covidgraph"
           target="_blank"
           >yFiles for HTML</a
         >. The actions in the context menu and in the details view help
@@ -70,6 +70,29 @@
         >Enjoy exploring the database and gaining knowledge about COVID-19!<br />
         #fightcorona #flattenthecurve</v-card-text
       >
+
+      <v-card-text>
+        This app was built using
+        <a href="https://vuejs.org" target="_blank">Vue.js</a>,
+        <a href="https://vuetifyjs.com/" target="_blank">Vuetify</a>, and
+        <a
+          href="https://www.yworks.com/yfileshtml?ref=covidgraph"
+          target="_blank"
+          >yFiles for HTML</a
+        >, with icons made by&nbsp;<a
+          href="https://www.flaticon.com/authors/freepik"
+          >Freepik</a
+        >&nbsp;from&nbsp;<a
+          href="http://www.flaticon.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          >www.flaticon.com</a
+        >
+        and
+        <a target="_blank" rel="noopener noreferrer" href="https://icons8.com"
+          >icons8.com</a
+        >.
+      </v-card-text>
 
       <v-card-actions style="align-items: flex-end; padding: 24px;"
         ><v-btn

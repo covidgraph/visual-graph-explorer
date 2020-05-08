@@ -100,6 +100,8 @@ export class IncrementalGraphLoader {
     this.id2NodeMapping = new Map();
     this.layout = new OrganicLayout({
       minimumNodeDistance: 100,
+      starSubstructureStyle: "separated-radial",
+      parallelSubstructureStyle: "radial",
     });
   }
 
@@ -142,26 +144,45 @@ export class IncrementalGraphLoader {
    * @param {function(item):string[]} labels
    * @param {string|null} singularName?
    * @param {string|null} pluralName?
+   * @param {function(item:object):string} tooltipFunction
    * @return {INode}
    */
-  addNodeType(
+  addNodeType({
     type,
     style,
     size,
     labels = null,
     singularName = null,
-    pluralName = null
-  ) {
+    pluralName = null,
+    tooltipFunction = null,
+  }) {
+    this.schemaTypeCounter++;
     let node = this.queryBuilder.addNodeType(type);
-    node.tag.creator = this.createNodeCreator(
-      style,
-      size,
-      labels || (() => [])
+    node.tag.creator = this.wrapCreatorWithSchemaType(
+      this.createNodeCreator(style, size, labels || (() => [])),
+      this.schemaTypeCounter
     );
     node.tag.type = type;
+    node.tag.tooltipFunction = tooltipFunction;
+    node.tag.schemaType = this.schemaTypeCounter;
     node.tag.singularName = singularName || type.toLowerCase();
     node.tag.pluralName = pluralName || type.toLowerCase() + "s";
     return node;
+  }
+
+  /**
+   * Retrieves the schema object that created the given item.
+   * @param item
+   * @return {INode|IEdge|null}
+   */
+  getSchemaObject(item) {
+    if (item && item.tag && item.tag.schemaType >= 0)
+      return this.queryBuilder.schemaGraph.nodes
+        .concat(this.queryBuilder.schemaGraph.edges)
+        .firstOrDefault(
+          (graphItem) => graphItem.tag.schemaType === item.tag.schemaType
+        );
+    else return null;
   }
 
   /**
@@ -169,20 +190,22 @@ export class IncrementalGraphLoader {
    * @param {INode} targetNode
    * @param {IEdgeStyle} style
    * @param {function(item:object):string[]} labels
-   * @param {string} matchClause
+   * @param {string|null} matchClause?
    * @param {string|null} relatedVerb?
    * @param {string|null} relatingVerb?
+   * @param {function(item:object):string} tooltipFunction
    * @return {IEdge}
    */
-  addRelationShip(
+  addRelationShip({
     sourceNode,
     targetNode,
     style = null,
     labels = null,
     matchClause = null,
     relatedVerb = null,
-    relatingVerb = null
-  ) {
+    relatingVerb = null,
+    tooltipFunction = null,
+  }) {
     this.schemaTypeCounter++;
     if (matchClause === null) {
       matchClause = `(sourceNode:${sourceNode.tag.type})-->(targetNode:${targetNode.tag.type})`;
@@ -200,6 +223,7 @@ export class IncrementalGraphLoader {
       relatingVerb || "relating"
     );
     edge.tag.schemaType = this.schemaTypeCounter;
+    edge.tag.tooltipFunction = tooltipFunction;
     edge.tag.creator = this.wrapCreatorWithSchemaType(
       this.createEdgeCreator(style || edgeStyle, labels),
       this.schemaTypeCounter
@@ -219,7 +243,7 @@ export class IncrementalGraphLoader {
       if (arguments[0]) {
         arguments[0].schemaType = schemaType;
       }
-      creatorFunction.apply(this, arguments);
+      return creatorFunction.apply(this, arguments);
     };
   }
 
@@ -667,7 +691,10 @@ export default class SchemaBasedQueryBuilder {
     relatingVerb
   ) {
     let relation = false;
-    if (matchClause.indexOf("[relation:") > 0) {
+    if (
+      matchClause.indexOf("[relation:") > 0 ||
+      matchClause.indexOf("(relation:") > 0
+    ) {
       relation = true;
     }
     return this.schemaGraph.createEdge({

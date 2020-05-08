@@ -3,7 +3,7 @@
     <v-list class="yellow lighten-5 pt-0 pb-0">
       <v-list-item three-line>
         <v-icon x-large color="yellow accent-1" class="textStroke"
-          >mdi-office-building</v-icon
+          >mdi-company</v-icon
         >
         <v-list-item-content flex-sm-column>
           <v-list-item-title class="primary--text wrapText pl-2">

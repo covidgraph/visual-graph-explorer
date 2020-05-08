@@ -2,7 +2,7 @@
   <v-card flat>
     <v-list class="lime lighten-5 pt-0 pb-0">
       <v-list-item three-line>
-        <v-icon x-large class="Entity-color--text pb-1">mdi-dna</v-icon>
+        <v-icon x-large class="Entity-color--text pb-1">mdi-puzzle</v-icon>
         <v-list-item-content flex-sm-column>
           <v-list-item-title class="primary--text pl-2">
             <div class="wrapText">

@@ -7,6 +7,10 @@
         </v-card>
       </PopupPanel>
     </div>
+    <div
+      class="overview-component-container"
+      ref="GraphOverviewComponentElement"
+    ></div>
     <ContextMenu
       ref="contextMenu"
       @populate-context-menu="currentItem = $event"
@@ -59,6 +63,8 @@ import {
   NodeStyleDecorationInstaller,
   EdgeStyleDecorationInstaller,
   IEdge,
+  GraphOverviewComponent,
+  RenderModes,
 } from "yfiles";
 import ContextMenu from "./ContextMenu";
 import PopupPanel from "./PopupPanel";
@@ -152,6 +158,11 @@ export default {
   }),
   mounted() {
     this.$graphComponent = new GraphComponent(this.$refs.GraphComponentElement);
+    this.$graphOverviewComponent = new GraphOverviewComponent(
+      this.$refs.GraphOverviewComponentElement,
+      this.$graphComponent
+    );
+    this.$graphOverviewComponent.renderMode = RenderModes.CANVAS;
     this.$graphComponent.selection.selectedNodes.addItemSelectionChangedListener(
       (sender, evt) => {
         if (evt.itemSelected) {
@@ -203,6 +214,14 @@ export default {
     viewerInputMode.itemHoverInputMode.addHoveredItemChangedListener(
       (sender, evt) => this.onHoveredItemChanged(evt.item)
     );
+
+    viewerInputMode.toolTipItems = GraphItemTypes.NODE | GraphItemTypes.EDGE;
+    viewerInputMode.addQueryItemToolTipListener((sender, evt) => {
+      const tooltip = this.loader.getTooltip(evt.item);
+      if (tooltip) {
+        evt.toolTip = tooltip;
+      }
+    });
 
     viewerInputMode.addItemLeftClickedListener((sender, args) => {
       // Zooms to the suitable point
@@ -390,5 +409,16 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
+}
+
+.overview-component-container {
+  padding: 1px;
+  border: 1px solid darkgrey;
+  background: white;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 200px;
+  height: 200px;
 }
 </style>
