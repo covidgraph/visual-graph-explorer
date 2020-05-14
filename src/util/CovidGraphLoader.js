@@ -20,6 +20,7 @@ import PathwayNode from "../graph-styles/PathwayNode";
 import ProteinNode from "../graph-styles/ProteinNode";
 import AffiliationNode from "../graph-styles/AffiliationNode";
 import EntityNode from "../graph-styles/EntityNode";
+import TissueNode from "../graph-styles/TissueNode";
 
 export const edgeStyle = new PolylineEdgeStyle({
   stroke: new Stroke({
@@ -111,11 +112,10 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       pluralName: "pathways",
     });
 
-    this.gTexTissueType = this.addNodeType({
-      type: "GtexTissue",
-      style: new ShapeNodeStyle(),
-      size: new Size(50, 50),
-      labels: (entity) => [entity.properties.sid || "untitled"],
+    this.gTexDetailedTissueType = this.addNodeType({
+      type: "GtexDetailedTissue",
+      style: new VuejsNodeStyle(TissueNode),
+      size: new Size(150, 150),
       singularName: "tissue",
       pluralName: "tissues",
     });
@@ -221,12 +221,13 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
 
     this.geneSymbol_gTexTissue = this.addRelationShip({
       sourceNode: this.geneSymbolType,
-      targetNode: this.gTexTissueType,
+      targetNode: this.gTexDetailedTissueType,
       style: edgeStyle,
       matchClause:
-        "(sourceNode:GeneSymbol)<-[:MAPS]-(:Gene)-[:EXPRESSED]->(:GtexDetailedTissue)<-[:PARENT]-(targetNode:GtexTissue)",
+        "(sourceNode:GeneSymbol)-[:SYNONYM*0..1]-(gs:GeneSymbol)-[:MAPS]-(:Gene)-[:MAPS*0..1]-(:Gene)-[relation:EXPRESSED]->(targetNode:GtexDetailedTissue) WHERE toFloat(relation.val) > 0.3 WITH sourceNode, relation, targetNode",
       relatedVerb: "expressed",
       relatingVerb: "expressing",
+      tooltipFunction: (relation) => relation.properties.val,
     });
 
     this.geneSymbol_pathway = this.addRelationShip({

@@ -20,6 +20,9 @@
   <v-card v-else-if="nodeIs('Protein')" flat>
     <ProteinPanel :value="model"></ProteinPanel>
   </v-card>
+  <v-card v-else-if="nodeIs('GtexDetailedTissue')" flat>
+    <TissuePanel :value="model"></TissuePanel>
+  </v-card>
   <v-card v-else-if="nodeIs('Entity')" flat>
     <EntityPanel :value="model"></EntityPanel>
   </v-card>
@@ -40,10 +43,12 @@ import { isOfType } from "../util/queries";
 import ProteinPanel from "./ProteinPanel";
 import EntityPanel from "./EntityPanel";
 import PathwayPanel from "./PathwayPanel";
+import TissuePanel from "./TissuePanel";
 
 export default {
   name: "DetailPanel",
   components: {
+    TissuePanel,
     PathwayPanel,
     EntityPanel,
     ProteinPanel,
