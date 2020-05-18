@@ -5,25 +5,27 @@
 Run the application here: https://live.yworks.com/covidgraph
 
 This repository contains a sample application that can be used as a template to browse the 
-"covid-graph" See [https://covidgraph.org](https://covidgraph.org) for more info.  
+"covid-graph" See [https://covidgraph.org](https://covidgraph.org) for more information.  
 
 
 ## See also
 
 * [Learn more about yFiles](https://www.yworks.com/products/yfiles), the software library for visualizing, editing, and analyzing graphs
 
-## How to run this app
+## How to run and develop this app as a software developer
 
 You need a copy of the [yFiles for HTML](https://www.yworks.com/products/yfiles-for-html) diagramming library in order
-to run this application. You can download a free test version of yFiles in the
+to develop this application. You can download a free test version of yFiles in the
 [yWorks Customer Center](https://my.yworks.com/signup?product=YFILES_HTML_EVAL).
 
-Checkout this project, then extract the yFiles for HTML package to some directory and run the initial steps in the
-package for playing with the demos. This will also create an `npm` package file (using `npm pack` in the `lib\es-modules` directory).
-That file needs to be placed top-level in this directory so that it can be installed via npm into the project.
-Before you do that, also copy the `license.json` file from the yFiles package as `yfiles-license.json` and also drop it into this directory.
-Finally for live debugging aids, add `yfiles-typeinfo.js` from the `ide-support` directory.
+Checkout this project, then extract the yFiles for HTML package zip to some directory and run the initial steps in that
+package for playing with the demos (execute the `start_demos` script or install the `package.json` in the `demos` directory). This will automatically create an `npm` package file (`yfiles-22.0.2-eval.tar.gz`) (using `npm pack` in the `lib\es-modules` directory), but of course this last step can also be done, manually.
 
+That `tar.gz` file needs to be placed top-level in the directory of this checkout next to this file so that it can be installed via `npm i` or `yarn` into this project (it is referenced in the [`package.json`, here](https://github.com/covidgraph/visual-graph-explorer/blob/de26bcd14ec547b7caa43b308954a7dea900c9b2/package.json#L40)).
+Before you compile and run the project, also copy the `license.json` file from the yFiles package (find it it `lib\license.json` as `yfiles-license.json` and also drop it into this directory.
+Finally for live debugging aids, add `yfiles-typeinfo.js` from the `ide-support` directory, here.
+
+This is what your directory contents should look like:
 
 ```
 documents
@@ -43,7 +45,7 @@ followed by
 ```
 npm run serve
 ```
-or
+or if you prefer the visual UI from vue-cli
 ```
 vue ui
 ```
