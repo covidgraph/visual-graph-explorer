@@ -52,6 +52,11 @@
                   ><b>AFFILIATIONS</b></v-list-item-title
                 >
               </v-list-item>
+              <v-list-item v-if="staging" @click="loadClinicalTrials">
+                <v-list-item-title class="yellow--text textStroke"
+                  ><b>CLINICAL TRIALS</b></v-list-item-title
+                >
+              </v-list-item>
             </v-list>
           </v-menu>
         </v-card-actions>
@@ -128,7 +133,7 @@
 </template>
 
 <script>
-import query from "../util/dbconnection";
+import query, { isStagingDb } from "../util/dbconnection";
 import {
   loadAbstractsForPaper,
   loadAuthorsForPaper,
@@ -154,6 +159,11 @@ export default {
   }),
   props: {
     value: Object,
+  },
+  computed: {
+    staging: function () {
+      return isStagingDb();
+    },
   },
   watch: {
     value: {
@@ -217,6 +227,9 @@ export default {
     },
     loadAffiliations() {
       this.eventBus.$emit("load-target-Affiliation-for-Paper", this.value);
+    },
+    loadClinicalTrials() {
+      this.eventBus.$emit("load-source-ClinicalTrial-for-Paper", this.value);
     },
     loadAuthors() {
       this.eventBus.$emit("load-target-Author-for-Paper", this.value);

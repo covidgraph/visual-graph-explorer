@@ -14,6 +14,9 @@
   <v-card v-else-if="nodeIs('Patent')" flat>
     <PatentPanel :value="model"></PatentPanel>
   </v-card>
+  <v-card v-else-if="nodeIs('ClinicalTrial')" flat>
+    <ClinicalTrialPanel :value="model"></ClinicalTrialPanel>
+  </v-card>
   <v-card v-else-if="nodeIs('Pathway')" flat>
     <PathwayPanel :value="model"></PathwayPanel>
   </v-card>
@@ -44,10 +47,12 @@ import ProteinPanel from "./ProteinPanel";
 import EntityPanel from "./EntityPanel";
 import PathwayPanel from "./PathwayPanel";
 import TissuePanel from "./TissuePanel";
+import ClinicalTrialPanel from "./ClinicalTrialPanel";
 
 export default {
   name: "DetailPanel",
   components: {
+    ClinicalTrialPanel,
     TissuePanel,
     PathwayPanel,
     EntityPanel,
