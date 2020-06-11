@@ -23,6 +23,7 @@ import EntityNode from "../graph-styles/EntityNode";
 import TissueNode from "../graph-styles/TissueNode";
 import { isStagingDb } from "./dbconnection";
 import ClinicalTrialNode from "../graph-styles/ClinicalTrialNode";
+import DiseaseNode from "../graph-styles/DiseaseNode";
 
 export const edgeStyle = new PolylineEdgeStyle({
   stroke: new Stroke({
@@ -107,6 +108,13 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
     });
 
     if (isStagingDb()) {
+      this.diseaseType = this.addNodeType({
+        type: "Disease",
+        style: new VuejsNodeStyle(DiseaseNode),
+        size: new Size(150, 150),
+        singularName: "disease",
+        pluralName: "diseases",
+      });
       this.clinicalTrialType = this.addNodeType({
         type: "ClinicalTrial",
         style: new VuejsNodeStyle(ClinicalTrialNode),
@@ -177,6 +185,15 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
           "(sourceNode:ClinicalTrial)-[:PUBLISHED]->(targetNode:Paper)",
         relatedVerb: "published",
         relatingVerb: "publishing",
+      });
+      this.gene_disease = this.addRelationShip({
+        sourceNode: this.diseaseType,
+        targetNode: this.geneSymbolType,
+        style: wroteEdgeStyle,
+        matchClause:
+          "(sourceNode:Disease)-[:ASSOCIATES_DaG]->(:Gene)-[:MAPS]->(targetNode:GeneSymbol)",
+        relatedVerb: "associated",
+        relatingVerb: "associated",
       });
       this.trial_facility = this.addRelationShip({
         sourceNode: this.clinicalTrialType,

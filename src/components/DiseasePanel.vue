@@ -2,18 +2,20 @@
   <v-card flat>
     <v-list class="lime lighten-5 pt-0 pb-0">
       <v-list-item three-line>
-        <v-icon x-large class="gene-color--text pb-1">mdi-dna</v-icon>
+        <v-icon x-large class="Disease-color--text pb-1">mdi-puzzle</v-icon>
         <v-list-item-content flex-sm-column>
           <v-list-item-title class="primary--text pl-2">
             <div class="wrapText">
               <h4>
-                {{ value.properties.sid }}
+                {{ value.properties.name }}
               </h4>
               <span class="caption">
-                {{ value.properties.status }}
-                {{ value.properties.taxid }}
+                <a :href="value.properties.link" target="_blank">{{
+                  value.properties.link
+                }}</a>
               </span>
             </div>
+            <!-- source , doid, license, -->
           </v-list-item-title>
         </v-list-item-content>
       </v-list-item>
@@ -28,19 +30,9 @@
               >
             </template>
             <v-list>
-              <v-list-item @click="loadPapers">
+              <v-list-item @click="loadGenes">
                 <v-list-item-title class="primary--text"
-                  ><b>PAPERS</b></v-list-item-title
-                >
-              </v-list-item>
-              <v-list-item @click="loadPatents">
-                <v-list-item-title class="orange--text"
-                  ><b>PATENTS</b></v-list-item-title
-                >
-              </v-list-item>
-              <v-list-item v-if="isStaging" @click="loadDiseases">
-                <v-list-item-title class="red--text"
-                  ><b>DISEASES</b></v-list-item-title
+                  ><b>GENES</b></v-list-item-title
                 >
               </v-list-item>
             </v-list>
@@ -48,29 +40,44 @@
         </v-card-actions>
       </v-col>
     </v-layout>
+    <v-expansion-panels v-model="panel" multiple accordion flat>
+      <PanelItem
+        itemTitle="Definition"
+        v-if="value.properties.definition"
+        :items="[value.properties.definition]"
+      />
+      <PanelItem
+        itemTitle="DOID"
+        v-if="value.properties.doid"
+        :items="[value.properties.doid]"
+      />
+      <PanelItem
+        item-title="License"
+        v-if="value.properties.license"
+        :items="[value.properties.license]"
+      />
+    </v-expansion-panels>
   </v-card>
 </template>
 
 <script>
-import { isStagingDb } from "../util/dbconnection";
+import PanelItem from "./shared/PanelItem";
 
 export default {
-  name: "GenePanel",
+  components: {
+    PanelItem,
+  },
+  data: () => ({
+    panel: [0, 1, 0],
+  }),
+  name: "DiseasePanel",
   props: {
     value: null,
   },
-  data: () => ({
-    isStaging: isStagingDb(),
-  }),
+
   methods: {
-    loadPapers() {
-      this.eventBus.$emit("load-source-Paper-for-GeneSymbol", this.value);
-    },
-    loadPatents() {
-      this.eventBus.$emit("load-source-Patent-for-GeneSymbol", this.value);
-    },
-    loadDiseases() {
-      this.eventBus.$emit("load-source-Disease-for-GeneSymbol", this.value);
+    loadGenes() {
+      this.eventBus.$emit("load-target-GeneSymbol-for-Disease", this.value);
     },
   },
 };
@@ -78,8 +85,8 @@ export default {
 
 <style lang="scss" scoped>
 @import "../styles/colors";
-.gene-color--text {
-  color: $gene-color !important;
+.Disease-color--text {
+  color: $disease-color !important;
 }
 .wrapText {
   white-space: normal !important;

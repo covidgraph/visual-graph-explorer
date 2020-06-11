@@ -26,6 +26,9 @@
   <v-card v-else-if="nodeIs('GtexDetailedTissue')" flat>
     <TissuePanel :value="model"></TissuePanel>
   </v-card>
+  <v-card v-else-if="nodeIs('Disease')" flat>
+    <DiseasePanel :value="model"></DiseasePanel>
+  </v-card>
   <v-card v-else-if="nodeIs('Entity')" flat>
     <EntityPanel :value="model"></EntityPanel>
   </v-card>
@@ -48,10 +51,12 @@ import EntityPanel from "./EntityPanel";
 import PathwayPanel from "./PathwayPanel";
 import TissuePanel from "./TissuePanel";
 import ClinicalTrialPanel from "./ClinicalTrialPanel";
+import DiseasePanel from "./DiseasePanel";
 
 export default {
   name: "DetailPanel",
   components: {
+    DiseasePanel,
     ClinicalTrialPanel,
     TissuePanel,
     PathwayPanel,
