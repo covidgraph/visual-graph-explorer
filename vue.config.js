@@ -113,12 +113,6 @@ module.exports = {
   chainWebpack: (config) => {
     /** the yFiles library files are ES5 compatible and don't need to be babeled explicitly */
     config.module.rule("js").exclude.add(/es-modules/);
-    if (process.env.NODE_ENV !== "production") {
-      config.entry("app").prepend(
-        // Add yFiles debugging support for development build
-        "./yfiles-typeinfo.js"
-      );
-    }
   },
   css: {
     loaderOptions: {

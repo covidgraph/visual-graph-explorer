@@ -126,6 +126,9 @@ function initializeHighlightStyles(graphComponent) {
     nodeStyleHighlight
   );
 
+  // move the highlight to the background
+  graphComponent.highlightGroup.toBack();
+
   // a similar style for the edges, however cropped by the highlight's insets
   const dummyCroppingArrow = new Arrow({
     type: ArrowType.NONE,
@@ -216,6 +219,12 @@ export default {
     );
 
     viewerInputMode.toolTipItems = GraphItemTypes.NODE | GraphItemTypes.EDGE;
+
+    // move the tooltip slightly away from the mouse cursor
+    viewerInputMode.mouseHoverInputMode.toolTipLocationOffset = new Point(
+      20,
+      20
+    );
     viewerInputMode.addQueryItemToolTipListener((sender, evt) => {
       const tooltip = this.loader.getTooltip(evt.item);
       if (tooltip) {
