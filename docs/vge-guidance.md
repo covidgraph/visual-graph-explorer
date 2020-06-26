@@ -14,7 +14,7 @@ The Visual Graph Explorer Interface is simple and consists of three main panels:
 * the detail panel.
 Although simple, this interface is a sophisticated tool that can be used to run simple, direct queries against CovidGraph but the real power of the Visual Graph Explorer lies in the limitless ability to keep following and loading more connections and related nodes into the results panel.
 
-[Interface Diagram]
+![The Visual Graph Explorer](https://github.com/covidgraph/visual-graph-explorer/blob/master/docs/interface.png)
 
 # The Search Panel
 The search panel has four options which allow for specific node types to be chosen as an initial starting point.
@@ -34,7 +34,7 @@ The Visual Graph Explorer will automatically control the layout of the results a
 ### Search for More Nodes.
 Because the results panel is not cleared automatically when a new search is run any new results will be added to the Results Panel. This behaviour is by design and allows for more complex exploration of CovidGraph. For example two specific publications can be loaded into the Results Panel. Loading nodes (e.g genes) related to either of these papers will reveal any nodes that the two papers have in common. This approach is not limited to two nodes but can be applied to any number of nodes.
 
-## Right Click Context Menus (or how to )
+## Right Click Context Menus
 It is possible to right click on any node in the Results Panel and depending on the type of node it will be possible to load more related nodes. For example, by right clicking on a publication it is possible to 'Load Related Authors'. The options available will vary by the type of node that has been right clicked. This is perhaps, the easiest way to follow and load connected nodes in the Visual Graph Explorer and there is no limit to number of times, or the variety of related nodes that can be loaded into the Results Panel. Consequently, queries that would be complex to write are trivial to create in the Visual Graph Explorer.
 
 # The Detail Panel
