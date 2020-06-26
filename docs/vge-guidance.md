@@ -32,11 +32,19 @@ The Results Panel is a blank canvas to which search results and additional nodes
 
 The Visual Graph Explorer will automatically control the layout of the results and will update the layout each time more nodes are loaded. Where a large number of nodes are returned it is possible to zoom in or out by using the mouse scroll button while the cursor is hovering over the results panel. It is also possible to shift the entire results panel by left clicking and dragging the mouse in any direction. This is useful when zoomed into the results and the Graph Overview helps to orient the active window.
 
-### Search for More Nodes.
+## Search for More Nodes.
 Because the results panel is not cleared automatically when a new search is run any new results will be added to the Results Panel. This behaviour is by design and allows for more complex exploration of CovidGraph. For example two specific publications can be loaded into the Results Panel. Loading nodes (e.g genes) related to either of these papers will reveal any nodes that the two papers have in common. This approach is not limited to two nodes but can be applied to any number of nodes.
 
 ## Right Click Context Menus
 It is possible to right click on any node in the Results Panel and depending on the type of node it will be possible to load more related nodes. For example, by right clicking on a publication it is possible to 'Load Related Authors'. The options available will vary by the type of node that has been right clicked. This is perhaps, the easiest way to follow and load connected nodes in the Visual Graph Explorer and there is no limit to number of times, or the variety of related nodes that can be loaded into the Results Panel. Consequently, queries that would be complex to write are trivial to create in the Visual Graph Explorer.
+
+## Removing a Node
+
+To fine tune a search or to remove unecessary nodes that may be cluttering up the Results Panel, right click the node to be removed and select 'Remove Item'. This will remove the Node and all of its connections from the current view.
+
+## Clearing the Results panel
+
+To completely clear the Results Panel simply click the 'Clear the Graph' bin icon at the top right of the screen. This will clear everything from the Results Panel leaving a fresh, blank canvas. 
 
 # The Detail Panel
 
