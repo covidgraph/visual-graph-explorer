@@ -12,6 +12,7 @@ The Visual Graph Explorer Interface is simple and consists of three main panels:
 * the search panel
 * the results panel
 * the detail panel.
+
 Although simple, this interface is a sophisticated tool that can be used to run simple, direct queries against CovidGraph but the real power of the Visual Graph Explorer lies in the limitless ability to keep following and loading more connections and related nodes into the results panel.
 
 ![The Visual Graph Explorer](https://github.com/covidgraph/visual-graph-explorer/blob/master/docs/interface.png)
