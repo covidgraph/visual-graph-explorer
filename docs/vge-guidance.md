@@ -26,7 +26,7 @@ The search panel has four options which allow for specific node types to be chos
 * **Authors - Publications:** It is possible to load either the Author as a single node, or all the papers by an author into the results panel.
 
 # The Results Panel
-The Results Panel is a blank canvas to which search results and additional nodes are loaded. Until the panel is cleared (using the 'Clear the Graph' icon at the top left) any new queries and results are continually added into the same view. Often, new results will have connections to nodes already in the Results Panel and these will be shown as new connected nodes. Sometimes, however, no connections exist and the results are added as a new cluster.
+The Results Panel is a blank canvas to which search results and additional nodes are loaded. Until the results panel is cleared any new queries and results are continually added into the same view. Often, new results will have connections to nodes already in the Results Panel and these will be shown as new connected nodes. Sometimes, however, no connections exist and the results are added as a new cluster.
 
 ## Navigating the Results Panel
 
