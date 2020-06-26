@@ -40,11 +40,11 @@ It is possible to right click on any node in the Results Panel and depending on 
 
 ## Removing a Node
 
-To fine tune a search or to remove unecessary nodes that may be cluttering up the Results Panel, right click the node to be removed and select 'Remove Item'. This will remove the Node and all of its connections from the current view.
+To fine tune a search or to remove unnecessary nodes that may be cluttering up the Results Panel, right click the node to be removed and select 'Remove Item'. This will remove the Node and all of its connections from the current view.
 
 ## Clearing the Results panel
 
-To completely clear the Results Panel simply click the 'Clear the Graph' bin icon at the top right of the screen. This will clear everything from the Results Panel leaving a fresh, blank canvas. 
+To completely clear the Results Panel simply click the 'Clear the Graph' bin icon at the top right of the screen. This will clear everything from the Results Panel leaving a fresh, blank canvas.
 
 # The Detail Panel
 
