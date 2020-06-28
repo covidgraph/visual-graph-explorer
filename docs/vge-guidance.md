@@ -1,6 +1,10 @@
 # Overview
 
-CovidGraph is a complex network of interconnected points of information. Each point, or node, can represent different types of information, for example, a research paper, a patent, an author, an organisation, a gene etc. In the real world these things relate to each other in a variety of different ways.  _An author writes a research paper, about a clinical trial and mentions a gene; that gene can express various tissues and has associated pathways and diseases; the author works for an organisation that holds a patent that relates to a medicinal product that treats a disease related to that gene._ The beauty of CovidGraph is that it is able to efficiently model these real world relationships and put them to work exposing previously hidden connections which can lead to high impact, fast paced innovation.
+CovidGraph is a complex network of interconnected points of information. Each point, or node, can represent different types of information, for example, a research paper, a patent, an author, an organisation, a gene etc. In the real world these things relate to each other in a variety of different ways.  
+
+> _An author writes a research paper, about a clinical trial and mentions a gene; that gene can express various tissues and has associated pathways and diseases; the author works for an organisation that holds a patent that relates to a medicinal product that treats a disease related to that gene._ 
+
+The beauty of CovidGraph is that it is able to efficiently model these real world relationships and put them to work exposing previously hidden connections which can lead to high impact, fast paced innovation.
 
 As its name suggests, the Visual Graph Explorer makes it simple to explore the many hundreds of thousands of information nodes and connections that currently exist within CovidGraph. Before starting it is worth having a look at the simplified Data Model of CovidGraph. This will provide useful context and can serve as a navigation aid on your travels through CovidGraph.
 
