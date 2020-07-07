@@ -7,6 +7,10 @@ Run the application here: https://live.yworks.com/covidgraph
 This repository contains a sample application that can be used as a template to browse the
 "covid-graph". See [https://covidgraph.org](https://covidgraph.org) for more information.
 
+## Using the editor
+
+Please see [the manual](./docs/vge-guidance.md) for a quick introduction on how to use the editor.
+
 ## See also
 
 - [Learn more about yFiles](https://www.yworks.com/products/yfiles), the software library for visualizing, editing, and analyzing graphs
