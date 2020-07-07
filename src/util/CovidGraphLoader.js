@@ -107,46 +107,44 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       pluralName: "entities",
     });
 
-    if (isStagingDb()) {
-      this.diseaseType = this.addNodeType({
-        type: "Disease",
-        style: new VuejsNodeStyle(DiseaseNode),
-        size: new Size(150, 150),
-        singularName: "disease",
-        pluralName: "diseases",
-      });
-      this.clinicalTrialType = this.addNodeType({
-        type: "ClinicalTrial",
-        style: new VuejsNodeStyle(ClinicalTrialNode),
-        size: new Size(150, 150),
-        singularName: "clinical trial",
-        pluralName: "clinical trials",
-      });
-      this.facilityType = this.addNodeType({
-        type: "Facility",
-        style: new ShapeNodeStyle(),
-        size: new Size(50, 50),
-        labels: (item) => item.properties.facilityName,
-        singularName: "facility",
-        pluralName: "facilities",
-      });
-      this.exclusionCriteriaType = this.addNodeType({
-        type: "ExclusionCriteria",
-        style: new ShapeNodeStyle({ shape: "diamond", fill: "red" }),
-        size: new Size(50, 50),
-        labels: (item) => item.properties.criteria,
-        singularName: "exclusion criteria",
-        pluralName: "exclusion criteria",
-      });
-      this.inclusionCriteriaType = this.addNodeType({
-        type: "InclusionCriteria",
-        style: new ShapeNodeStyle({ shape: "diamond", fill: "green" }),
-        size: new Size(50, 50),
-        labels: (item) => item.properties.criteria,
-        singularName: "inclusion criteria",
-        pluralName: "inclusion criteria",
-      });
-    }
+    this.diseaseType = this.addNodeType({
+      type: "Disease",
+      style: new VuejsNodeStyle(DiseaseNode),
+      size: new Size(150, 150),
+      singularName: "disease",
+      pluralName: "diseases",
+    });
+    this.clinicalTrialType = this.addNodeType({
+      type: "ClinicalTrial",
+      style: new VuejsNodeStyle(ClinicalTrialNode),
+      size: new Size(150, 150),
+      singularName: "clinical trial",
+      pluralName: "clinical trials",
+    });
+    this.facilityType = this.addNodeType({
+      type: "Facility",
+      style: new ShapeNodeStyle(),
+      size: new Size(50, 50),
+      labels: (item) => item.properties.facilityName,
+      singularName: "facility",
+      pluralName: "facilities",
+    });
+    this.exclusionCriteriaType = this.addNodeType({
+      type: "ExclusionCriteria",
+      style: new ShapeNodeStyle({ shape: "diamond", fill: "red" }),
+      size: new Size(50, 50),
+      labels: (item) => item.properties.criteria,
+      singularName: "exclusion criteria",
+      pluralName: "exclusion criteria",
+    });
+    this.inclusionCriteriaType = this.addNodeType({
+      type: "InclusionCriteria",
+      style: new ShapeNodeStyle({ shape: "diamond", fill: "green" }),
+      size: new Size(50, 50),
+      labels: (item) => item.properties.criteria,
+      singularName: "inclusion criteria",
+      pluralName: "inclusion criteria",
+    });
 
     this.pathwayType = this.addNodeType({
       type: "Pathway",
@@ -176,53 +174,51 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
         "(sourceNode:Paper)-[:PAPER_HAS_AUTHORCOLLECTION]->(:AuthorCollection)-[:AUTHORCOLLECTION_HAS_AUTHOR]->(targetNode:Author)",
     });
 
-    if (isStagingDb()) {
-      this.trial_paper = this.addRelationShip({
-        sourceNode: this.clinicalTrialType,
-        targetNode: this.paperType,
-        style: wroteEdgeStyle,
-        matchClause:
-          "(sourceNode:ClinicalTrial)-[:PUBLISHED]->(targetNode:Paper)",
-        relatedVerb: "published",
-        relatingVerb: "publishing",
-      });
-      this.gene_disease = this.addRelationShip({
-        sourceNode: this.diseaseType,
-        targetNode: this.geneSymbolType,
-        style: wroteEdgeStyle,
-        matchClause:
-          "(sourceNode:Disease)-[:ASSOCIATES_DaG]->(:Gene)-[:MAPS]->(targetNode:GeneSymbol)",
-        relatedVerb: "associated",
-        relatingVerb: "associated",
-      });
-      this.trial_facility = this.addRelationShip({
-        sourceNode: this.clinicalTrialType,
-        targetNode: this.facilityType,
-        style: wroteEdgeStyle,
-        matchClause:
-          "(sourceNode:ClinicalTrial)-[:CONDUCTED_AT]->(targetNode:Facility)",
-        relatedVerb: "conducting",
-        relatingVerb: "conducted",
-      });
-      this.trial_exclusion_criteria = this.addRelationShip({
-        sourceNode: this.clinicalTrialType,
-        targetNode: this.exclusionCriteriaType,
-        style: new PolylineEdgeStyle({ stroke: "2px red" }),
-        matchClause:
-          "(sourceNode:ClinicalTrial)-[:HAS_EXCLUSION_CRITERIA]->(targetNode:ExclusionCriteria)",
-        relatedVerb: "applied",
-        relatingVerb: "applying",
-      });
-      this.trial_exclusion_criteria = this.addRelationShip({
-        sourceNode: this.clinicalTrialType,
-        targetNode: this.inclusionCriteriaType,
-        style: new PolylineEdgeStyle({ stroke: "2px green" }),
-        matchClause:
-          "(sourceNode:ClinicalTrial)-[:HAS_INCLUSION_CRITERIA]->(targetNode:InclusionCriteria)",
-        relatedVerb: "applied",
-        relatingVerb: "applying",
-      });
-    }
+    this.trial_paper = this.addRelationShip({
+      sourceNode: this.clinicalTrialType,
+      targetNode: this.paperType,
+      style: wroteEdgeStyle,
+      matchClause:
+        "(sourceNode:ClinicalTrial)-[:PUBLISHED]->(targetNode:Paper)",
+      relatedVerb: "published",
+      relatingVerb: "publishing",
+    });
+    this.gene_disease = this.addRelationShip({
+      sourceNode: this.diseaseType,
+      targetNode: this.geneSymbolType,
+      style: wroteEdgeStyle,
+      matchClause:
+        "(sourceNode:Disease)-[:ASSOCIATES_DaG]->(:Gene)-[:MAPS]->(targetNode:GeneSymbol)",
+      relatedVerb: "associated",
+      relatingVerb: "associated",
+    });
+    this.trial_facility = this.addRelationShip({
+      sourceNode: this.clinicalTrialType,
+      targetNode: this.facilityType,
+      style: wroteEdgeStyle,
+      matchClause:
+        "(sourceNode:ClinicalTrial)-[:CONDUCTED_AT]->(targetNode:Facility)",
+      relatedVerb: "conducting",
+      relatingVerb: "conducted",
+    });
+    this.trial_exclusion_criteria = this.addRelationShip({
+      sourceNode: this.clinicalTrialType,
+      targetNode: this.exclusionCriteriaType,
+      style: new PolylineEdgeStyle({ stroke: "2px red" }),
+      matchClause:
+        "(sourceNode:ClinicalTrial)-[:HAS_EXCLUSION_CRITERIA]->(targetNode:ExclusionCriteria)",
+      relatedVerb: "applied",
+      relatingVerb: "applying",
+    });
+    this.trial_exclusion_criteria = this.addRelationShip({
+      sourceNode: this.clinicalTrialType,
+      targetNode: this.inclusionCriteriaType,
+      style: new PolylineEdgeStyle({ stroke: "2px green" }),
+      matchClause:
+        "(sourceNode:ClinicalTrial)-[:HAS_INCLUSION_CRITERIA]->(targetNode:InclusionCriteria)",
+      relatedVerb: "applied",
+      relatingVerb: "applying",
+    });
 
     this.paper_affiliation = this.addRelationShip({
       sourceNode: this.paperType,

@@ -38,7 +38,7 @@
                   ><b>PATENTS</b></v-list-item-title
                 >
               </v-list-item>
-              <v-list-item v-if="isStaging" @click="loadDiseases">
+              <v-list-item @click="loadDiseases">
                 <v-list-item-title class="red--text"
                   ><b>DISEASES</b></v-list-item-title
                 >

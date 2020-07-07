@@ -52,7 +52,7 @@
                   ><b>AFFILIATIONS</b></v-list-item-title
                 >
               </v-list-item>
-              <v-list-item v-if="staging" @click="loadClinicalTrials">
+              <v-list-item @click="loadClinicalTrials">
                 <v-list-item-title class="yellow--text textStroke"
                   ><b>CLINICAL TRIALS</b></v-list-item-title
                 >
