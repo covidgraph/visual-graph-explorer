@@ -392,8 +392,12 @@ export default {
     async searchPatent(id) {
       await this.loader.loadNodeForSchema(this.loader.patentType, id);
     },
-    async searchArticle(id) {
-      await this.loader.loadNodeForSchema(this.loader.paperType, id);
+    async searchArticles(ids) {
+      await this.loader.loadNodesForSchema(
+        this.loader.paperType,
+        ["id(node) in $articleIds"],
+        { articleIds: ids }
+      );
     },
     async searchAuthor(id) {
       await this.loader.loadNodeForSchema(this.loader.authorType, id);

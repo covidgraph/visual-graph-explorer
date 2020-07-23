@@ -76,7 +76,7 @@
     >
       <SearchGene @search-gene="$refs.graphComponent.searchGenes($event)" />
       <SearchArticle
-        @search-article="$refs.graphComponent.searchArticle($event)"
+        @search-articles="$refs.graphComponent.searchArticles($event)"
       />
       <SearchPatent
         @search-patent="$refs.graphComponent.searchPatent($event)"
@@ -97,6 +97,7 @@
     </v-content>
 
     <about-dialog></about-dialog>
+    <results-dialog></results-dialog>
   </v-app>
 </template>
 
@@ -109,10 +110,12 @@ import SearchAuthor from "./components/SearchAuthor";
 import SearchPatent from "./components/SearchPatent";
 import ConnectionStatus from "./components/ConnectionStatus";
 import AboutDialog from "./components/AboutDialog";
+import ResultsDialog from "./components/ResultsDialog";
 
 export default {
   name: "app",
   components: {
+    ResultsDialog,
     AboutDialog,
     ConnectionStatus,
     SearchArticle,

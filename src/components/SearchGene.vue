@@ -15,6 +15,7 @@
         :search-input.sync="search"
         hide-details
         full-width
+        no-filter
         clearable
         chips
         multiple

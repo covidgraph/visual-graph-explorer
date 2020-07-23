@@ -10,11 +10,12 @@
     <v-card-text class="ma-0 px-2 py-0">
       <v-autocomplete
         v-model="model"
-        :items="items"
+        :items="entries"
         :loading="isLoading"
         :search-input.sync="search"
         hide-details
         full-width
+        no-filter
         clearable
         solo
         flat
@@ -53,7 +54,7 @@
         class="paper--background white--text"
         text
         rounded
-        @click="$emit('search-article', model.id)"
+        @click="filterResults()"
       >
         <v-icon left small>fas fa-book</v-icon>
         Find Papers
@@ -64,6 +65,14 @@
 
 <script>
 import query from "../util/dbconnection";
+import Vue from "vue";
+import { IEnumerable } from "yfiles";
+import { getId } from "../util/Neo4jGraphBuilder";
+
+const headers = [
+  { text: "Title", value: "title", align: "start", sortable: true },
+  { text: "Publication Date", value: "publishTime", sortable: true },
+];
 
 export default {
   name: "SearchArticle",
@@ -86,43 +95,80 @@ export default {
         },
       ];
     },
-    items() {
-      return this.entries;
-    },
   },
-
-  watch: {
-    search(val) {
-      // Items have already been requested
+  methods: {
+    filterResults() {
+      return new Promise((resolve, reject) => {
+        this.eventBus.$emit("show-results-dialog", {
+          items: this.entries.map((item) => ({ ID: getId(item.id), ...item })),
+          headers,
+          resolve,
+        });
+      }).then((results) => {
+        if (results && results.length > 0) {
+          this.$emit(
+            "search-articles",
+            results.map((item) => item.id)
+          );
+        }
+      });
+    },
+    performSearch() {
       if (this.isLoading) return;
-
-      if (val.length > 2) {
+      const search = this.search;
+      if (search && this.search.length > 2) {
         this.isLoading = true;
-
-        // Lazily load input items
-        query(
-          "MATCH (p:Paper) WHERE toLower(p.title) CONTAINS $word RETURN p LIMIT 50",
-          { word: val.toLowerCase() }
-        )
-          .then((res) => {
-            this.count = res.records.length;
-            this.entries = res.records.map((record) => {
-              let node = record.get("p");
-              return {
-                id: node.identity,
-                publishTime: node.properties["publish_time"],
-                title: node.properties["title"],
-              };
-            });
+        Promise.all([
+          query(
+            `MATCH (p:Paper) WHERE toLower(p.title) CONTAINS $word RETURN p LIMIT 10`,
+            { word: search.toLowerCase() }
+          ),
+          query(
+            `CALL db.index.fulltext.queryNodes("textOfPapersAndPatents", $query) YIELD node, score
+            match (node)<-[:HAS_FRAGMENT]-()<-[:ABSTRACTCOLLECTION_HAS_ABSTRACT|PAPER_HAS_ABSTRACTCOLLECTION*1..2]-(p:Paper) where node:Fragment and not node:AbstractCollection
+            WITH p ORDER BY score DESC LIMIT 50 RETURN distinct(p)`,
+            { query: search }
+          ),
+        ])
+          // Lazily load input items
+          .then(([titleMatches, textMatches]) => {
+            const entries = IEnumerable.from(
+              [...titleMatches.records, ...textMatches.records].map(
+                (record) => {
+                  let node = record.get("p");
+                  return {
+                    id: node.identity,
+                    publishTime: node.properties["publish_time"],
+                    title: node.properties["title"],
+                  };
+                }
+              )
+            )
+              .distinct((arg) => getId(arg.id))
+              .toArray();
+            Vue.set(this, "entries", entries);
+            this.count = entries.length;
           })
           .catch((err) => {
             console.log(err);
+            this.count = 0;
+            this.entries = [];
           })
-          .finally(() => (this.isLoading = false));
+          .finally(() => {
+            if (search !== this.search) {
+              setTimeout(() => this.performSearch(), 300);
+            }
+            this.isLoading = false;
+          });
       } else {
         this.count = 0;
         this.entries = [];
       }
+    },
+  },
+  watch: {
+    search(val) {
+      this.performSearch();
     },
   },
 };

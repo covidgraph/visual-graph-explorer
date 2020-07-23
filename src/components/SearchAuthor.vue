@@ -19,6 +19,7 @@
         clearable
         solo
         flat
+        no-filter
         outlined
         hide-no-data
         hide-selected
