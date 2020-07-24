@@ -18,8 +18,7 @@ import licenseData from "../../yfiles-license.json";
 License.value = licenseData;
 
 import coreQuery from "./dbconnection";
-import { getId } from "./Neo4jGraphBuilder";
-import { isOfType } from "./queries";
+import { getId, isOfType } from "./Neo4jGraphBuilder";
 
 /**
  * @param {String} query
@@ -155,6 +154,7 @@ export class IncrementalGraphLoader {
     singularName = null,
     pluralName = null,
     tooltipFunction = null,
+    metadata = null,
   }) {
     this.schemaTypeCounter++;
     let node = this.queryBuilder.addNodeType(type);
@@ -167,6 +167,7 @@ export class IncrementalGraphLoader {
     node.tag.schemaType = this.schemaTypeCounter;
     node.tag.singularName = singularName || type.toLowerCase();
     node.tag.pluralName = pluralName || type.toLowerCase() + "s";
+    node.tag.metadata = metadata;
     return node;
   }
 

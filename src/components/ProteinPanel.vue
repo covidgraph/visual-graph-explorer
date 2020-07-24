@@ -12,9 +12,6 @@
               <h4 v-else>
                 {{ value.properties.sid }}
               </h4>
-              <span v-if="value.properties.name">
-                {{ value.properties.sid }}
-              </span>
             </div>
           </v-list-item-title>
         </v-list-item-content>

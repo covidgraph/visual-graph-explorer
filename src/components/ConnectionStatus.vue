@@ -54,7 +54,7 @@ export default {
   },
   destroyed() {
     if (this.timerHandle) {
-      clearImmediate(this.timerHandle);
+      clearInterval(this.timerHandle);
       this.timerHandle = null;
     }
   },

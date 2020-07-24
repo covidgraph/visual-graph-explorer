@@ -69,7 +69,6 @@ import {
 import ContextMenu from "./ContextMenu";
 import PopupPanel from "./PopupPanel";
 import { enableWorkarounds } from "./../util/Workarounds";
-import { isOfType } from "../util/queries";
 import {
   CovidGraphLoader,
   edgeStyle,
@@ -350,64 +349,11 @@ export default {
         );
       }
     },
-    currentItemIs(type) {
-      return isOfType(this.currentItem, type);
-    },
-    selectionIs(type) {
-      return (
-        this.selectedItems.length > 0 &&
-        this.selectedItems.every((item) => isOfType(item, type))
-      );
-    },
-    isMultiSelection(type) {
-      return (
-        this.selectedItems.length > 1 &&
-        this.selectedItems.every((item) => isOfType(item, type))
-      );
-    },
     clearGraph() {
       this.loader.clearGraph();
     },
     remove(items) {
       this.loader.remove(items);
-    },
-    async loadPapersForGene(gene) {
-      await this.loader.loadInEdges(gene, this.loader.paper_geneSymbol);
-    },
-    async loadCommonPapersForGenes(items) {
-      await this.loader.loadCommonSources(items, this.loader.paper_geneSymbol);
-    },
-    async searchGenes(geneIds) {
-      let genes = await this.loader.loadNodesForSchema(
-        this.loader.geneSymbolType,
-        ["node.sid in $geneIds"],
-        { geneIds }
-      );
-      if (genes.length > 1) {
-        await this.loadCommonPapersForGenes(genes);
-      } else if (genes.length > 0) {
-        await this.loadPapersForGene(genes[0]);
-      }
-    },
-    async searchPatent(id) {
-      await this.loader.loadNodeForSchema(this.loader.patentType, id);
-    },
-    async searchArticles(ids) {
-      await this.loader.loadNodesForSchema(
-        this.loader.paperType,
-        ["id(node) in $articleIds"],
-        { articleIds: ids }
-      );
-    },
-    async searchAuthor(id) {
-      await this.loader.loadNodeForSchema(this.loader.authorType, id);
-    },
-    async searchAuthorPapers(id) {
-      const author = await this.loader.loadNodeForSchema(
-        this.loader.authorType,
-        id
-      );
-      await this.loader.loadInEdges(author, this.loader.paper_author);
     },
   },
 };

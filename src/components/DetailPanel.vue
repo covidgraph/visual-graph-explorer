@@ -45,7 +45,7 @@ import AuthorPanel from "./AuthorPanel";
 import GenePanel from "./GenePanel";
 import PatentPanel from "./PatentPanel";
 import AffiliationPanel from "./AffiliationPanel";
-import { isOfType } from "../util/queries";
+import { isOfType } from "../util/Neo4jGraphBuilder";
 import ProteinPanel from "./ProteinPanel";
 import EntityPanel from "./EntityPanel";
 import PathwayPanel from "./PathwayPanel";

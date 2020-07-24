@@ -3,16 +3,6 @@ import { CovidGraphLoader } from "./CovidGraphLoader";
 
 const loader = new CovidGraphLoader(null);
 
-export function isOfType(item, type) {
-  if (item && item.labels && item.labels.length > 0) {
-    if (Array.isArray(type)) {
-      return type.every((t) => item.labels.indexOf(t) >= 0);
-    } else {
-      return item.labels.indexOf(type) >= 0;
-    }
-  }
-}
-
 export async function query(query, args = {}, name = "result") {
   return (await coreQuery(query, args)).records.map((r) => r.get(name));
 }
@@ -56,19 +46,6 @@ export async function loadTitlesForPatent(patent) {
             WHERE id(p) = $id
             RETURN pt as result LIMIT 50`,
     { id: patent.identity }
-  );
-}
-
-export async function findPatents(searchText) {
-  return coreQuery(
-    `call db.index.fulltext.queryNodes("PatentsFulltextIndex", $searchText)
-yield node,score match (node)--(p:Patent)-[:PATENT_HAS_PATENTTITLE]->(pt:PatentTitle)
-return distinct(id(p)) as id, collect(pt.text) as titles, labels(node)[0] as found_type, node.lang as found_in_lang, score
-order by score
-desc limit 10`,
-    {
-      searchText,
-    }
   );
 }
 

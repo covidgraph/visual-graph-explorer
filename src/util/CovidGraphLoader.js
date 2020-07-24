@@ -7,6 +7,7 @@ import {
   Arrow,
   ArrowType,
   DefaultLabelStyle,
+  IEnumerable,
   PolylineEdgeStyle,
   ShapeNodeStyle,
   Size,
@@ -21,9 +22,78 @@ import ProteinNode from "../graph-styles/ProteinNode";
 import AffiliationNode from "../graph-styles/AffiliationNode";
 import EntityNode from "../graph-styles/EntityNode";
 import TissueNode from "../graph-styles/TissueNode";
-import { isStagingDb } from "./dbconnection";
+import coreQuery, { isStagingDb } from "./dbconnection";
 import ClinicalTrialNode from "../graph-styles/ClinicalTrialNode";
 import DiseaseNode from "../graph-styles/DiseaseNode";
+import { getId } from "./Neo4jGraphBuilder";
+
+export async function query(query, args = {}, name = "result") {
+  return (await coreQuery(query, args)).records.map((r) => r.get(name));
+}
+
+async function queryPapers(queryString) {
+  return (
+    Promise.all([
+      query(
+        `MATCH (p:Paper) WHERE toLower(p.title) CONTAINS $word RETURN p as result LIMIT 10`,
+        { word: queryString.toLowerCase() }
+      ),
+      Promise.resolve([]),
+      /*query(
+      `CALL db.index.fulltext.queryNodes("textOfPapersAndPatents", $query) YIELD node, score
+          match (node)<-[:HAS_FRAGMENT]-()<-[:ABSTRACTCOLLECTION_HAS_ABSTRACT|PAPER_HAS_ABSTRACTCOLLECTION*1..2]-(p:Paper) where node:Fragment and not node:AbstractCollection
+          WITH p ORDER BY score DESC LIMIT 50 RETURN distinct(p)`,
+      { query: queryString }
+    ),*/
+    ])
+      // Lazily load input items
+      .then(([titleMatches, textMatches]) => {
+        return IEnumerable.from(
+          [...titleMatches, ...textMatches].map((node) => ({
+            id: node.identity,
+            publishTime: node.properties["publish_time"],
+            title: node.properties["title"],
+          }))
+        )
+          .distinct((arg) => getId(arg.id))
+          .toArray();
+      })
+  );
+}
+
+async function queryAuthors(queryString) {
+  return await query(
+    "MATCH (a:Author) WHERE (toLower(a.last) CONTAINS $word) OR (toLower(a.first) CONTAINS $word) RETURN a as result LIMIT 50",
+    { word: queryString.toLowerCase() }
+  ).then((res) =>
+    res.map((node) => ({
+      id: node.identity,
+      name: node.properties["first"] + " " + node.properties["last"],
+    }))
+  );
+}
+
+async function findPatents(searchText) {
+  return coreQuery(
+    `call db.index.fulltext.queryNodes("PatentsFulltextIndex", $searchText)
+yield node,score match (node)--(p:Patent)-[:PATENT_HAS_PATENTTITLE]->(pt:PatentTitle)
+return distinct(id(p)) as id, collect(pt.text) as titles, labels(node)[0] as found_type, node.lang as found_in_lang, score
+order by score
+desc limit 10`,
+    {
+      searchText,
+    }
+  );
+}
+
+async function queryPatents(queryString) {
+  return findPatents(queryString).then((res) =>
+    res.records.map((record) => ({
+      id: record.get("id"),
+      title: record.get("titles")[0],
+    }))
+  );
+}
 
 export const edgeStyle = new PolylineEdgeStyle({
   stroke: new Stroke({
@@ -50,6 +120,55 @@ export const edgeLabelLayoutParameter = new SmartEdgeLabelModel({
   segmentRatio: 0.5,
 });
 
+/**
+ *
+ * @param {String} match
+ * @param {String[]} props
+ * @return {function(*): *}
+ */
+function createQuery(match, props, caseSensitive = false) {
+  return function (queryString) {
+    if (!caseSensitive) {
+      queryString = queryString.toLowerCase();
+    }
+    return query(match, { query: queryString }).then((res) =>
+      res.map((node) =>
+        props.reduce(
+          (prev, current) => {
+            prev[current] = node.properties[current];
+            return prev;
+          },
+          { id: node.identity }
+        )
+      )
+    );
+  };
+}
+
+function toTableName(name) {
+  return name.substring(0, 1).toUpperCase() + name.substring(1);
+}
+
+function createMetaData(type, props = [], nameProp = "name") {
+  return {
+    table: {
+      headers: props.map((p) => ({
+        text: toTableName(p),
+        value: p,
+        align: "start",
+        sortable: true,
+      })),
+      query: createQuery(
+        `MATCH (n:${type})
+           WHERE toLower(n.${nameProp}) 
+            CONTAINS $query
+           RETURN n as result LIMIT 100`,
+        props
+      ),
+    },
+  };
+}
+
 export class CovidGraphLoader extends IncrementalGraphLoader {
   constructor(graphComponent) {
     super(new SchemaBasedQueryBuilder(), graphComponent);
@@ -58,24 +177,54 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       type: "Patent",
       style: new VuejsNodeStyle(PatentNode),
       size: new Size(80, 80),
+      metadata: {
+        table: {
+          headers: [
+            { text: "Title", value: "title", align: "start", sortable: true },
+          ],
+          query: queryPatents,
+        },
+      },
     });
 
     this.paperType = this.addNodeType({
       type: "Paper",
       style: new VuejsNodeStyle(PaperNode),
       size: new Size(150, 150),
+      metadata: {
+        table: {
+          headers: [
+            { text: "Title", value: "title", align: "start", sortable: true },
+            { text: "Publication Date", value: "publishTime", sortable: true },
+          ],
+          query: queryPapers,
+        },
+      },
     });
 
     this.authorType = this.addNodeType({
       type: "Author",
       style: new VuejsNodeStyle(AuthorNode),
       size: new Size(150, 150),
+      metadata: {
+        table: {
+          headers: [
+            { text: "Name", value: "name", align: "start", sortable: true },
+          ],
+          query: queryAuthors,
+        },
+      },
     });
 
     this.affiliationType = this.addNodeType({
       type: "Affiliation",
       style: new VuejsNodeStyle(AffiliationNode),
       size: new Size(80, 80),
+      metadata: createMetaData(
+        "Affiliation",
+        ["institution", "laboratory"],
+        "institution"
+      ),
     });
 
     this.geneSymbolType = this.addNodeType({
@@ -84,12 +233,29 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       size: new Size(150, 150),
       singularName: "gene",
       pluralName: "genes",
+      metadata: {
+        table: {
+          headers: [
+            { text: "SID", value: "sid", align: "start", sortable: true },
+            { text: "Status", value: "status", sortable: true },
+          ],
+          query: createQuery(
+            `MATCH (g:GeneSymbol)
+           WHERE toLower(g.sid) 
+            STARTS WITH $query
+           RETURN g as result LIMIT 100`,
+            ["sid", "status"],
+            true
+          ),
+        },
+      },
     });
 
     this.proteinType = this.addNodeType({
       type: "Protein",
       style: new VuejsNodeStyle(ProteinNode),
       size: new Size(150, 150),
+      metadata: createMetaData("Protein", ["sid", "name", "category"], "name"),
     });
 
     this.transcriptType = this.addNodeType({
@@ -105,6 +271,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       size: new Size(120, 120),
       singularName: "entity",
       pluralName: "entities",
+      metadata: createMetaData("Entity", ["name", "category"], "name"),
     });
 
     this.diseaseType = this.addNodeType({
@@ -113,6 +280,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       size: new Size(150, 150),
       singularName: "disease",
       pluralName: "diseases",
+      metadata: createMetaData("Disease", ["name", "definition", "doid"]),
     });
     this.clinicalTrialType = this.addNodeType({
       type: "ClinicalTrial",
@@ -120,6 +288,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       size: new Size(150, 150),
       singularName: "clinical trial",
       pluralName: "clinical trials",
+      //metadata: createMetaData("ClinicalTrial", ["briefTitle", "sponsorName"]),
     });
     this.facilityType = this.addNodeType({
       type: "Facility",
@@ -152,6 +321,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       size: new Size(150, 150),
       singularName: "pathway",
       pluralName: "pathways",
+      metadata: createMetaData("Pathway", ["name", "sid", "org", "desc"]),
     });
 
     this.gTexDetailedTissueType = this.addNodeType({
@@ -160,6 +330,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       size: new Size(150, 150),
       singularName: "tissue",
       pluralName: "tissues",
+      metadata: createMetaData("GtexDetailedTissue", ["name"]),
     });
 
     const wroteEdgeStyle = new PolylineEdgeStyle({
@@ -374,6 +545,15 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
         this.loadAndConnectNodeForSchema(schemaNode, id)
       );
     });
+  }
+
+  getMetadata(item) {
+    const schemaObject = this.getSchemaObject(item);
+    if (schemaObject) {
+      return schemaObject.tag.metadata;
+    } else {
+      return null;
+    }
   }
 
   getTooltip(item) {

@@ -133,7 +133,7 @@
 </template>
 
 <script>
-import query, { isStagingDb } from "../util/dbconnection";
+import { isStagingDb } from "../util/dbconnection";
 import {
   loadAbstractsForPaper,
   loadAuthorsForPaper,

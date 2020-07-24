@@ -29,7 +29,7 @@
         </template>
         <span>https://covidgraph.org</span>
       </v-tooltip>
-      <v-spacer></v-spacer>
+      <CombinedSearch ref="combinedSearch"></CombinedSearch>
       <v-tooltip bottom>
         <template v-slot:activator="{ on }">
           <v-btn
@@ -65,68 +65,52 @@
       <detail-panel ref="detailsPanel"></detail-panel>
     </v-navigation-drawer>
 
-    <v-navigation-drawer
-      app
-      clipped
-      right
-      width="350"
-      style="
-        box-shadow: 0 1px 15px rgba(0, 0, 0, 0.1), 0 1px 6px rgba(0, 0, 0, 0.1);
-      "
-    >
-      <SearchGene @search-gene="$refs.graphComponent.searchGenes($event)" />
-      <SearchArticle
-        @search-articles="$refs.graphComponent.searchArticles($event)"
-      />
-      <SearchPatent
-        @search-patent="$refs.graphComponent.searchPatent($event)"
-      />
-      <SearchAuthor
-        @search-author="$refs.graphComponent.searchAuthor($event)"
-        @search-author-papers="$refs.graphComponent.searchAuthorPapers($event)"
-      />
-    </v-navigation-drawer>
-
-    <v-content>
+    <v-main>
       <v-container fluid fill-height>
         <diagram-component
           ref="graphComponent"
           @item-selected="$refs.detailsPanel.show($event)"
         ></diagram-component>
       </v-container>
-    </v-content>
+    </v-main>
 
     <about-dialog></about-dialog>
     <results-dialog></results-dialog>
+    <error-dialog :error="error"></error-dialog>
   </v-app>
 </template>
 
 <script>
 import DiagramComponent from "./components/DiagramComponent";
-import SearchArticle from "./components/SearchArticle";
 import DetailPanel from "./components/DetailPanel";
-import SearchGene from "./components/SearchGene";
-import SearchAuthor from "./components/SearchAuthor";
-import SearchPatent from "./components/SearchPatent";
 import ConnectionStatus from "./components/ConnectionStatus";
 import AboutDialog from "./components/AboutDialog";
 import ResultsDialog from "./components/ResultsDialog";
+import CombinedSearch from "./components/CombinedSearch";
+import ErrorDialog from "./components/ErrorDialog";
 
 export default {
   name: "app",
   components: {
+    ErrorDialog,
+    CombinedSearch,
     ResultsDialog,
     AboutDialog,
     ConnectionStatus,
-    SearchArticle,
-    SearchGene,
     DiagramComponent,
     DetailPanel,
-    SearchAuthor,
-    SearchPatent,
   },
+  created() {
+    this.eventBus.$on("error", (e) => {
+      this.error = e.toString();
+    });
+  },
+  data: () => ({
+    error: null,
+  }),
   mounted() {
     setTimeout(() => this.showAboutDialog(), 500);
+    this.$refs["combinedSearch"].configure(this.$refs["graphComponent"].loader);
   },
   methods: {
     showAboutDialog() {

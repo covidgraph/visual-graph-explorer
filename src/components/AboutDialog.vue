@@ -23,9 +23,11 @@
       </v-card-text>
       <v-card-text class="card-text">
         <h1 style="margin-bottom: 20px;">Covid Graph Explorer</h1>
-        Use this application to interactively explore the database. The search
-        panel allows for finding specific genes, authors, articles, and patents
-        which are loaded into the graph which is visualized with
+        Use this application to interactively explore the database. Start by
+        searching for entities in the database. Select an entity type and enter
+        a query in the toolbar. If there are multiple matches for your query,
+        you can preview and filter the results in a table. From there you can
+        load them into the diagram. The visualizations have been created with
         <a
           href="https://www.yworks.com/yfileshtml?ref=covidgraph"
           target="_blank"
