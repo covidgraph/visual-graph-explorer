@@ -10,10 +10,16 @@
           <v-list-item-title class="primary--text pl-2">
             <div class="wrapText">
               <h4>
-                {{ value.properties.briefTitle }}
+                {{ value.properties.NCTId }}
               </h4>
             </div>
           </v-list-item-title>
+          <v-list-item-subtitle class="pa-4 pt-0"
+            ><b class="pr-1 primary--text pl-1">URL:</b
+            ><a :href="value.properties.url" target="_blank">{{
+              value.properties.url
+            }}</a></v-list-item-subtitle
+          >
         </v-list-item-content>
       </v-list-item>
     </v-list>

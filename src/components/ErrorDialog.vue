@@ -26,18 +26,12 @@ export default {
   name: "ErrorDialog",
   data: () => ({
     dialog: false,
+    error: "",
   }),
-  props: {
-    error: {
-      type: String,
-      required: true,
-    },
-  },
-  watch: {
-    error(val) {
-      if (val) {
-        this.dialog = true;
-      }
+  methods: {
+    showError(e) {
+      this.error = e;
+      this.dialog = true;
     },
   },
 };

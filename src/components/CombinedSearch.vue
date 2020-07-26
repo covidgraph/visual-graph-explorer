@@ -232,7 +232,7 @@ export default {
       }
     },
     query(val) {
-      if (val.length === 0) this.open = false;
+      if (!val || val.length === 0) this.open = false;
     },
   },
 };

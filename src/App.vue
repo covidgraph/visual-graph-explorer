@@ -76,7 +76,7 @@
 
     <about-dialog></about-dialog>
     <results-dialog></results-dialog>
-    <error-dialog :error="error"></error-dialog>
+    <error-dialog ref="errorDialog"></error-dialog>
   </v-app>
 </template>
 
@@ -102,12 +102,9 @@ export default {
   },
   created() {
     this.eventBus.$on("error", (e) => {
-      this.error = e.toString();
+      this.$refs.errorDialog.showError(e);
     });
   },
-  data: () => ({
-    error: null,
-  }),
   mounted() {
     setTimeout(() => this.showAboutDialog(), 500);
     this.$refs["combinedSearch"].configure(this.$refs["graphComponent"].loader);

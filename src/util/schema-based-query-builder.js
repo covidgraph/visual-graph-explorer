@@ -86,6 +86,19 @@ function createRelation(graph, sourceNode, targetNode, schemaEdge, relation) {
   }
 }
 
+function select(a, prop) {
+  return a.map((item) => item[prop]);
+}
+
+/**
+ * @param {function[]} actions
+ */
+function runAll(actions) {
+  if (actions && actions.length > 0) {
+    actions.forEach((action) => action());
+  }
+}
+
 export class IncrementalGraphLoader {
   /**
    * @param {GraphComponent} graphComponent
@@ -300,6 +313,15 @@ export class IncrementalGraphLoader {
       .toArray();
   }
 
+  getMetadata(item) {
+    const schemaObject = this.getSchemaObject(item);
+    if (schemaObject) {
+      return schemaObject.tag.metadata;
+    } else {
+      return null;
+    }
+  }
+
   /**
    *
    * @param {INode} node
@@ -323,21 +345,50 @@ export class IncrementalGraphLoader {
       .toArray();
   }
 
-  async loadAndConnectSchemaOutEdges(item, schemaEdge, nodeCreator) {
-    let sourceNode = this.getLoadedNode(item);
-    let newItems = [];
+  async loadAndConnectSchemaOutEdges(
+    item,
+    schemaEdge,
+    nodeCreator,
+    filterAction = null
+  ) {
+    const sourceNode = this.getLoadedNode(item);
+    let lazyActions = [];
     if (sourceNode) {
-      let location = sourceNode.layout.center.toPoint();
-      let graph = this.graphComponent.graph;
+      const location = sourceNode.layout.center.toPoint();
+      const graph = this.graphComponent.graph;
+      const lazyRelations = [];
       if (schemaEdge.tag.hasRelation) {
         (await this.queryBuilder.loadOutEdges(schemaEdge, item)).forEach(
           ({ targetNode: targetItem, relation }) => {
             let targetNode = this.getLoadedNode(targetItem);
             if (!targetNode) {
-              newItems.push(targetItem);
-              targetNode = nodeCreator(targetItem, location);
+              lazyActions.push({
+                item: targetItem,
+                action: () => {
+                  targetNode = this.getLoadedNode(targetItem);
+                  if (!targetNode) {
+                    targetNode = nodeCreator(targetItem, location);
+                  }
+                  createRelation(
+                    graph,
+                    sourceNode,
+                    targetNode,
+                    schemaEdge,
+                    relation
+                  );
+                },
+              });
+            } else {
+              lazyRelations.push(() =>
+                createRelation(
+                  graph,
+                  sourceNode,
+                  targetNode,
+                  schemaEdge,
+                  relation
+                )
+              );
             }
-            createRelation(graph, sourceNode, targetNode, schemaEdge, relation);
           }
         );
       } else {
@@ -345,15 +396,33 @@ export class IncrementalGraphLoader {
           (targetItem) => {
             let targetNode = this.getLoadedNode(targetItem);
             if (!targetNode) {
-              newItems.push(targetItem);
-              targetNode = nodeCreator(targetItem, location);
+              lazyActions.push({
+                item: targetItem,
+                action: () =>
+                  createRelation(
+                    graph,
+                    sourceNode,
+                    nodeCreator(targetItem, location),
+                    schemaEdge
+                  ),
+              });
+            } else {
+              lazyRelations.push(() =>
+                createRelation(graph, sourceNode, targetNode, schemaEdge)
+              );
             }
-            createRelation(graph, sourceNode, targetNode, schemaEdge);
           }
         );
       }
+      if (filterAction && lazyActions.length > 0) {
+        lazyActions = await filterAction(lazyActions);
+      }
+      if (lazyActions !== null) {
+        runAll(select(lazyActions, "action"));
+        runAll(lazyRelations);
+      }
     }
-    return newItems;
+    return lazyActions !== null ? lazyActions.map((item) => item.item) : [];
   }
 
   async loadAndConnectSchemaTargets(
@@ -430,21 +499,50 @@ export class IncrementalGraphLoader {
     return newItems;
   }
 
-  async loadAndConnectSchemaInEdges(item, schemaEdge, nodeCreator) {
-    let targetNode = this.getLoadedNode(item);
-    let newItems = [];
+  async loadAndConnectSchemaInEdges(
+    item,
+    schemaEdge,
+    nodeCreator,
+    filterAction = null
+  ) {
+    const targetNode = this.getLoadedNode(item);
+    let lazyActions = [];
     if (targetNode) {
-      let location = targetNode.layout.center.toPoint();
-      let graph = this.graphComponent.graph;
+      const location = targetNode.layout.center.toPoint();
+      const graph = this.graphComponent.graph;
+      const lazyRelations = [];
       if (schemaEdge.tag.hasRelation) {
         (await this.queryBuilder.loadInEdges(schemaEdge, item)).forEach(
-          ({ sourceNode: sourceItem, relation }) => {
-            let sourceNode = this.getLoadedNode(sourceItem);
+          ({ sourceNode: targetItem, relation }) => {
+            let sourceNode = this.getLoadedNode(targetItem);
             if (!sourceNode) {
-              newItems.push(sourceItem);
-              sourceNode = nodeCreator(sourceItem, location);
+              lazyActions.push({
+                item: targetItem,
+                action: () => {
+                  sourceNode = this.getLoadedNode(targetItem);
+                  if (!sourceNode) {
+                    sourceNode = nodeCreator(targetItem, location);
+                  }
+                  createRelation(
+                    graph,
+                    sourceNode,
+                    targetNode,
+                    schemaEdge,
+                    relation
+                  );
+                },
+              });
+            } else {
+              lazyRelations.push(() =>
+                createRelation(
+                  graph,
+                  sourceNode,
+                  targetNode,
+                  schemaEdge,
+                  relation
+                )
+              );
             }
-            createRelation(graph, sourceNode, targetNode, schemaEdge, relation);
           }
         );
       } else {
@@ -452,15 +550,33 @@ export class IncrementalGraphLoader {
           (sourceItem) => {
             let sourceNode = this.getLoadedNode(sourceItem);
             if (!sourceNode) {
-              newItems.push(sourceItem);
-              sourceNode = nodeCreator(sourceItem, location);
+              lazyActions.push({
+                item: sourceItem,
+                action: () =>
+                  createRelation(
+                    graph,
+                    nodeCreator(sourceItem, location),
+                    targetNode,
+                    schemaEdge
+                  ),
+              });
+            } else {
+              lazyRelations.push(() =>
+                createRelation(graph, sourceNode, targetNode, schemaEdge)
+              );
             }
-            createRelation(graph, sourceNode, targetNode, schemaEdge);
           }
         );
       }
+      if (filterAction && lazyActions.length > 0) {
+        lazyActions = await filterAction(lazyActions);
+      }
+      if (lazyActions !== null) {
+        runAll(select(lazyActions, "action"));
+        runAll(lazyRelations);
+      }
     }
-    return newItems;
+    return lazyActions !== null ? lazyActions.map((item) => item.item) : [];
   }
 
   remove(items) {
@@ -593,12 +709,20 @@ export class IncrementalGraphLoader {
     }
   }
 
+  /**
+   * @template T
+   * @param item
+   * @param schemaEdge
+   * @return {Promise<void>}
+   */
   async loadInEdges(item, schemaEdge) {
     await this.loadAndLayout(async () => {
       const newItems = await this.loadAndConnectSchemaInEdges(
         item,
         schemaEdge,
-        schemaEdge.sourceNode.tag.creator
+        schemaEdge.sourceNode.tag.creator,
+        schemaEdge.sourceNode.tag.metadata &&
+          schemaEdge.sourceNode.tag.metadata.filter
       );
       await this.loadMissingEdgesForSchemaNodes(
         schemaEdge.sourceNode,
@@ -607,12 +731,20 @@ export class IncrementalGraphLoader {
     });
   }
 
+  /**
+   * @template T
+   * @param item
+   * @param schemaEdge
+   * @return {Promise<void>}
+   */
   async loadOutEdges(item, schemaEdge) {
     await this.loadAndLayout(async () => {
       const newItems = await this.loadAndConnectSchemaOutEdges(
         item,
         schemaEdge,
-        schemaEdge.targetNode.tag.creator
+        schemaEdge.targetNode.tag.creator,
+        schemaEdge.targetNode.tag.metadata &&
+          schemaEdge.targetNode.tag.metadata.filter
       );
       await this.loadMissingEdgesForSchemaNodes(
         schemaEdge.targetNode,

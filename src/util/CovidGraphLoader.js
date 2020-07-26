@@ -77,7 +77,7 @@ async function findPatents(searchText) {
   return coreQuery(
     `call db.index.fulltext.queryNodes("PatentsFulltextIndex", $searchText)
 yield node,score match (node)--(p:Patent)-[:PATENT_HAS_PATENTTITLE]->(pt:PatentTitle)
-return distinct(id(p)) as id, collect(pt.text) as titles, labels(node)[0] as found_type, node.lang as found_in_lang, score
+return distinct(id(p)) as id, collect(pt.text) as titles, score
 order by score
 desc limit 10`,
     {
@@ -88,10 +88,14 @@ desc limit 10`,
 
 async function queryPatents(queryString) {
   return findPatents(queryString).then((res) =>
-    res.records.map((record) => ({
-      id: record.get("id"),
-      title: record.get("titles")[0],
-    }))
+    IEnumerable.from(
+      res.records.map((record) => ({
+        id: record.get("id"),
+        title: record.get("titles")[0],
+      }))
+    )
+      .distinct((e) => getId(e.id))
+      .toArray()
   );
 }
 
@@ -288,7 +292,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       size: new Size(150, 150),
       singularName: "clinical trial",
       pluralName: "clinical trials",
-      //metadata: createMetaData("ClinicalTrial", ["briefTitle", "sponsorName"]),
+      metadata: createMetaData("ClinicalTrial", ["briefTitle", "sponsorName"]),
     });
     this.facilityType = this.addNodeType({
       type: "Facility",
@@ -520,6 +524,50 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
     });
   }
 
+  /**
+   *
+   * @param {INode} schemaNode
+   * @return {(function(t:T[]):Promise<T[]>)|null}
+   */
+  createFilter(schemaNode, eventBus) {
+    if (schemaNode.tag.metadata) {
+      return function (items) {
+        return new Promise((resolve, reject) => {
+          if (items.length < 2) {
+            resolve(items);
+            return;
+          }
+          const uniqueItems = IEnumerable.from(items)
+            .map((i, _index) => ({
+              id: getId(i.item.identity),
+              $origIndex: _index,
+              ...i.item.properties,
+            }))
+            .groupBy(
+              (i) => i.id,
+              (id, items) => items
+            )
+            .toArray();
+
+          eventBus.$emit("show-results-dialog", {
+            items: uniqueItems.map((i) => i.first()),
+            headers: schemaNode.tag.metadata.table.headers,
+            resolve: function (indices) {
+              resolve(
+                indices !== null
+                  ? indices.flatMap((i) =>
+                      uniqueItems[i].map((i) => items[i.$origIndex]).toArray()
+                    )
+                  : null
+              );
+            },
+          });
+        });
+      };
+    }
+    return null;
+  }
+
   registerEvents(eventBus) {
     this.queryBuilder.schemaGraph.edges.forEach((schemaEdge) => {
       let eventNameOut = `load-target-${schemaEdge.targetNode.tag.type}-for-${schemaEdge.sourceNode.tag.type}`;
@@ -540,20 +588,17 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
     });
 
     this.queryBuilder.schemaGraph.nodes.forEach((schemaNode) => {
+      if (schemaNode.tag.metadata && !schemaNode.tag.metadata.filter) {
+        schemaNode.tag.metadata.filter = this.createFilter(
+          schemaNode,
+          eventBus
+        );
+      }
       let commonEventNameIn = `load-${schemaNode.tag.type}`;
       eventBus.$on(commonEventNameIn, (id) =>
         this.loadAndConnectNodeForSchema(schemaNode, id)
       );
     });
-  }
-
-  getMetadata(item) {
-    const schemaObject = this.getSchemaObject(item);
-    if (schemaObject) {
-      return schemaObject.tag.metadata;
-    } else {
-      return null;
-    }
   }
 
   getTooltip(item) {
