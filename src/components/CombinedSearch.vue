@@ -123,7 +123,7 @@ export default {
       loader.queryBuilder.schemaGraph.nodes.forEach((node) => {
         if (node.tag.metadata) {
           this.configurations.push({
-            type: node.tag.singularName,
+            type: node.tag.metadata.name,
             headers: node.tag.metadata.table.headers,
             query: node.tag.metadata.table.query,
             load(ids) {

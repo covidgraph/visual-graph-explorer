@@ -22,7 +22,7 @@ import ProteinNode from "../graph-styles/ProteinNode";
 import AffiliationNode from "../graph-styles/AffiliationNode";
 import EntityNode from "../graph-styles/EntityNode";
 import TissueNode from "../graph-styles/TissueNode";
-import coreQuery, { isStagingDb } from "./dbconnection";
+import coreQuery from "./dbconnection";
 import ClinicalTrialNode from "../graph-styles/ClinicalTrialNode";
 import DiseaseNode from "../graph-styles/DiseaseNode";
 import { getId } from "./Neo4jGraphBuilder";
@@ -68,7 +68,8 @@ async function queryAuthors(queryString) {
   ).then((res) =>
     res.map((node) => ({
       id: node.identity,
-      name: node.properties["first"] + " " + node.properties["last"],
+      first: node.properties["first"],
+      last: node.properties["last"],
     }))
   );
 }
@@ -153,8 +154,9 @@ function toTableName(name) {
   return name.substring(0, 1).toUpperCase() + name.substring(1);
 }
 
-function createMetaData(type, props = [], nameProp = "name") {
+function createMetaData(type, props = [], nameProp = "name", tableName = null) {
   return {
+    name: tableName || toTableName(type) + "s",
     table: {
       headers: props.map((p) => ({
         text: toTableName(p),
@@ -182,6 +184,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       style: new VuejsNodeStyle(PatentNode),
       size: new Size(80, 80),
       metadata: {
+        name: "Patents",
         table: {
           headers: [
             { text: "Title", value: "title", align: "start", sortable: true },
@@ -196,6 +199,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       style: new VuejsNodeStyle(PaperNode),
       size: new Size(150, 150),
       metadata: {
+        name: "Publications",
         table: {
           headers: [
             { text: "Title", value: "title", align: "start", sortable: true },
@@ -211,9 +215,21 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       style: new VuejsNodeStyle(AuthorNode),
       size: new Size(150, 150),
       metadata: {
+        name: "Authors",
         table: {
           headers: [
-            { text: "Name", value: "name", align: "start", sortable: true },
+            {
+              text: "Last Name",
+              value: "last",
+              align: "start",
+              sortable: true,
+            },
+            {
+              text: "First Name",
+              value: "first",
+              align: "start",
+              sortable: true,
+            },
           ],
           query: queryAuthors,
         },
@@ -238,6 +254,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       singularName: "gene",
       pluralName: "genes",
       metadata: {
+        name: "Genes",
         table: {
           headers: [
             { text: "SID", value: "sid", align: "start", sortable: true },
@@ -275,7 +292,12 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       size: new Size(120, 120),
       singularName: "entity",
       pluralName: "entities",
-      metadata: createMetaData("Entity", ["name", "category"], "name"),
+      metadata: createMetaData(
+        "Entity",
+        ["name", "category"],
+        "name",
+        "Entities"
+      ),
     });
 
     this.diseaseType = this.addNodeType({
@@ -292,7 +314,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       size: new Size(150, 150),
       singularName: "clinical trial",
       pluralName: "clinical trials",
-      metadata: createMetaData("ClinicalTrial", ["briefTitle", "sponsorName"]),
+      //metadata: createMetaData("ClinicalTrial", ["briefTitle", "sponsorName"]),
     });
     this.facilityType = this.addNodeType({
       type: "Facility",
@@ -334,7 +356,12 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       size: new Size(150, 150),
       singularName: "tissue",
       pluralName: "tissues",
-      metadata: createMetaData("GtexDetailedTissue", ["name"]),
+      metadata: createMetaData(
+        "GtexDetailedTissue",
+        ["name"],
+        "name",
+        "Tissues"
+      ),
     });
 
     const wroteEdgeStyle = new PolylineEdgeStyle({

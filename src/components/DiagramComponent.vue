@@ -125,7 +125,8 @@ function initializeHighlightStyles(graphComponent) {
     nodeStyleHighlight
   );
 
-  // move the highlight to the background
+  // move the selection and highlight to the background
+  graphComponent.selectionGroup.below(graphComponent.contentGroup);
   graphComponent.highlightGroup.toBack();
 
   // a similar style for the edges, however cropped by the highlight's insets

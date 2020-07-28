@@ -1,9 +1,6 @@
 <template>
   <v-dialog v-model="showDialog" width="80%" height="90%">
     <v-card class="d-flex flex-column" min-height="80vh">
-      <v-card-title class="primary white--text" primary-title>
-        Load Results
-      </v-card-title>
       <v-card-title>
         Search results
         <v-spacer></v-spacer>
