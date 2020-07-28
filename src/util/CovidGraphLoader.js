@@ -249,7 +249,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
             STARTS WITH $query
            RETURN g as result LIMIT 100`,
             ["sid", "status"],
-            true
+            false
           ),
         },
       },
