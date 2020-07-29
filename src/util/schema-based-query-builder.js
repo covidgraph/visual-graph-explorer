@@ -1,24 +1,24 @@
 import {
   DefaultGraph,
+  GraphComponent,
   IEdge,
+  IEdgeStyle,
   IGraph,
   INode,
-  IEdgeStyle,
-  GraphComponent,
-  Size,
   INodeStyle,
-  Rect,
-  Point,
   License,
   OrganicLayout,
+  OrganicLayoutData,
+  Point,
+  Rect,
+  Size,
 } from "yfiles";
 
 import licenseData from "../../yfiles-license.json";
-
-License.value = licenseData;
-
 import coreQuery from "./dbconnection";
 import { getId, isOfType } from "./Neo4jGraphBuilder";
+
+License.value = licenseData;
 
 /**
  * @param {String} query
@@ -784,7 +784,13 @@ export class IncrementalGraphLoader {
   }
 
   async runLayout() {
-    await this.graphComponent.morphLayout(this.layout);
+    await this.graphComponent.morphLayout({
+      layout: this.layout,
+      layoutData: new OrganicLayoutData({
+        sourceGroupIds: (item) => "s" + item.tag.schemaType,
+        targetGroupIds: (item) => "t" + item.tag.schemaType,
+      }),
+    });
   }
 }
 

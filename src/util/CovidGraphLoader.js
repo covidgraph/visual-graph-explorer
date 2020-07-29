@@ -101,6 +101,7 @@ async function queryPatents(queryString) {
 }
 
 export const edgeStyle = new PolylineEdgeStyle({
+  smoothingLength: 500,
   stroke: new Stroke({
     fill: "gray",
     thickness: 3,
@@ -365,6 +366,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
     });
 
     const wroteEdgeStyle = new PolylineEdgeStyle({
+      smoothingLength: 500,
       stroke: "2px blue",
     });
 
@@ -406,7 +408,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
     this.trial_exclusion_criteria = this.addRelationShip({
       sourceNode: this.clinicalTrialType,
       targetNode: this.exclusionCriteriaType,
-      style: new PolylineEdgeStyle({ stroke: "2px red" }),
+      style: new PolylineEdgeStyle({ stroke: "2px red", smoothingLength: 500 }),
       matchClause:
         "(sourceNode:ClinicalTrial)-[:HAS_EXCLUSION_CRITERIA]->(targetNode:ExclusionCriteria)",
       relatedVerb: "applied",
