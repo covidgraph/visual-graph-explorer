@@ -6,6 +6,7 @@
     transition="slide-y-transition"
     z-index="4"
     :close-on-content-click="false"
+    max-height="80vh"
   >
     <template v-slot:activator="{ on }">
       <v-row no-gutters align-content="center" align="center">

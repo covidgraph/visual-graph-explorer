@@ -47,7 +47,8 @@ async function mapQuery(query, args = {}, names = ["result"]) {
   });
 }
 
-const limit = 200;
+// the maximum number of elements fetched from the server for one request
+const limit = 250;
 
 /**
  *

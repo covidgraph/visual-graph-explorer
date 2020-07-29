@@ -31,18 +31,21 @@ export async function query(query, args = {}, name = "result") {
   return (await coreQuery(query, args)).records.map((r) => r.get(name));
 }
 
+// the maximum number of elements fetched from the server for one request
+const queryLimit = 250;
+
 async function queryPapers(queryString) {
   return (
     Promise.all([
       query(
-        `MATCH (p:Paper) WHERE toLower(p.title) CONTAINS $word RETURN p as result LIMIT 10`,
+        `MATCH (p:Paper) WHERE toLower(p.title) CONTAINS $word RETURN p as result LIMIT ${queryLimit}`,
         { word: queryString.toLowerCase() }
       ),
       Promise.resolve([]),
       /*query(
       `CALL db.index.fulltext.queryNodes("textOfPapersAndPatents", $query) YIELD node, score
           match (node)<-[:HAS_FRAGMENT]-()<-[:ABSTRACTCOLLECTION_HAS_ABSTRACT|PAPER_HAS_ABSTRACTCOLLECTION*1..2]-(p:Paper) where node:Fragment and not node:AbstractCollection
-          WITH p ORDER BY score DESC LIMIT 50 RETURN distinct(p)`,
+          WITH p ORDER BY score DESC LIMIT ${queryLimit} RETURN distinct(p)`,
       { query: queryString }
     ),*/
     ])
@@ -63,7 +66,7 @@ async function queryPapers(queryString) {
 
 async function queryAuthors(queryString) {
   return await query(
-    "MATCH (a:Author) WHERE (toLower(a.last) CONTAINS $word) OR (toLower(a.first) CONTAINS $word) RETURN a as result LIMIT 50",
+    "MATCH (a:Author) WHERE (toLower(a.last) CONTAINS $word) OR (toLower(a.first) CONTAINS $word) RETURN a as result LIMIT ${queryLimit}",
     { word: queryString.toLowerCase() }
   ).then((res) =>
     res.map((node) => ({
@@ -80,7 +83,7 @@ async function findPatents(searchText) {
 yield node,score match (node)--(p:Patent)-[:PATENT_HAS_PATENTTITLE]->(pt:PatentTitle)
 return distinct(id(p)) as id, collect(pt.text) as titles, score
 order by score
-desc limit 10`,
+desc limit ${queryLimit}`,
     {
       searchText,
     }
@@ -169,7 +172,7 @@ function createMetaData(type, props = [], nameProp = "name", tableName = null) {
         `MATCH (n:${type})
            WHERE toLower(n.${nameProp}) 
             CONTAINS $query
-           RETURN n as result LIMIT 100`,
+           RETURN n as result LIMIT ${queryLimit}`,
         props
       ),
     },
@@ -265,7 +268,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
             `MATCH (g:GeneSymbol)
            WHERE toLower(g.sid) 
             STARTS WITH $query
-           RETURN g as result LIMIT 100`,
+           RETURN g as result LIMIT ${queryLimit}`,
             ["sid", "status"],
             false
           ),
