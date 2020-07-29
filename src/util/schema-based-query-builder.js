@@ -114,6 +114,7 @@ export class IncrementalGraphLoader {
       minimumNodeDistance: 100,
       starSubstructureStyle: "separated-radial",
       parallelSubstructureStyle: "radial",
+      qualityTimeRatio: 0.7,
     });
   }
 
