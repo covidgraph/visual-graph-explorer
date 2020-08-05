@@ -40,6 +40,18 @@ export async function loadAbstractsForPaper(paper) {
   );
 }
 
+export async function loadAbstractsForPatent(paper) {
+  return await query(
+    `MATCH (n:Patent)-[r:PATENT_HAS_PATENTABSTRACT]->(a:PatentAbstract)-[:HAS_FRAGMENT]->(f:Fragment) WHERE id(n) = $paperId 
+       WITH collect({txt:f.text, pos:f.sequence}) as text
+            UNWIND text as t
+            WITH t
+            order by t.pos
+            RETURN collect(t.txt) as result LIMIT 100`,
+    { paperId: paper.identity }
+  );
+}
+
 export async function loadTitlesForPatent(patent) {
   return await query(
     `MATCH (p:Patent)-[:PATENT_HAS_PATENTTITLE]->(pt:PatentTitle)
@@ -58,7 +70,7 @@ export async function loadBodyTextForPaper(paper) {
             UNWIND text as t
             WITH t
             order by t.pos
-            RETURN collect(t.txt) as result LIMIT 10`,
+            RETURN collect(t.txt) as result LIMIT 100`,
     { paperId: paper.identity }
   );
 }

@@ -34,6 +34,8 @@ export async function query(query, args = {}, name = "result") {
 // the maximum number of elements fetched from the server for one request
 const queryLimit = 250;
 
+const insertAnds = (s) => s.split(/\s+/).join(" AND ");
+
 async function queryPapers(queryString) {
   return (
     Promise.all([
@@ -41,13 +43,12 @@ async function queryPapers(queryString) {
         `MATCH (p:Paper) WHERE toLower(p.title) CONTAINS $word RETURN p as result LIMIT ${queryLimit}`,
         { word: queryString.toLowerCase() }
       ),
-      Promise.resolve([]),
-      /*query(
-      `CALL db.index.fulltext.queryNodes("textOfPapersAndPatents", $query) YIELD node, score
+      query(
+        `CALL db.index.fulltext.queryNodes("textOfPapersAndPatents", $query) YIELD node, score
           match (node)<-[:HAS_FRAGMENT]-()<-[:ABSTRACTCOLLECTION_HAS_ABSTRACT|PAPER_HAS_ABSTRACTCOLLECTION*1..2]-(p:Paper) where node:Fragment and not node:AbstractCollection
-          WITH p ORDER BY score DESC LIMIT ${queryLimit} RETURN distinct(p)`,
-      { query: queryString }
-    ),*/
+          WITH p as result ORDER BY score DESC LIMIT ${queryLimit} RETURN distinct(result)`,
+        { query: queryString }
+      ),
     ])
       // Lazily load input items
       .then(([titleMatches, textMatches]) => {
@@ -64,42 +65,79 @@ async function queryPapers(queryString) {
   );
 }
 
+async function queryPatents(queryString) {
+  return (
+    Promise.all([
+      coreQuery(
+        `call db.index.fulltext.queryNodes("PatentsFulltextIndex", $searchText)
+yield node,score match (node)--(p:Patent)-[:PATENT_HAS_PATENTTITLE]->(pt:PatentTitle)
+WITH p ORDER BY score DESC with distinct(p) 
+match (p:Patent)-[:PATENT_HAS_PATENTTITLE]->(pt:PatentTitle) RETURN id(p) as id, collect(pt.text) as titles LIMIT ${queryLimit}
+`,
+        {
+          searchText: queryString,
+        }
+      ).then((result) =>
+        result.records.map((record) => ({
+          id: record.get("id"),
+          title: record.get("titles")[0],
+        }))
+      ),
+      coreQuery(
+        `CALL db.index.fulltext.queryNodes("textOfPapersAndPatents", $query) YIELD node, score
+          match (node:Fragment)<-[:HAS_FRAGMENT]-(:PatentAbstract)<-[:PATENT_HAS_PATENTABSTRACT]-(p:Patent) 
+          WITH p as result ORDER BY score DESC WITH distinct(result) as p 
+          match (p:Patent)-[:PATENT_HAS_PATENTTITLE]->(pt:PatentTitle) RETURN id(p) as id, collect(pt.text) as titles LIMIT ${queryLimit}`,
+        { query: queryString }
+      ).then((result) =>
+        result.records.map((record) => ({
+          id: record.get("id"),
+          title: record.get("titles")[0],
+        }))
+      ),
+    ])
+      // Lazily load input items
+      .then(([titleMatches, textMatches]) => {
+        return IEnumerable.from([...titleMatches, ...textMatches])
+          .distinct((arg) => getId(arg.id))
+          .toArray();
+      })
+  );
+}
+
+async function queryGenes(queryString) {
+  return await Promise.all([
+    createSearchQuery(
+      `CALL db.index.fulltext.queryNodes("GeneSymbolFullTextIndex", $query) YIELD node, score WITH node ORDER BY score DESC LIMIT ${queryLimit} RETURN node as result`,
+      ["sid", "GeneSymbol", "status"],
+      insertAnds
+    )(queryString),
+    createQuery(
+      `MATCH (g:GeneSymbol)
+           WHERE toLower(g.sid) 
+            STARTS WITH $query
+           RETURN g as result LIMIT ${queryLimit}`,
+      ["sid", "status, GeneSymbol"],
+      false
+    )(queryString),
+  ]).then(([match1, match2]) => {
+    return IEnumerable.from(match1)
+      .concat(IEnumerable.from(match2))
+      .distinct((arg) => getId(arg.id))
+      .toArray();
+  });
+}
+
 async function queryAuthors(queryString) {
   return await query(
-    "MATCH (a:Author) WHERE (toLower(a.last) CONTAINS $word) OR (toLower(a.first) CONTAINS $word) RETURN a as result LIMIT ${queryLimit}",
-    { word: queryString.toLowerCase() }
+    `CALL db.index.fulltext.queryNodes("AuthorFullTextIndex", $query) YIELD node, score WITH node ORDER BY score DESC LIMIT ${queryLimit} RETURN node as result`,
+    { query: insertAnds(queryString) }
   ).then((res) =>
     res.map((node) => ({
       id: node.identity,
       first: node.properties["first"],
       last: node.properties["last"],
     }))
-  );
-}
-
-async function findPatents(searchText) {
-  return coreQuery(
-    `call db.index.fulltext.queryNodes("PatentsFulltextIndex", $searchText)
-yield node,score match (node)--(p:Patent)-[:PATENT_HAS_PATENTTITLE]->(pt:PatentTitle)
-return distinct(id(p)) as id, collect(pt.text) as titles, score
-order by score
-desc limit ${queryLimit}`,
-    {
-      searchText,
-    }
-  );
-}
-
-async function queryPatents(queryString) {
-  return findPatents(queryString).then((res) =>
-    IEnumerable.from(
-      res.records.map((record) => ({
-        id: record.get("id"),
-        title: record.get("titles")[0],
-      }))
-    )
-      .distinct((e) => getId(e.id))
-      .toArray()
   );
 }
 
@@ -136,11 +174,23 @@ export const edgeLabelLayoutParameter = new SmartEdgeLabelModel({
  * @return {function(*): *}
  */
 function createQuery(match, props, caseSensitive = false) {
+  if (caseSensitive) {
+    return createSearchQuery(match, props, (s) => s);
+  } else {
+    return createSearchQuery(match, props, (s) => s.toLocaleLowerCase());
+  }
+}
+
+/**
+ *
+ * @param {String} match
+ * @param {String[]} props
+ * @param {function(s:string):string} queryTransform
+ * @return {function(*): *}
+ */
+function createSearchQuery(match, props, queryTransform) {
   return function (queryString) {
-    if (!caseSensitive) {
-      queryString = queryString.toLowerCase();
-    }
-    return query(match, { query: queryString }).then((res) =>
+    return query(match, { query: queryTransform(queryString) }).then((res) =>
       res.map((node) =>
         props.reduce(
           (prev, current) => {
@@ -158,7 +208,13 @@ function toTableName(name) {
   return name.substring(0, 1).toUpperCase() + name.substring(1);
 }
 
-function createMetaData(type, props = [], nameProp = "name", tableName = null) {
+function createMetaData(
+  type,
+  props = [],
+  nameProp = "name",
+  tableName = null,
+  query = null
+) {
   return {
     name: tableName || toTableName(type) + "s",
     table: {
@@ -168,13 +224,15 @@ function createMetaData(type, props = [], nameProp = "name", tableName = null) {
         align: "start",
         sortable: true,
       })),
-      query: createQuery(
-        `MATCH (n:${type})
+      query:
+        query ||
+        createQuery(
+          `MATCH (n:${type})
            WHERE toLower(n.${nameProp}) 
             CONTAINS $query
            RETURN n as result LIMIT ${queryLimit}`,
-        props
-      ),
+          props
+        ),
     },
   };
 }
@@ -264,14 +322,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
             { text: "SID", value: "sid", align: "start", sortable: true },
             { text: "Status", value: "status", sortable: true },
           ],
-          query: createQuery(
-            `MATCH (g:GeneSymbol)
-           WHERE toLower(g.sid) 
-            STARTS WITH $query
-           RETURN g as result LIMIT ${queryLimit}`,
-            ["sid", "status"],
-            false
-          ),
+          query: queryGenes,
         },
       },
     });
@@ -300,7 +351,12 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
         "Entity",
         ["name", "category"],
         "name",
-        "Entities"
+        "Entities",
+        createSearchQuery(
+          `CALL db.index.fulltext.queryNodes("EntityFullTextIndex", $query) YIELD node, score WITH node ORDER BY score DESC LIMIT ${queryLimit} RETURN node as result`,
+          ["name", "category"],
+          insertAnds
+        )
       ),
     });
 

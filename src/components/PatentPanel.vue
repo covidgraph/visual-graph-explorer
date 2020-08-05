@@ -61,6 +61,7 @@
         v-if="patent.classification_us"
         :items="patent.classification_us"
       />
+      <PanelItem itemTitle="Abstract" :items="[abstract]" />
       <v-expansion-panel v-if="geneSymbols.length" class="mr-1" flat>
         <v-expansion-panel-header class="primary--text pb-0">
           <b>Mentioned Genes</b>
@@ -74,7 +75,15 @@
 </template>
 
 <script>
-import { loadGenesForPatent, loadTitlesForPatent } from "../util/queries";
+import {
+  loadAbstractsForPaper,
+  loadAbstractsForPatent,
+  loadAuthorsForPaper,
+  loadBodyTextForPaper,
+  loadGenesForPaper,
+  loadGenesForPatent,
+  loadTitlesForPatent,
+} from "../util/queries";
 import PanelItem from "./shared/PanelItem";
 
 import GeneSymbolList from "./shared/GeneSymbolList";
@@ -89,6 +98,7 @@ export default {
     titles: [],
     patent: {},
     geneSymbols: [],
+    abstract: "",
   }),
   props: {
     value: {
@@ -107,6 +117,16 @@ export default {
       handler: function (patent) {
         if (patent) {
           this.patent = { ...patent.properties };
+
+          this.abstract = "Loading...";
+          loadAbstractsForPatent(patent)
+            .then((value) => {
+              this.abstract = value.length > 0 ? value[0][0] : "n/a";
+            })
+            .catch((reason) => {
+              this.abstract = "Failed to load " + reason;
+            });
+
           loadGenesForPatent(patent)
             .then((genes) => {
               this.geneSymbols = genes;
@@ -154,6 +174,7 @@ export default {
             });
         } else {
           this.titles = [];
+          this.abstract = "n/a";
         }
       },
     },
