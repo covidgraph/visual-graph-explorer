@@ -1,82 +1,63 @@
 <template>
-  <v-card flat>
-    <v-list class="blue lighten-5 pt-0" two-lines>
-      <v-list-item three-line>
-        <v-icon x-large class="pr-2" color="#5b9ad9">fas fa-book</v-icon>
-        <v-list-item-content flex-sm-column>
-          <v-list-item-title class="primary--text wrapText">
-            <v-tooltip top>
-              <template v-slot:activator="{ on }">
-                <h4 v-on="on">
-                  {{ value.properties.title }}
-                </h4>
-              </template>
-              <span>{{ value.properties.title }}</span>
-            </v-tooltip>
-          </v-list-item-title>
-        </v-list-item-content>
-      </v-list-item>
-    </v-list>
-    <v-layout class="blue lighten-5">
-      <v-col class="flex-row-reverse d-flex pt-0">
-        <v-card-actions class="wrap-actions">
-          <v-menu>
-            <template v-slot:activator="{ on: menu }">
-              <v-btn outlined rounded color="primary" light v-on="{ ...menu }"
-                >LOAD MORE</v-btn
-              >
-            </template>
-            <v-list>
-              <v-list-item @click="loadAuthors">
-                <v-list-item-title class="purple--text"
-                  ><b>AUTHORS</b></v-list-item-title
-                >
-              </v-list-item>
-              <v-list-item @click="loadGenes">
-                <v-list-item-title class="green--text"
-                  ><b>GENES</b></v-list-item-title
-                >
-              </v-list-item>
-              <v-list-item @click="loadReferencedPapers">
-                <v-list-item-title class="primary--text"
-                  ><b>REFERENCED PAPERS</b></v-list-item-title
-                >
-              </v-list-item>
-              <v-list-item @click="loadReferencingPapers">
-                <v-list-item-title class="primary--text"
-                  ><b>REFERENCING PAPERS</b></v-list-item-title
-                >
-              </v-list-item>
-              <v-list-item @click="loadAffiliations">
-                <v-list-item-title class="yellow--text textStroke"
-                  ><b>AFFILIATIONS</b></v-list-item-title
-                >
-              </v-list-item>
-              <v-list-item @click="loadClinicalTrials">
-                <v-list-item-title class="yellow--text textStroke"
-                  ><b>CLINICAL TRIALS</b></v-list-item-title
-                >
-              </v-list-item>
-            </v-list>
-          </v-menu>
-        </v-card-actions>
-      </v-col>
-    </v-layout>
-    <v-expansion-panels v-model="panel" multiple accordion flat>
+  <item-panel-base
+    :title="value.properties.title"
+    icon="fas fa-book"
+    icon-color="#5b9ad9"
+  >
+    <template #menu>
+      <v-list>
+        <v-list-item @click="loadAuthors">
+          <v-list-item-title class="purple--text"
+            ><b>AUTHORS</b></v-list-item-title
+          >
+        </v-list-item>
+        <v-list-item @click="loadGenes">
+          <v-list-item-title class="green--text"
+            ><b>GENES</b></v-list-item-title
+          >
+        </v-list-item>
+        <v-list-item @click="loadReferencedPapers">
+          <v-list-item-title class="primary--text"
+            ><b>REFERENCED PAPERS</b></v-list-item-title
+          >
+        </v-list-item>
+        <v-list-item @click="loadReferencingPapers">
+          <v-list-item-title class="primary--text"
+            ><b>REFERENCING PAPERS</b></v-list-item-title
+          >
+        </v-list-item>
+        <v-list-item @click="loadAffiliations">
+          <v-list-item-title class="yellow--text textStroke"
+            ><b>AFFILIATIONS</b></v-list-item-title
+          >
+        </v-list-item>
+        <v-list-item @click="loadClinicalTrials">
+          <v-list-item-title class="yellow--text textStroke"
+            ><b>CLINICAL TRIALS</b></v-list-item-title
+          >
+        </v-list-item>
+      </v-list>
+    </template>
+    <template>
       <PanelItem
         itemTitle="Published"
         :items="[value.properties.publish_time || 'n/a']"
       />
-      <PanelItem itemTitle="Abstract" :items="[abstract]" />
-      <PanelItem itemTitle="Full Text" :items="[fullText]" />
-      <v-expansion-panel v-if="geneSymbols.length" class="mr-1" flat>
-        <v-expansion-panel-header class="primary--text pb-0">
-          <b>Mentioned Genes</b>
-        </v-expansion-panel-header>
-        <v-expansion-panel-content class="grey lighten-5">
+      <PanelItem
+        v-if="abstract && abstract.length > 0"
+        temTitle="Abstract"
+        :items="[abstract]"
+      />
+      <PanelItem
+        v-if="fullText && fullText.length > 0"
+        itemTitle="Full Text"
+        :items="[fullText]"
+      />
+      <PanelItem itemTitle="Mentioned Genes" :items="geneSymbols">
+        <template #content>
           <gene-symbol-list :geneSymbols="geneSymbols" />
-        </v-expansion-panel-content>
-      </v-expansion-panel>
+        </template>
+      </PanelItem>
       <PanelItem itemTitle="Authors" :items="authors" v-slot:default="{ item }">
         <v-chip
           link
@@ -103,8 +84,8 @@
         v-if="value.properties.license"
         :items="[value.properties.license]"
       />
-    </v-expansion-panels>
-  </v-card>
+    </template>
+  </item-panel-base>
 </template>
 
 <script>
@@ -116,6 +97,7 @@ import {
   loadGenesForPaper,
 } from "../util/queries";
 import PanelItem from "./shared/PanelItem";
+import ItemPanelBase from "./shared/ItemPanelBase";
 import GeneSymbolList from "./shared/GeneSymbolList";
 
 export default {
@@ -123,13 +105,13 @@ export default {
   components: {
     GeneSymbolList,
     PanelItem,
+    ItemPanelBase,
   },
   data: () => ({
     abstract: "",
     fullText: "",
     authors: [],
     geneSymbols: [],
-    panel: [0, 1],
   }),
   props: {
     value: Object,
@@ -213,17 +195,6 @@ export default {
 </script>
 
 <style scoped>
-.overflow-content {
-  max-height: 350px;
-  overflow-y: auto;
-}
-.wrap-actions {
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-.wrapText {
-  white-space: normal !important;
-}
 .textStroke {
   -webkit-text-stroke: 0.4px gray;
 }
