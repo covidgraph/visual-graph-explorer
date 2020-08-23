@@ -39,6 +39,9 @@ module.exports = {
             new YWorksOptimizer({
               logLevel: "info",
               blacklist: [
+                "component",
+                "model",
+                "is",
                 "render",
                 "template",
                 "show",
@@ -84,6 +87,7 @@ module.exports = {
                 "eventType",
                 "selectedNodes",
                 "isOpen",
+                "context",
                 "orientation",
                 "targetNode",
                 "sourceNode",
