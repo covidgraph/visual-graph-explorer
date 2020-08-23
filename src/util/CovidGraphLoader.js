@@ -65,6 +65,32 @@ async function queryPapers(queryString) {
   );
 }
 
+const collectTitlesAndIds = (result) =>
+  result.records.map((record) => ({
+    id: record.get("id"),
+    title: record.get("titles")[0],
+  }));
+
+function mergeWithIds(titles, patents) {
+  const map = new Map();
+  titles.forEach((t) => map.set(getId(t.id), t));
+  return patents.map((p) => {
+    Object.assign(p, map.get(getId(p.identity)));
+    return p;
+  });
+}
+
+async function addPatentTitles(patents) {
+  return coreQuery(
+    `MATCH (p:Patent)-[:PATENT_HAS_PATENTTITLE]->(pt:PatentTitle) 
+    WHERE id(p) in $patentIds 
+    RETURN id(p) as id, collect(pt.text) as titles LIMIT ${queryLimit}`,
+    { patentIds: patents.map((p) => p.identity) }
+  )
+    .then(collectTitlesAndIds)
+    .then((titles) => mergeWithIds(titles, patents));
+}
+
 async function queryPatents(queryString) {
   return (
     Promise.all([
@@ -77,24 +103,14 @@ match (p:Patent)-[:PATENT_HAS_PATENTTITLE]->(pt:PatentTitle) RETURN id(p) as id,
         {
           searchText: queryString,
         }
-      ).then((result) =>
-        result.records.map((record) => ({
-          id: record.get("id"),
-          title: record.get("titles")[0],
-        }))
-      ),
+      ).then(collectTitlesAndIds),
       coreQuery(
         `CALL db.index.fulltext.queryNodes("textOfPapersAndPatents", $query) YIELD node, score
           match (node:Fragment)<-[:HAS_FRAGMENT]-(:PatentAbstract)<-[:PATENT_HAS_PATENTABSTRACT]-(p:Patent) 
           WITH p as result ORDER BY score DESC WITH distinct(result) as p 
           match (p:Patent)-[:PATENT_HAS_PATENTTITLE]->(pt:PatentTitle) RETURN id(p) as id, collect(pt.text) as titles LIMIT ${queryLimit}`,
         { query: queryString }
-      ).then((result) =>
-        result.records.map((record) => ({
-          id: record.get("id"),
-          title: record.get("titles")[0],
-        }))
-      ),
+      ).then(collectTitlesAndIds),
     ])
       // Lazily load input items
       .then(([titleMatches, textMatches]) => {
@@ -251,6 +267,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
           headers: [
             { text: "Title", value: "title", align: "start", sortable: true },
           ],
+          propertyLoader: addPatentTitles,
           query: queryPatents,
         },
       },
@@ -556,7 +573,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       matchClause:
         "(sourceNode:Patent)-[relation:APPLICANT]->(targetNode:Entity)",
       relatedVerb: "applying",
-      relatingVerb: "owned",
+      relatingVerb: "applied for",
     });
 
     this.applicant_protein = this.addRelationShip({
@@ -625,9 +642,11 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
             resolve(items);
             return;
           }
+
           const uniqueItems = IEnumerable.from(items)
             .map((i, _index) => ({
               id: getId(i.item.identity),
+              identity: i.item.identity,
               $origIndex: _index,
               ...i.item.properties,
             }))
@@ -637,19 +656,29 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
             )
             .toArray();
 
-          eventBus.$emit("show-results-dialog", {
-            items: uniqueItems.map((i) => i.first()),
-            headers: schemaNode.tag.metadata.table.headers,
-            resolve: function (indices) {
-              resolve(
-                indices !== null
-                  ? indices.flatMap((i) =>
-                      uniqueItems[i].map((i) => items[i.$origIndex]).toArray()
-                    )
-                  : null
-              );
-            },
-          });
+          if (schemaNode.tag.metadata.table.propertyLoader) {
+            schemaNode.tag.metadata.table
+              .propertyLoader(uniqueItems.map((i) => i.first()))
+              .then(() => showDialog(uniqueItems));
+          } else {
+            showDialog(uniqueItems);
+          }
+
+          function showDialog(uniqueItems) {
+            eventBus.$emit("show-results-dialog", {
+              items: uniqueItems.map((i) => i.first()),
+              headers: schemaNode.tag.metadata.table.headers,
+              resolve: function (indices) {
+                resolve(
+                  indices !== null
+                    ? indices.flatMap((i) =>
+                        uniqueItems[i].map((i) => items[i.$origIndex]).toArray()
+                      )
+                    : null
+                );
+              },
+            });
+          }
         });
       };
     }

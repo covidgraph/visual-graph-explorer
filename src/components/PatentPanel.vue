@@ -31,7 +31,7 @@
         }}</a></v-list-item-subtitle
       >
     </v-list>
-    <v-expansion-panels multiple accordion flat>
+    <v-expansion-panels multiple accordion flat v-model="expanded">
       <PanelItem
         itemTitle="Other titles"
         :items="
@@ -46,19 +46,21 @@
         "
       />
       <PanelItem itemTitle="Date" :items="[value.properties.pub_date]" />
+      <PanelItem itemTitle="Patent Owners" :items="owners">
+        <template #content>
+          <entity-list :entities="owners" />
+        </template>
+      </PanelItem>
       <PanelItem
         itemTitle="Classification CPC"
-        v-if="value.properties.classification_cpc"
         :items="value.properties.classification_cpc"
       />
       <PanelItem
         itemTitle="Classification IPC"
-        v-if="patent.classification_ipc"
         :items="patent.classification_ipc"
       />
       <PanelItem
         itemTitle="Classification US"
-        v-if="patent.classification_us"
         :items="patent.classification_us"
       />
       <PanelItem itemTitle="Abstract" :items="[abstract]" />
@@ -76,21 +78,20 @@
 
 <script>
 import {
-  loadAbstractsForPaper,
   loadAbstractsForPatent,
-  loadAuthorsForPaper,
-  loadBodyTextForPaper,
-  loadGenesForPaper,
   loadGenesForPatent,
   loadTitlesForPatent,
 } from "../util/queries";
 import PanelItem from "./shared/PanelItem";
 
 import GeneSymbolList from "./shared/GeneSymbolList";
+import { loadPatentOwnersForPatent } from "@/util/queries";
+import EntityList from "./shared/EntityList";
 
 export default {
   name: "PatentPanel",
   components: {
+    EntityList,
     PanelItem,
     GeneSymbolList,
   },
@@ -99,6 +100,8 @@ export default {
     patent: {},
     geneSymbols: [],
     abstract: "",
+    owners: [],
+    expanded: [2, 3, 4],
   }),
   props: {
     value: {
@@ -119,6 +122,14 @@ export default {
           this.patent = { ...patent.properties };
 
           this.abstract = "Loading...";
+          loadPatentOwnersForPatent(patent)
+            .then((value) => {
+              this.owners = value;
+            })
+            .catch((reason) => {
+              this.owners = ["asdf"];
+            });
+
           loadAbstractsForPatent(patent)
             .then((value) => {
               this.abstract = value.length > 0 ? value[0][0] : "n/a";

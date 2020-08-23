@@ -14,6 +14,13 @@ export async function loadGenesForPaper(paper) {
   );
 }
 
+export async function loadPatentOwnersForPatent(patent) {
+  return await loader.queryBuilder.loadTargetNodes(
+    loader.patent_owner_entity,
+    patent
+  );
+}
+
 export async function loadAuthorsForPaper(paper) {
   return await loader.queryBuilder.loadTargetNodes(loader.paper_author, paper);
 }
