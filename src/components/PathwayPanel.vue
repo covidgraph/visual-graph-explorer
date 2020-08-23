@@ -55,18 +55,18 @@
         item-title="Child Pathways"
         v-if="children && children.length > 0"
         :items="children"
-        v-slot:default="item"
+        v-slot:default="{ item }"
       >
         <v-chip
           label
           close
           close-icon="mdi-download"
-          @click:close="loadChildPathway(item.item)"
+          @click:close="loadChildPathway(item)"
         >
           <v-avatar left>
             <v-icon color="#BCD104">mdi-dna</v-icon>
           </v-avatar>
-          {{ item.item.properties.name }}
+          {{ item.properties.name }}
         </v-chip>
       </PanelItem>
     </v-expansion-panels>

@@ -16,7 +16,6 @@
               </slot>
             </v-list-item-content>
           </v-list-item>
-          <v-divider v-if="i < items.length - 1" />
         </div>
       </v-list>
     </v-expansion-panel-content>

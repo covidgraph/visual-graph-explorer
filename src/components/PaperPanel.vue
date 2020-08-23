@@ -77,52 +77,27 @@
           <gene-symbol-list :geneSymbols="geneSymbols" />
         </v-expansion-panel-content>
       </v-expansion-panel>
-      <v-expansion-panel v-if="authors.length" class="mr-1">
-        <v-expansion-panel-header class="primary--text pb-0">
-          <b>Authors</b>
-        </v-expansion-panel-header>
-        <v-expansion-panel-content class="overflow-content">
-          <v-chip-group column>
-            <template v-for="author in authors">
-              <v-chip
-                link
-                close
-                :key="getId(author)"
-                close-icon="mdi-download"
-                :href="'mailto\:' + author.properties.email"
-                @click:close="loadAuthor(author.identity)"
-                v-if="author.properties.email"
-              >
-                <v-avatar left>
-                  <v-icon color="#D12EAE">mdi-account-circle</v-icon>
-                </v-avatar>
-                {{ author.properties.first }}
-                {{ author.properties.middle }}
-                {{ author.properties.last }}
-                <v-icon right>
-                  mdi-email-outline
-                </v-icon>
-              </v-chip>
-              <v-chip
-                pill
-                close
-                :key="getId(author)"
-                close-icon="mdi-download"
-                :ripple="false"
-                @click:close="loadAuthor(author.identity)"
-                v-else
-              >
-                <v-avatar left>
-                  <v-icon color="#D12EAE">mdi-account-circle</v-icon>
-                </v-avatar>
-                {{ author.properties.first }}
-                {{ author.properties.middle || "" }}
-                {{ author.properties.last }}
-              </v-chip>
-            </template>
-          </v-chip-group>
-        </v-expansion-panel-content>
-      </v-expansion-panel>
+      <PanelItem itemTitle="Authors" :items="authors" v-slot:default="{ item }">
+        <v-chip
+          link
+          close
+          close-icon="mdi-download"
+          :href="
+            item.properties.email ? 'mailto\:' + item.properties.email : null
+          "
+          @click:close="loadAuthor(item.identity)"
+        >
+          <v-avatar left>
+            <v-icon color="#D12EAE">mdi-account-circle</v-icon>
+          </v-avatar>
+          {{ item.properties.first }}
+          {{ item.properties.middle }}
+          {{ item.properties.last }}
+          <v-icon v-if="item.properties.email" right>
+            mdi-email-outline
+          </v-icon>
+        </v-chip>
+      </PanelItem>
       <PanelItem
         itemTitle="License"
         v-if="value.properties.license"
@@ -141,7 +116,6 @@ import {
   loadGenesForPaper,
 } from "../util/queries";
 import PanelItem from "./shared/PanelItem";
-import { getId } from "../util/Neo4jGraphBuilder";
 import GeneSymbolList from "./shared/GeneSymbolList";
 
 export default {
@@ -155,7 +129,7 @@ export default {
     fullText: "",
     authors: [],
     geneSymbols: [],
-    panel: [0, 1, 0, 0, 0, 0],
+    panel: [0, 1],
   }),
   props: {
     value: Object,
@@ -210,9 +184,6 @@ export default {
     },
   },
   methods: {
-    getId(item) {
-      return getId(item.identity);
-    },
     loadAuthor(authorId) {
       this.eventBus.$emit("load-Author", authorId);
     },
