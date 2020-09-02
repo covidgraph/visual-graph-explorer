@@ -13,7 +13,7 @@ const { url, pass, user } = isStagingDb()
       pass: "corona",
     }
   : {
-      url: "bolt://covid.petesis.com:7687",
+      url: "bolt://db.covidgraph.org:7687",
       user: "public",
       pass: "corona",
     };

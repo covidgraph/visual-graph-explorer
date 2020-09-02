@@ -46,7 +46,6 @@ module.exports = {
                 "template",
                 "show",
                 "properties",
-                "content",
                 "active",
                 "contains",
                 "content",
