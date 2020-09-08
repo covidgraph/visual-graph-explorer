@@ -391,15 +391,21 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       size: new Size(150, 150),
       singularName: "clinical trial",
       pluralName: "clinical trials",
-      //metadata: createMetaData("ClinicalTrial", ["briefTitle", "sponsorName"]),
+      metadata: createMetaData(
+        "ClinicalTrial",
+        ["NCTId"],
+        "name",
+        "Clinical Trials"
+      ),
     });
     this.facilityType = this.addNodeType({
       type: "Facility",
-      style: new ShapeNodeStyle(),
+      style: new VuejsNodeStyle(EntityNode),
       size: new Size(50, 50),
       labels: (item) => item.properties.facilityName,
       singularName: "facility",
       pluralName: "facilities",
+      metadata: createMetaData("Facility", ["name"], "name", "Facilities"),
     });
     this.exclusionCriteriaType = this.addNodeType({
       type: "ExclusionCriteria",
@@ -459,9 +465,9 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       targetNode: this.paperType,
       style: wroteEdgeStyle,
       matchClause:
-        "(sourceNode:ClinicalTrial)-[:PUBLISHED]->(targetNode:Paper)",
-      relatedVerb: "published",
-      relatingVerb: "publishing",
+        "(sourceNode:ClinicalTrial)-[:REFERS_TO]->(c:Citation)-[:HAS_PUBLICATION_ID]->(:PaperID)<-[:PAPER_HAS_PAPERID]-(targetNode:Paper)",
+      relatedVerb: "cited in",
+      relatingVerb: "citing",
     });
     this.gene_disease = this.addRelationShip({
       sourceNode: this.diseaseType,

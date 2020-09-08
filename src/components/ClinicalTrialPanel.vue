@@ -50,24 +50,29 @@
     </v-layout>
     <v-expansion-panels v-model="panel" multiple accordion flat>
       <PanelItem
-        itemTitle="Lead Sponsor"
-        :items="[value.properties.leadSponsorName || 'n/a']"
-      />
-      <PanelItem itemTitle="Status" :items="[value.properties.overallStatus]" />
-      <PanelItem
-        itemTitle="Collaborator"
-        :items="
-          Array.isArray(value.properties.collaboratorName)
-            ? value.properties.collaboratorName
-            : [value.properties.collaboratorName]
-        "
-      />
+        itemTitle="Conducting Facilities"
+        :items="facilities"
+        v-slot:default="{ item }"
+      >
+        <v-chip
+          link
+          close
+          close-icon="mdi-download"
+          @click:close="loadFacility(item.identity)"
+        >
+          <v-avatar left>
+            <v-icon color="#D12EAE">mdi-account-circle</v-icon>
+          </v-avatar>
+          {{ item.properties.name }}
+        </v-chip>
+      </PanelItem>
     </v-expansion-panels>
   </v-card>
 </template>
 
 <script>
 import PanelItem from "./shared/PanelItem";
+import { loadConductionFacilitiesForClinicalTrials } from "@/util/queries";
 
 export default {
   name: "ClinicalTrialPanel",
@@ -78,9 +83,34 @@ export default {
     value: null,
   },
   data: () => ({
-    panel: [1, 1, 1],
+    panel: [0],
+    facilities: [],
   }),
+  watch: {
+    value: {
+      immediate: true,
+      handler: function (trial) {
+        this.authors = [];
+        this.geneSymbols = [];
+        if (trial != null) {
+          loadConductionFacilitiesForClinicalTrials(trial)
+            .then((facs) => {
+              this.facilities = facs;
+            })
+            .catch((reason) => {
+              this.facilities = [];
+            });
+        } else {
+          this.abstract = "n/a";
+          this.fullText = "n/a";
+        }
+      },
+    },
+  },
   methods: {
+    loadFacility(facilityId) {
+      this.eventBus.$emit("load-Facility", facilityId);
+    },
     loadPapers() {
       this.eventBus.$emit("load-target-Paper-for-ClinicalTrial", this.value);
     },

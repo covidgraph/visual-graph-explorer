@@ -92,11 +92,11 @@ export default {
   computed: {
     fullName() {
       const properties = this.tag.properties;
-      return properties.briefTitle;
+      return properties.NCTId;
     },
     shortName() {
       const properties = this.tag.properties;
-      return properties.briefTitle;
+      return properties.NCTId;
     },
   },
   props: {

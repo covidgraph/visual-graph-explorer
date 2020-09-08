@@ -39,6 +39,13 @@ export async function loadChildPathways(pathway) {
   );
 }
 
+export async function loadConductionFacilitiesForClinicalTrials(trial) {
+  return await loader.queryBuilder.loadTargetNodes(
+    loader.trial_facility,
+    trial
+  );
+}
+
 export async function loadAbstractsForPaper(paper) {
   return await query(
     `MATCH (n:Paper)-[r:PAPER_HAS_ABSTRACTCOLLECTION]->(ach:AbstractCollection)-[r2:ABSTRACTCOLLECTION_HAS_ABSTRACT]->(a:Abstract) WHERE id(n) = $paperId 
