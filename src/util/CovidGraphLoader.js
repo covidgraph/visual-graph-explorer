@@ -257,6 +257,24 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
   constructor(graphComponent) {
     super(new SchemaBasedQueryBuilder(), graphComponent);
 
+    this.geneSymbolType = this.addNodeType({
+      type: "GeneSymbol",
+      style: new VuejsNodeStyle(GeneNode),
+      size: new Size(150, 150),
+      singularName: "gene",
+      pluralName: "genes",
+      metadata: {
+        name: "Genes",
+        table: {
+          headers: [
+            { text: "SID", value: "sid", align: "start", sortable: true },
+            { text: "Status", value: "status", sortable: true },
+          ],
+          query: queryGenes,
+        },
+      },
+    });
+
     this.patentType = this.addNodeType({
       type: "Patent",
       style: new VuejsNodeStyle(PatentNode),
@@ -289,6 +307,72 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       },
     });
 
+    this.diseaseType = this.addNodeType({
+      type: "Disease",
+      style: new VuejsNodeStyle(DiseaseNode),
+      size: new Size(150, 150),
+      singularName: "disease",
+      pluralName: "diseases",
+      metadata: createMetaData("Disease", ["name", "definition", "doid"]),
+    });
+
+    this.proteinType = this.addNodeType({
+      type: "Protein",
+      style: new VuejsNodeStyle(ProteinNode),
+      size: new Size(150, 150),
+      metadata: createMetaData("Protein", ["sid", "name", "category"], "name"),
+    });
+
+    this.transcriptType = this.addNodeType({
+      type: "Transcript",
+      style: new ShapeNodeStyle(),
+      size: new Size(50, 50),
+      labels: (entity) => [entity.properties.sid || "untitled"],
+    });
+
+    this.anatomyType = this.addNodeType({
+      type: "Anatomy",
+      style: new ShapeNodeStyle(),
+      size: new Size(50, 50),
+      labels: (entity) => [entity.properties.name || "untitled"],
+      pluralName: "anatomies",
+      metadata: createMetaData(
+        "Anatomy",
+        ["name", "uberon_id", "mesh_id", "bto_id"],
+        "name"
+      ),
+    });
+
+    this.affiliationType = this.addNodeType({
+      type: "Affiliation",
+      style: new VuejsNodeStyle(AffiliationNode),
+      size: new Size(80, 80),
+      metadata: createMetaData(
+        "Affiliation",
+        ["institution", "laboratory"],
+        "institution"
+      ),
+    });
+
+    this.entityType = this.addNodeType({
+      type: "Entity",
+      style: new VuejsNodeStyle(EntityNode),
+      size: new Size(120, 120),
+      singularName: "entity",
+      pluralName: "entities",
+      metadata: createMetaData(
+        "Entity",
+        ["name", "category"],
+        "name",
+        "Entities",
+        createSearchQuery(
+          `CALL db.index.fulltext.queryNodes("EntityFullTextIndex", $query) YIELD node, score WITH node ORDER BY score DESC LIMIT ${queryLimit} RETURN node as result`,
+          ["name", "category"],
+          insertAnds
+        )
+      ),
+    });
+
     this.authorType = this.addNodeType({
       type: "Author",
       style: new VuejsNodeStyle(AuthorNode),
@@ -315,76 +399,6 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       },
     });
 
-    this.affiliationType = this.addNodeType({
-      type: "Affiliation",
-      style: new VuejsNodeStyle(AffiliationNode),
-      size: new Size(80, 80),
-      metadata: createMetaData(
-        "Affiliation",
-        ["institution", "laboratory"],
-        "institution"
-      ),
-    });
-
-    this.geneSymbolType = this.addNodeType({
-      type: "GeneSymbol",
-      style: new VuejsNodeStyle(GeneNode),
-      size: new Size(150, 150),
-      singularName: "gene",
-      pluralName: "genes",
-      metadata: {
-        name: "Genes",
-        table: {
-          headers: [
-            { text: "SID", value: "sid", align: "start", sortable: true },
-            { text: "Status", value: "status", sortable: true },
-          ],
-          query: queryGenes,
-        },
-      },
-    });
-
-    this.proteinType = this.addNodeType({
-      type: "Protein",
-      style: new VuejsNodeStyle(ProteinNode),
-      size: new Size(150, 150),
-      metadata: createMetaData("Protein", ["sid", "name", "category"], "name"),
-    });
-
-    this.transcriptType = this.addNodeType({
-      type: "Transcript",
-      style: new ShapeNodeStyle(),
-      size: new Size(50, 50),
-      labels: (entity) => [entity.properties.sid || "untitled"],
-    });
-
-    this.entityType = this.addNodeType({
-      type: "Entity",
-      style: new VuejsNodeStyle(EntityNode),
-      size: new Size(120, 120),
-      singularName: "entity",
-      pluralName: "entities",
-      metadata: createMetaData(
-        "Entity",
-        ["name", "category"],
-        "name",
-        "Entities",
-        createSearchQuery(
-          `CALL db.index.fulltext.queryNodes("EntityFullTextIndex", $query) YIELD node, score WITH node ORDER BY score DESC LIMIT ${queryLimit} RETURN node as result`,
-          ["name", "category"],
-          insertAnds
-        )
-      ),
-    });
-
-    this.diseaseType = this.addNodeType({
-      type: "Disease",
-      style: new VuejsNodeStyle(DiseaseNode),
-      size: new Size(150, 150),
-      singularName: "disease",
-      pluralName: "diseases",
-      metadata: createMetaData("Disease", ["name", "definition", "doid"]),
-    });
     this.clinicalTrialType = this.addNodeType({
       type: "ClinicalTrial",
       style: new VuejsNodeStyle(ClinicalTrialNode),
@@ -469,7 +483,17 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       relatedVerb: "cited in",
       relatingVerb: "citing",
     });
-    this.gene_disease = this.addRelationShip({
+    this.disease_anatomy = this.addRelationShip({
+      sourceNode: this.diseaseType,
+      targetNode: this.anatomyType,
+      style: wroteEdgeStyle,
+      matchClause:
+        "(sourceNode:Disease)-[relation:LOCALIZES_DlA]->(targetNode:Anatomy)",
+      relatedVerb: "localized",
+      relatingVerb: "hosted",
+      labels: (relation) => relation.properties.expected,
+    });
+    this.geneSymbol_disease = this.addRelationShip({
       sourceNode: this.diseaseType,
       targetNode: this.geneSymbolType,
       style: wroteEdgeStyle,
@@ -477,6 +501,23 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
         "(sourceNode:Disease)-[:ASSOCIATES_DaG]->(:Gene)-[:MAPS]->(targetNode:GeneSymbol)",
       relatedVerb: "associated",
       relatingVerb: "associated",
+    });
+    this.geneSymbol_transcript = this.addRelationShip({
+      sourceNode: this.geneSymbolType,
+      targetNode: this.transcriptType,
+      style: wroteEdgeStyle,
+      matchClause:
+        "(sourceNode:GeneSymbol)<-[:MAPS]->(:Gene)-[:CODES]->(targetNode:Transcript)",
+      relatedVerb: "coded",
+      relatingVerb: "coding",
+    });
+    this.transcript_protein = this.addRelationShip({
+      sourceNode: this.transcriptType,
+      targetNode: this.proteinType,
+      style: wroteEdgeStyle,
+      matchClause: "(sourceNode:Transcript)-[:CODES]->(targetNode:Protein)",
+      relatedVerb: "codes",
+      relatingVerb: "coding",
     });
     this.trial_facility = this.addRelationShip({
       sourceNode: this.clinicalTrialType,
@@ -614,6 +655,33 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       relatingVerb: "related",
     });
 
+    this.addIntersections(
+      [
+        this.paper_geneSymbol,
+        this.geneSymbol_transcript,
+        this.protein_geneSymbol,
+        this.geneSymbol_gTexTissue,
+        this.geneSymbol_pathway,
+        this.geneSymbol_disease,
+        this.patent_geneSymbol,
+      ],
+      this.geneSymbolType,
+      "involved Genes"
+    );
+
+    this.addIntersections(
+      [this.geneSymbol_transcript, this.transcript_protein],
+      this.transcriptType,
+      "involved Transcripts"
+    );
+
+    this.addIntersectionQuery({
+      relationShip1: this.patent_owner_entity,
+      connectingNode: this.patentType,
+      relationShip2: this.patent_geneSymbol,
+      name: "involved Patents",
+    });
+
     this.pathway_pathway = this.addRelationShip({
       sourceNode: this.pathwayType,
       targetNode: this.pathwayType,
@@ -632,6 +700,30 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
         "(sourceNode:Patent)-[:PATENT_HAS_PATENTCITATIONCOLLECTION]->(:PatentCitationCollection)-[:PATENTCITATIONCOLLECTION_HAS_PATENTLITERATURECITATION]->(:PatentLiteratureCitation)-[:PATENTLITERATURECITATION_HAS_PATENTNUMBER]->(:PatentNumber)<-[:PATENT_HAS_PATENTNUMBER]-(targetNode:Patent)",
       relatedVerb: "referenced",
       relatingVerb: "referencing",
+    });
+
+    this.disease_disease = this.addRelationShip({
+      sourceNode: this.diseaseType,
+      targetNode: this.diseaseType,
+      style: wroteEdgeStyle,
+      matchClause: "(sourceNode:Disease)-[:IS_A]->(targetNode:Disease)",
+      relatedVerb: "parent",
+      relatingVerb: "child",
+    });
+  }
+
+  addIntersections(relations, connectingNode, name) {
+    relations.forEach((leftRelation, leftIndex) => {
+      relations.forEach((rightRelation, rightIndex) => {
+        if (leftIndex < rightIndex) {
+          this.addIntersectionQuery({
+            relationShip1: leftRelation,
+            relationShip2: rightRelation,
+            connectingNode,
+            name,
+          });
+        }
+      });
     });
   }
 
@@ -720,6 +812,13 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       let commonEventNameIn = `load-${schemaNode.tag.type}`;
       eventBus.$on(commonEventNameIn, (id) =>
         this.loadAndConnectNodeForSchema(schemaNode, id)
+      );
+    });
+
+    this.intersections.forEach((i) => {
+      const intersectionEventName = `load-intersection-` + i.name;
+      eventBus.$on(intersectionEventName, ({ left, right }) =>
+        this.loadIntersection(left, right, i)
       );
     });
   }

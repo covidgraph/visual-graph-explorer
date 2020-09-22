@@ -61,6 +61,23 @@ function isMultiSelection(items, type) {
 }
 
 /**
+ * Determines whether the items *only* consist of *all* of the types -
+ * no additional types and at least one of each type
+ * @param {Object[]} items
+ * @param {String[]} types
+ * @return {boolean}
+ */
+function isMixedSelection(items, types) {
+  const typeCounts = types.map(
+    (type) => items.filter((item) => isOfType(item, type)).length
+  );
+  return (
+    typeCounts.every((count) => count > 0) &&
+    typeCounts.reduce((c1, c2) => c1 + c2, 0) === items.length
+  );
+}
+
+/**
  * @param {IGraph} graph
  * @param {INode} sourceNode
  * @param {INode} targetNode
@@ -100,6 +117,10 @@ function runAll(actions) {
   }
 }
 
+/**
+ * @typedef {{name: String, query:String, leftEnd:INode, rightEnd:INode, relationShipType:String,      leftRelationShip:IEdge,  rightRelationShip:IEdge,intersectionSchemaNode:INode}} Intersection
+ */
+
 export class IncrementalGraphLoader {
   /**
    * @param {GraphComponent} graphComponent
@@ -111,6 +132,8 @@ export class IncrementalGraphLoader {
     this.schemaTypeCounter = 0;
     /** @type {Map<any, INode>} */
     this.id2NodeMapping = new Map();
+    /** @type {Intersection[]} */
+    this.intersections = [];
     this.layout = new OrganicLayout({
       minimumNodeDistance: 100,
       starSubstructureStyle: "separated-radial",
@@ -249,6 +272,45 @@ export class IncrementalGraphLoader {
   }
 
   /**
+   * @param {IEdge} relationShip1
+   * @param {INode} connectingNode
+   * @param {IEdge} relationShip2
+   * @param {string} name
+   */
+  addIntersectionQuery({ relationShip1, connectingNode, relationShip2, name }) {
+    let leftEnd =
+      relationShip1.targetNode === connectingNode
+        ? relationShip1.sourceNode
+        : relationShip1.targetNode;
+    let rightEnd =
+      relationShip2.targetNode === connectingNode
+        ? relationShip2.sourceNode
+        : relationShip2.targetNode;
+    let relationShipType =
+      leftEnd.tag.type +
+      "--" +
+      connectingNode.tag.type +
+      "->" +
+      rightEnd.tag.type;
+
+    this.intersections.push({
+      leftEnd,
+      rightEnd,
+      relationShipType,
+      leftRelationShip: relationShip1,
+      rightRelationShip: relationShip2,
+      intersectionSchemaNode: connectingNode,
+      query: this.queryBuilder.createIntersectionQuery(
+        relationShip1,
+        leftEnd === relationShip1.targetNode,
+        relationShip2,
+        rightEnd === relationShip2.sourceNode
+      ),
+      name,
+    });
+  }
+
+  /**
    * @template {T}
    * @param {function(item:object, ...):T} creatorFunction
    * @param schemaType
@@ -294,25 +356,49 @@ export class IncrementalGraphLoader {
    * @return {{action: (function(): *), title: string}[]}
    */
   findCommonActions(items) {
-    return this.queryBuilder.schemaGraph.nodes
-      .filter((schemaNode) => isMultiSelection(items, schemaNode.tag.type))
-      .flatMap((schemaNode) =>
-        this.queryBuilder.schemaGraph
-          .outEdgesAt(schemaNode)
-          .map((schemaEdge) => ({
-            action: () => this.loadCommonTargets(items, schemaEdge),
-            title: `Load common ${schemaEdge.tag.relatedVerb} ${schemaEdge.targetNode.tag.pluralName}`,
-          }))
-          .concat(
-            this.queryBuilder.schemaGraph
-              .inEdgesAt(schemaNode)
-              .map((schemaEdge) => ({
-                action: () => this.loadCommonSources(items, schemaEdge),
-                title: `Load common ${schemaEdge.tag.relatingVerb} ${schemaEdge.sourceNode.tag.pluralName}`,
-              }))
-          )
+    return this.intersections
+      .filter((intersection) =>
+        isMixedSelection(items, [
+          intersection.leftEnd.tag.type,
+          intersection.rightEnd.tag.type,
+        ])
       )
-      .toArray();
+      .map((intersection) => {
+        return {
+          action: () =>
+            this.loadIntersection(
+              items.filter((item) =>
+                isOfType(item, intersection.leftEnd.tag.type)
+              ),
+              items.filter((item) =>
+                isOfType(item, intersection.rightEnd.tag.type)
+              ),
+              intersection
+            ),
+          title: "Find " + intersection.name,
+        };
+      })
+      .concat(
+        this.queryBuilder.schemaGraph.nodes
+          .filter((schemaNode) => isMultiSelection(items, schemaNode.tag.type))
+          .flatMap((schemaNode) =>
+            this.queryBuilder.schemaGraph
+              .outEdgesAt(schemaNode)
+              .map((schemaEdge) => ({
+                action: () => this.loadCommonTargets(items, schemaEdge),
+                title: `Load common ${schemaEdge.tag.relatedVerb} ${schemaEdge.targetNode.tag.pluralName}`,
+              }))
+              .concat(
+                this.queryBuilder.schemaGraph
+                  .inEdgesAt(schemaNode)
+                  .map((schemaEdge) => ({
+                    action: () => this.loadCommonSources(items, schemaEdge),
+                    title: `Load common ${schemaEdge.tag.relatingVerb} ${schemaEdge.sourceNode.tag.pluralName}`,
+                  }))
+              )
+          )
+          .toArray()
+      );
   }
 
   getMetadata(item) {
@@ -581,6 +667,51 @@ export class IncrementalGraphLoader {
     return lazyActions !== null ? lazyActions.map((item) => item.item) : [];
   }
 
+  /**
+   * @param {object[]} left
+   * @param {object[]} right
+   * @param {Intersection} intersection
+   * @param {Point} location
+   * @return {Promise<INode[]>}
+   */
+  async loadIntersectionNodes(
+    left,
+    right,
+    intersection,
+    location,
+    filterAction = null
+  ) {
+    let newItems = [];
+    let lazyActions = [];
+    (
+      await this.queryBuilder.loadIntersection(intersection, left, right)
+    ).forEach(({ intermediateNode }) => {
+      let existingNode = this.getLoadedNode(intermediateNode);
+      if (!existingNode) {
+        lazyActions.push({
+          item: intermediateNode,
+          action: () => {
+            existingNode = this.getLoadedNode(intermediateNode);
+            if (!existingNode) {
+              existingNode = intersection.intersectionSchemaNode.tag.creator(
+                intermediateNode,
+                location
+              );
+              newItems.push(intermediateNode);
+            }
+          },
+        });
+      }
+    });
+    if (filterAction && lazyActions.length > 0) {
+      lazyActions = await filterAction(lazyActions);
+    }
+    if (lazyActions !== null) {
+      runAll(select(lazyActions, "action"));
+    }
+    return newItems;
+  }
+
   remove(items) {
     items
       .slice()
@@ -785,6 +916,39 @@ export class IncrementalGraphLoader {
     });
   }
 
+  /**
+   *
+   * @param {object[]} left
+   * @param {object[]} right
+   * @param {Intersection} intersection
+   * @return {Promise<void>}
+   */
+  async loadIntersection(left, right, intersection) {
+    /** @type {Point[]} */
+    const centers = left
+      .concat(right)
+      .map((item) => this.getLoadedNode(item))
+      .filter((node) => node !== null)
+      .map((node) => node.layout.center);
+    const centerSum = centers.reduce((c1, c2) => c1.add(c2), Point.ORIGIN);
+    const location =
+      centers.length > 0 ? centerSum.multiply(1 / centers.length) : null;
+    await this.loadAndLayout(async () => {
+      const newItems = await this.loadIntersectionNodes(
+        left,
+        right,
+        intersection,
+        location,
+        intersection.intersectionSchemaNode.tag.metadata &&
+          intersection.intersectionSchemaNode.tag.metadata.filter
+      );
+      await this.loadMissingEdgesForSchemaNodes(
+        intersection.intersectionSchemaNode,
+        newItems
+      );
+    });
+  }
+
   async runLayout() {
     await this.graphComponent.morphLayout({
       layout: this.layout,
@@ -851,12 +1015,17 @@ export default class SchemaBasedQueryBuilder {
     });
   }
 
+  /** @param {INode} schemaNode */
+  createNodeMatch(schemaNode) {
+    return schemaNode.tag.nodeLabels.join(":");
+  }
+
   /** @param {INode} schemaNode
    * @param {string[]} whereClauses
    */
   createLoadNodesQuery(schemaNode, whereClauses) {
-    return `MATCH (node:${schemaNode.tag.nodeLabels.join(
-      ":"
+    return `MATCH (node:${this.createNodeMatch(
+      schemaNode
     )}) WHERE ${whereClauses.join(
       " AND "
     )} RETURN distinct(node) as result LIMIT ${limit}`;
@@ -864,8 +1033,8 @@ export default class SchemaBasedQueryBuilder {
 
   /** @param {IEdge} schemaEdge */
   createOutEdgeQuery(schemaEdge) {
-    return `MATCH (sourceNode:${schemaEdge.sourceNode.tag.nodeLabels.join(
-      ":"
+    return `MATCH (sourceNode:${this.createNodeMatch(
+      schemaEdge.sourceNode
     )}) WHERE id(sourceNode) = $sourceId MATCH ${
       schemaEdge.tag.matchClause
     } RETURN distinct(targetNode) as targetNode,relation LIMIT ${limit}`;
@@ -873,8 +1042,8 @@ export default class SchemaBasedQueryBuilder {
 
   /** @param {IEdge} schemaEdge */
   createTargetNodesQuery(schemaEdge) {
-    return `MATCH (sourceNode:${schemaEdge.sourceNode.tag.nodeLabels.join(
-      ":"
+    return `MATCH (sourceNode:${this.createNodeMatch(
+      schemaEdge.sourceNode
     )}) WHERE id(sourceNode) = $sourceId MATCH ${
       schemaEdge.tag.matchClause
     } RETURN distinct(targetNode) as result LIMIT ${limit}`;
@@ -882,8 +1051,8 @@ export default class SchemaBasedQueryBuilder {
 
   /** @param {IEdge} schemaEdge */
   createSourceNodesQuery(schemaEdge) {
-    return `MATCH (targetNode:${schemaEdge.targetNode.tag.nodeLabels.join(
-      ":"
+    return `MATCH (targetNode:${this.createNodeMatch(
+      schemaEdge.targetNode
     )}) WHERE id(targetNode) = $targetId MATCH ${
       schemaEdge.tag.matchClause
     } RETURN distinct(sourceNode) as result LIMIT ${limit}`;
@@ -891,8 +1060,8 @@ export default class SchemaBasedQueryBuilder {
 
   /** @param {IEdge} schemaEdge */
   createInEdgeQuery(schemaEdge) {
-    return `MATCH (targetNode:${schemaEdge.targetNode.tag.nodeLabels.join(
-      ":"
+    return `MATCH (targetNode:${this.createNodeMatch(
+      schemaEdge.targetNode
     )}) WHERE id(targetNode) = $targetId MATCH ${
       schemaEdge.tag.matchClause
     } RETURN distinct(sourceNode) as sourceNode, relation LIMIT ${limit}`;
@@ -900,13 +1069,49 @@ export default class SchemaBasedQueryBuilder {
 
   /** @param {IEdge} schemaEdge */
   createMissingEdgesQuery(schemaEdge) {
-    return `MATCH (sourceNode:${schemaEdge.sourceNode.tag.nodeLabels.join(
-      ":"
+    return `MATCH (sourceNode:${this.createNodeMatch(
+      schemaEdge.sourceNode
     )}) WHERE id(sourceNode) in $sourceIds MATCH ${
       schemaEdge.tag.matchClause
     } WHERE id(targetNode) in $targetIds RETURN id(sourceNode) as sourceNodeId, id(targetNode) as targetNodeId ${
       schemaEdge.tag.hasRelation ? ",relation " : ""
     } LIMIT ${limit}`;
+  }
+
+  /**
+   * @param {String} query
+   * @param {String[]} query
+   */
+  addWith(query, withClause) {
+    query = query.replaceAll(
+      /\bWITH\b/gi,
+      (substring) => "WITH " + withClause + ","
+    );
+    if (!query.match(/\bWITH\b/i)) {
+      query = query + " WITH " + withClause;
+    }
+    return query;
+  }
+
+  createIntersectionQuery(schemaEdge1, reverse1, schemaEdge2, reverse2) {
+    return `MATCH (leftNode:${this.createNodeMatch(
+      schemaEdge1.sourceNode
+    )}) WHERE id(leftNode) in $leftIds WITH leftNode
+    MATCH (rightNode:${this.createNodeMatch(
+      schemaEdge2.targetNode
+    )}) WHERE id(rightNode) in $rightIds WITH leftNode as ${
+      reverse1 ? "targetNode" : "sourceNode"
+    }, rightNode
+    MATCH ${this.addWith(
+      schemaEdge1.tag.matchClause,
+      `${reverse1 ? "sourceNode" : "targetNode"} as ${
+        reverse2 ? "targetNode" : "sourceNode"
+      }, rightNode as ${reverse2 ? "sourceNode" : "targetNode"}`
+    )}
+    MATCH ${schemaEdge2.tag.matchClause} 
+    RETURN distinct(${
+      reverse2 ? "targetNode" : "sourceNode"
+    }) as intermediateNode LIMIT ${limit}`;
   }
 
   /**
@@ -1028,12 +1233,32 @@ export default class SchemaBasedQueryBuilder {
   }
 
   /**
+   * @param {object} intersection
+   * @param {object[]} left
+   * @param {object[]} right
+   * @return {Promise<{intermediateNode:object}[]>}
+   */
+  async loadIntersection(intersection, left, right) {
+    return await mapQuery(
+      intersection.query,
+      {
+        leftIds: left.map((item) => item.identity),
+        rightIds: right.map((item) => item.identity),
+      },
+      ["intermediateNode"]
+    );
+  }
+
+  /**
    * @param {IEdge} schemaEdge
    * @param {object[]} sourceObjects
    * @param {object[]} targetObjects
    * @return {Promise<{sourceId:integer, targetId:integer, relation:object?}[]>}
    */
   async loadMissingEdges(schemaEdge, sourceObjects, targetObjects) {
+    if (sourceObjects.length === 0 || targetObjects.length === 0) {
+      return [];
+    }
     return (
       await coreQuery(this.createMissingEdgesQuery(schemaEdge), {
         sourceIds: sourceObjects.map((item) => item.identity),
