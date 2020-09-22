@@ -339,7 +339,8 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       metadata: createMetaData(
         "Anatomy",
         ["name", "uberon_id", "mesh_id", "bto_id"],
-        "name"
+        "name",
+        "Anatomies"
       ),
     });
 
@@ -490,8 +491,8 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       matchClause:
         "(sourceNode:Disease)-[relation:LOCALIZES_DlA]->(targetNode:Anatomy)",
       relatedVerb: "localized",
-      relatingVerb: "hosted",
-      labels: (relation) => relation.properties.expected,
+      relatingVerb: "hosting",
+      tooltipFunction: (relation) => "" + relation.properties.expected,
     });
     this.geneSymbol_disease = this.addRelationShip({
       sourceNode: this.diseaseType,
@@ -516,7 +517,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       targetNode: this.proteinType,
       style: wroteEdgeStyle,
       matchClause: "(sourceNode:Transcript)-[:CODES]->(targetNode:Protein)",
-      relatedVerb: "codes",
+      relatedVerb: "coded",
       relatingVerb: "coding",
     });
     this.trial_facility = this.addRelationShip({
