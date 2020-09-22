@@ -384,7 +384,6 @@ export class IncrementalGraphLoader {
           .flatMap((schemaNode) =>
             this.queryBuilder.schemaGraph
               .outEdgesAt(schemaNode)
-              .filter((schemaEdge) => !schemaEdge.tag.hasRelation)
               .map((schemaEdge) => ({
                 action: () => this.loadCommonTargets(items, schemaEdge),
                 title: `Load common ${schemaEdge.tag.relatedVerb} ${schemaEdge.targetNode.tag.pluralName}`,
@@ -392,7 +391,6 @@ export class IncrementalGraphLoader {
               .concat(
                 this.queryBuilder.schemaGraph
                   .inEdgesAt(schemaNode)
-                  .filter((schemaEdge) => !schemaEdge.tag.hasRelation)
                   .map((schemaEdge) => ({
                     action: () => this.loadCommonSources(items, schemaEdge),
                     title: `Load common ${schemaEdge.tag.relatingVerb} ${schemaEdge.sourceNode.tag.pluralName}`,
@@ -511,7 +509,6 @@ export class IncrementalGraphLoader {
       }
       if (lazyActions !== null) {
         runAll(select(lazyActions, "action"));
-        runAll(lazyRelations);
       }
     }
     return lazyActions !== null ? lazyActions.map((item) => item.item) : [];
@@ -536,45 +533,16 @@ export class IncrementalGraphLoader {
       .map((item) => this.getLoadedNode(item))
       .filter((item) => !!item);
     let lazyActions = [];
-    const lazyRelations = [];
     if (sourceNodes.length > 0) {
       let location = sourceNodes[0].layout.center.toPoint();
-      let graph = this.graphComponent.graph;
       (await this.queryBuilder.loadCommonTargets(schemaEdge, items)).forEach(
         (targetItem) => {
           let existingTarget = this.getLoadedNode(targetItem);
-          if (existingTarget) {
-            sourceNodes.forEach((sourceNode) => {
-              lazyRelations.push(() =>
-                createRelation(
-                  graph,
-                  sourceNode,
-                  existingTarget,
-                  schemaEdge,
-                  null
-                )
-              );
-            });
-          } else {
+          if (!existingTarget) {
             lazyActions.push({
               item: targetItem,
-              action: () => {
-                const targetNode = this.getOrCreateNode(
-                  targetItem,
-                  nodeCreator,
-                  location
-                );
-                sourceNodes.forEach((sourceNode) => {
-                  createRelation(
-                    graph,
-                    sourceNode,
-                    targetNode,
-                    schemaEdge,
-                    null
-                  );
-                });
-                return targetNode;
-              },
+              action: () =>
+                this.getOrCreateNode(targetItem, nodeCreator, location),
             });
           }
         }
@@ -584,7 +552,6 @@ export class IncrementalGraphLoader {
       }
       if (lazyActions !== null) {
         runAll(select(lazyActions, "action"));
-        runAll(lazyRelations);
       }
     }
     return lazyActions !== null ? lazyActions.map((item) => item.item) : [];
@@ -601,39 +568,16 @@ export class IncrementalGraphLoader {
       .map((item) => this.getLoadedNode(item))
       .filter((item) => !!item);
     let lazyActions = [];
-    const lazyRelations = [];
     if (targetNodes.length > 0) {
       let location = targetNodes[0].layout.center.toPoint();
-      let graph = this.graphComponent.graph;
       (await this.queryBuilder.loadCommonSources(schemaEdge, items)).forEach(
         (sourceItem) => {
           let existingSource = this.getLoadedNode(sourceItem);
-          if (existingSource) {
-            targetNodes.forEach((targetNode) => {
-              lazyRelations.push(() =>
-                createRelation(
-                  graph,
-                  existingSource,
-                  targetNode,
-                  schemaEdge,
-                  null
-                )
-              );
-            });
-          } else {
+          if (!existingSource) {
             lazyActions.push({
               item: sourceItem,
-              action: () => {
-                const sourceNode = this.getOrCreateNode(
-                  sourceItem,
-                  nodeCreator,
-                  location
-                );
-                targetNodes.forEach((targetNode) => {
-                  createRelation(graph, sourceNode, targetNode, schemaEdge);
-                });
-                return sourceNode;
-              },
+              action: () =>
+                this.getOrCreateNode(sourceItem, nodeCreator, location),
             });
           }
         }
@@ -643,7 +587,6 @@ export class IncrementalGraphLoader {
       }
       if (lazyActions !== null) {
         runAll(select(lazyActions, "action"));
-        runAll(lazyRelations);
       }
     }
     return lazyActions !== null ? lazyActions.map((item) => item.item) : [];
