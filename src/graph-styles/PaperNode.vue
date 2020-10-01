@@ -46,39 +46,15 @@
               ></use>
               <SvgText
                 class="text-gray"
-                :content="tag.properties.publish_time || '-'"
+                :content="
+                  (tag.properties.publish_time || '-') +
+                  ' ' +
+                  tag.properties.journal
+                "
                 x="25"
                 y="0"
                 style="text-transform: uppercase;"
-                :width="80"
-                :height="25"
-                :wrapping="0"
-                font-family="Roboto,sans-serif"
-                :font-size="16"
-                :font-style="0"
-                :font-weight="0"
-                :text-decoration="0"
-                :opacity="1"
-                visible="true"
-                :clipped="true"
-                align="start"
-                transform=""
-              ></SvgText>
-            </g>
-            <g transform="translate(140 0)">
-              <use
-                class="text-gray"
-                href="#license-icon"
-                width="20"
-                height="20"
-              ></use>
-              <SvgText
-                class="text-gray"
-                :content="tag.properties.license"
-                x="25"
-                y="0"
-                style="text-transform: uppercase;"
-                :width="75"
+                :width="280"
                 :height="25"
                 :wrapping="0"
                 font-family="Roboto,sans-serif"

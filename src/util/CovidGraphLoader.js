@@ -57,6 +57,7 @@ async function queryPapers(queryString) {
             id: node.identity,
             publishTime: node.properties["publish_time"],
             title: node.properties["title"],
+            journal: node.properties["journal"],
           }))
         )
           .distinct((arg) => getId(arg.id))
@@ -301,6 +302,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
           headers: [
             { text: "Title", value: "title", align: "start", sortable: true },
             { text: "Publication Date", value: "publishTime", sortable: true },
+            { text: "Journal", value: "journal", sortable: true },
           ],
           query: queryPapers,
         },
@@ -520,6 +522,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       relatedVerb: "coded",
       relatingVerb: "coding",
     });
+
     this.trial_facility = this.addRelationShip({
       sourceNode: this.clinicalTrialType,
       targetNode: this.facilityType,
@@ -529,6 +532,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       relatedVerb: "conducting",
       relatingVerb: "conducted",
     });
+
     this.trial_exclusion_criteria = this.addRelationShip({
       sourceNode: this.clinicalTrialType,
       targetNode: this.exclusionCriteriaType,
@@ -538,6 +542,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       relatedVerb: "applied",
       relatingVerb: "applying",
     });
+
     this.trial_exclusion_criteria = this.addRelationShip({
       sourceNode: this.clinicalTrialType,
       targetNode: this.inclusionCriteriaType,
@@ -568,8 +573,6 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       relatingVerb: "mentioning",
       tooltipFunction: (item) => item.properties.text,
     });
-
-    //
 
     this.patent_geneSymbol = this.addRelationShip({
       sourceNode: this.patentType,
@@ -622,17 +625,6 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
         "(sourceNode:Patent)-[relation:APPLICANT]->(targetNode:Entity)",
       relatedVerb: "applying",
       relatingVerb: "applied for",
-    });
-
-    this.applicant_protein = this.addRelationShip({
-      sourceNode: this.entityType,
-      targetNode: this.proteinType,
-      style: edgeStyle,
-      labels: (relation) => relation.type,
-      matchClause:
-        "(sourceNode:Entity)<-[:APPLICANT|OWNER|INVENTOR]-(:Patent)-[:PATENT_HAS_PATENTABSTRACT|PATENT_HAS_PATENTTITLE|PATENT_HAS_PATENTDESCRIPTION|PATENT_HAS_PATENTCLAIM]->()-[:HAS_FRAGMENT]->(:Fragment)-[:MENTIONS]->(:GeneSymbol)-[:SYNONYM]->(:GeneSymbol)<-[:MAPS]-(g:Gene)-[:CODES]->(:Transcript)-[:CODES]->(targetNode:Protein)",
-      relatedVerb: "related",
-      relatingVerb: "related",
     });
 
     this.geneSymbol_gTexTissue = this.addRelationShip({

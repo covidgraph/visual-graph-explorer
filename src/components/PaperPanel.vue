@@ -1,9 +1,18 @@
 <template>
-  <item-panel-base
-    :title="value.properties.title"
-    icon="fas fa-book"
-    icon-color="#5b9ad9"
-  >
+  <item-panel-base :title="''" icon="fas fa-book" icon-color="#5b9ad9">
+    <template #title>
+      <v-tooltip top>
+        <template v-slot:activator="{ on }">
+          <h4 v-on="on">
+            {{ value.properties.title }}
+          </h4>
+          <a :href="value.properties.url" target="_blank">{{
+            value.properties.url
+          }}</a>
+        </template>
+        <span>{{ value.properties.title }}</span>
+      </v-tooltip>
+    </template>
     <template #menu>
       <v-list>
         <v-list-item @click="loadAuthors">
@@ -41,7 +50,11 @@
     <template>
       <PanelItem
         itemTitle="Published"
-        :items="[value.properties.publish_time || 'n/a']"
+        :items="[
+          (value.properties.publish_time || 'n/a') +
+            ` in ` +
+            value.properties.journal,
+        ]"
       />
       <PanelItem
         v-if="abstract && abstract.length > 0"

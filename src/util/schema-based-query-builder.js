@@ -1089,16 +1089,15 @@ export default class SchemaBasedQueryBuilder {
 
   /**
    * @param {String} query
-   * @param {String[]} query
+   * @param {String} augments
+   * @param {String} withClause
    */
-  addWith(query, withClause) {
+  addWith(query, augments, withClause) {
     query = query.replaceAll(
       /\bWITH\b/gi,
-      (substring) => "WITH " + withClause + ","
+      (substring) => "WITH " + augments + ","
     );
-    if (!query.match(/\bWITH\b/i)) {
-      query = query + " WITH " + withClause;
-    }
+    query = query + " WITH " + withClause;
     return query;
   }
 
@@ -1113,6 +1112,7 @@ export default class SchemaBasedQueryBuilder {
     }, rightNode
     MATCH ${this.addWith(
       schemaEdge1.tag.matchClause,
+      "rightNode",
       `${reverse1 ? "sourceNode" : "targetNode"} as ${
         reverse2 ? "targetNode" : "sourceNode"
       }, rightNode as ${reverse2 ? "sourceNode" : "targetNode"}`
