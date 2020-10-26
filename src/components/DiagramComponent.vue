@@ -65,6 +65,7 @@ import {
   IEdge,
   GraphOverviewComponent,
   RenderModes,
+  MouseEventRecognizers,
 } from "yfiles";
 import ContextMenu from "./ContextMenu";
 import PopupPanel from "./PopupPanel";
@@ -192,6 +193,12 @@ export default {
     graph.edgeDefaults.labels.layoutParameter = edgeLabelLayoutParameter;
 
     let viewerInputMode = new GraphViewerInputMode();
+    const selectionInputMode = viewerInputMode.lassoSelectionInputMode;
+    selectionInputMode.enabled = true;
+    selectionInputMode.prepareRecognizer =
+      MouseEventRecognizers.LEFT_DOUBLE_CLICK;
+    selectionInputMode.dragFreeRecognizer = MouseEventRecognizers.MOVE_OR_DRAG;
+    selectionInputMode.finishRecognizer = MouseEventRecognizers.LEFT_UP;
     viewerInputMode.contextMenuItems = GraphItemTypes.NODE;
     viewerInputMode.contextMenuInputMode.addPopulateMenuListener(
       (sender, evt) => {
