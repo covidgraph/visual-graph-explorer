@@ -335,20 +335,44 @@ export class IncrementalGraphLoader {
       .flatMap((schemaNode) =>
         this.queryBuilder.schemaGraph
           .outEdgesAt(schemaNode)
-          .map((schemaEdge) => ({
-            action: () => this.loadOutEdges(item, schemaEdge),
-            title: `Load ${schemaEdge.tag.relatedVerb} ${schemaEdge.targetNode.tag.pluralName}`,
-          }))
+          .map(this.createLoadOutEdgesAction(item))
           .concat(
             this.queryBuilder.schemaGraph
               .inEdgesAt(schemaNode)
-              .map((schemaEdge) => ({
-                action: () => this.loadInEdges(item, schemaEdge),
-                title: `Load ${schemaEdge.tag.relatingVerb} ${schemaEdge.sourceNode.tag.pluralName}`,
-              }))
+              .map(this.createLoadInEdgesAction(item))
           )
       )
       .toArray();
+  }
+
+  createLoadInEdgesAction(item) {
+    return (schemaEdge) => {
+      const action = {
+        action: () => this.loadInEdges(item, schemaEdge),
+        title: `Load ${schemaEdge.tag.relatingVerb} ${schemaEdge.sourceNode.tag.pluralName} (?)`,
+        disabled: false,
+      };
+      this.loadInEdgeCount(item, schemaEdge).then((count) => {
+        action.title = `Load ${schemaEdge.tag.relatingVerb} ${schemaEdge.sourceNode.tag.pluralName} (${count})`;
+        action.disabled = count < 1;
+      });
+      return action;
+    };
+  }
+
+  createLoadOutEdgesAction(item) {
+    return (schemaEdge) => {
+      const action = {
+        action: () => this.loadOutEdges(item, schemaEdge),
+        title: `Load ${schemaEdge.tag.relatedVerb} ${schemaEdge.targetNode.tag.pluralName} (?)`,
+        disabled: false,
+      };
+      this.loadOutEdgeCount(item, schemaEdge).then((count) => {
+        action.title = `Load ${schemaEdge.tag.relatedVerb} ${schemaEdge.targetNode.tag.pluralName} (${count})`;
+        action.disabled = count < 1;
+      });
+      return action;
+    };
   }
 
   /**
@@ -869,6 +893,22 @@ export class IncrementalGraphLoader {
     });
   }
 
+  async loadInEdgeCount(item, schemaEdge) {
+    if (schemaEdge.tag.hasRelation) {
+      return await this.queryBuilder.loadInEdgeCount(schemaEdge, item);
+    } else {
+      return await this.queryBuilder.loadSourceNodeCount(schemaEdge, item);
+    }
+  }
+
+  async loadOutEdgeCount(item, schemaEdge) {
+    if (schemaEdge.tag.hasRelation) {
+      return await this.queryBuilder.loadOutEdgeCount(schemaEdge, item);
+    } else {
+      return await this.queryBuilder.loadTargetNodeCount(schemaEdge, item);
+    }
+  }
+
   /**
    * @template T
    * @param item
@@ -1050,12 +1090,30 @@ export default class SchemaBasedQueryBuilder {
   }
 
   /** @param {IEdge} schemaEdge */
+  createOutEdgeCountQuery(schemaEdge) {
+    return `MATCH (sourceNode:${this.createNodeMatch(
+      schemaEdge.sourceNode
+    )}) WHERE id(sourceNode) = $sourceId MATCH ${
+      schemaEdge.tag.matchClause
+    } RETURN count(targetNode) as result`;
+  }
+
+  /** @param {IEdge} schemaEdge */
   createTargetNodesQuery(schemaEdge) {
     return `MATCH (sourceNode:${this.createNodeMatch(
       schemaEdge.sourceNode
     )}) WHERE id(sourceNode) = $sourceId MATCH ${
       schemaEdge.tag.matchClause
     } RETURN distinct(targetNode) as result LIMIT ${limit}`;
+  }
+
+  /** @param {IEdge} schemaEdge */
+  createTargetNodeCountQuery(schemaEdge) {
+    return `MATCH (sourceNode:${this.createNodeMatch(
+      schemaEdge.sourceNode
+    )}) WHERE id(sourceNode) = $sourceId MATCH ${
+      schemaEdge.tag.matchClause
+    } RETURN count(targetNode) as result`;
   }
 
   /** @param {IEdge} schemaEdge */
@@ -1068,12 +1126,30 @@ export default class SchemaBasedQueryBuilder {
   }
 
   /** @param {IEdge} schemaEdge */
+  createSourceNodeCountQuery(schemaEdge) {
+    return `MATCH (targetNode:${this.createNodeMatch(
+      schemaEdge.targetNode
+    )}) WHERE id(targetNode) = $targetId MATCH ${
+      schemaEdge.tag.matchClause
+    } RETURN count(sourceNode) as result`;
+  }
+
+  /** @param {IEdge} schemaEdge */
   createInEdgeQuery(schemaEdge) {
     return `MATCH (targetNode:${this.createNodeMatch(
       schemaEdge.targetNode
     )}) WHERE id(targetNode) = $targetId MATCH ${
       schemaEdge.tag.matchClause
     } RETURN distinct(sourceNode) as sourceNode, relation LIMIT ${limit}`;
+  }
+
+  /** @param {IEdge} schemaEdge */
+  createInEdgeCountQuery(schemaEdge) {
+    return `MATCH (targetNode:${this.createNodeMatch(
+      schemaEdge.targetNode
+    )}) WHERE id(targetNode) = $targetId MATCH ${
+      schemaEdge.tag.matchClause
+    } RETURN count(sourceNode) as result`;
   }
 
   /** @param {IEdge} schemaEdge */
@@ -1163,6 +1239,22 @@ export default class SchemaBasedQueryBuilder {
     );
   }
 
+  async loadInEdgeCount(schemaEdge, item) {
+    return (
+      await query(this.createInEdgeCountQuery(schemaEdge), {
+        targetId: item.identity,
+      })
+    )[0];
+  }
+
+  async loadOutEdgeCount(schemaEdge, item) {
+    return (
+      await query(this.createOutEdgeCountQuery(schemaEdge), {
+        sourceId: item.identity,
+      })
+    )[0];
+  }
+
   /**
    * @param {{identity:string}[]} items
    * @param {IEdge} schemaEdge
@@ -1216,6 +1308,28 @@ export default class SchemaBasedQueryBuilder {
     return await query(this.createSourceNodesQuery(schemaEdge), {
       targetId: item.identity,
     });
+  }
+
+  /**
+   * @param {IEdge} schemaEdge
+   */
+  async loadSourceNodeCount(schemaEdge, item) {
+    return (
+      await query(this.createSourceNodeCountQuery(schemaEdge), {
+        targetId: item.identity,
+      })
+    )[0];
+  }
+
+  /**
+   * @param {IEdge} schemaEdge
+   */
+  async loadTargetNodeCount(schemaEdge, item) {
+    return (
+      await query(this.createTargetNodeCountQuery(schemaEdge), {
+        sourceId: item.identity,
+      })
+    )[0];
   }
 
   /**

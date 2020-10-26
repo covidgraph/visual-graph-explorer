@@ -13,13 +13,13 @@
     ></div>
     <ContextMenu
       ref="contextMenu"
-      @populate-context-menu="currentItem = $event"
+      @populate-context-menu="actions = getActions($event)"
     >
       <v-list>
         <v-list-item
           v-for="action in actions"
-          :key="action.title"
           @click="action.action()"
+          :disabled="action.disabled"
         >
           <v-list-item-title>{{ action.title }}</v-list-item-title>
         </v-list-item>
@@ -155,6 +155,7 @@ export default {
     ContextMenu,
   },
   data: () => ({
+    actions: [],
     currentItem: null,
     selectedItems: [],
     isStaging: isStaging,
@@ -263,8 +264,9 @@ export default {
     });
     this.loader.registerEvents(this.eventBus);
   },
-  computed: {
-    actions: function () {
+  methods: {
+    getActions: function (item) {
+      this.currentItem = item;
       if (this.loader !== null) {
         if (this.selectedItems.length > 1) {
           return this.loader.findCommonActions(this.selectedItems);
@@ -274,8 +276,6 @@ export default {
       }
       return [];
     },
-  },
-  methods: {
     onHoveredItemChanged(item) {
       // we use the highlight manager of the GraphComponent to highlight related items
       const manager = this.$graphComponent.highlightIndicatorManager;
