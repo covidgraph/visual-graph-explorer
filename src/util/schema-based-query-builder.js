@@ -893,19 +893,41 @@ export class IncrementalGraphLoader {
     });
   }
 
+  getExistingItems(type) {
+    return this.graphComponent.graph.nodes.map((node) => node.tag);
+  }
+
   async loadInEdgeCount(item, schemaEdge) {
+    const existingItems = this.getExistingItems(schemaEdge.tag.source);
     if (schemaEdge.tag.hasRelation) {
-      return await this.queryBuilder.loadInEdgeCount(schemaEdge, item);
+      return await this.queryBuilder.loadInEdgeCount(
+        schemaEdge,
+        item,
+        existingItems
+      );
     } else {
-      return await this.queryBuilder.loadSourceNodeCount(schemaEdge, item);
+      return await this.queryBuilder.loadSourceNodeCount(
+        schemaEdge,
+        item,
+        existingItems
+      );
     }
   }
 
   async loadOutEdgeCount(item, schemaEdge) {
+    const existingItems = this.getExistingItems(schemaEdge.tag.target);
     if (schemaEdge.tag.hasRelation) {
-      return await this.queryBuilder.loadOutEdgeCount(schemaEdge, item);
+      return await this.queryBuilder.loadOutEdgeCount(
+        schemaEdge,
+        item,
+        existingItems
+      );
     } else {
-      return await this.queryBuilder.loadTargetNodeCount(schemaEdge, item);
+      return await this.queryBuilder.loadTargetNodeCount(
+        schemaEdge,
+        item,
+        existingItems
+      );
     }
   }
 
@@ -1095,7 +1117,7 @@ export default class SchemaBasedQueryBuilder {
       schemaEdge.sourceNode
     )}) WHERE id(sourceNode) = $sourceId MATCH ${
       schemaEdge.tag.matchClause
-    } RETURN count(targetNode) as result`;
+    } WITH targetNode MATCH (targetNode) WHERE NOT id(targetNode) in $existingIds RETURN COUNT(DISTINCT(targetNode)) as result`;
   }
 
   /** @param {IEdge} schemaEdge */
@@ -1113,7 +1135,7 @@ export default class SchemaBasedQueryBuilder {
       schemaEdge.sourceNode
     )}) WHERE id(sourceNode) = $sourceId MATCH ${
       schemaEdge.tag.matchClause
-    } RETURN count(targetNode) as result`;
+    } WITH targetNode MATCH (targetNode) WHERE NOT id(targetNode) in $existingIds RETURN COUNT(DISTINCT(targetNode)) as result`;
   }
 
   /** @param {IEdge} schemaEdge */
@@ -1131,7 +1153,7 @@ export default class SchemaBasedQueryBuilder {
       schemaEdge.targetNode
     )}) WHERE id(targetNode) = $targetId MATCH ${
       schemaEdge.tag.matchClause
-    } RETURN count(sourceNode) as result`;
+    } WITH sourceNode MATCH (sourceNode) WHERE NOT id(sourceNode) in $existingIds RETURN COUNT(DISTINCT(sourceNode)) as result`;
   }
 
   /** @param {IEdge} schemaEdge */
@@ -1149,7 +1171,7 @@ export default class SchemaBasedQueryBuilder {
       schemaEdge.targetNode
     )}) WHERE id(targetNode) = $targetId MATCH ${
       schemaEdge.tag.matchClause
-    } RETURN count(sourceNode) as result`;
+    } WITH sourceNode MATCH (sourceNode) WHERE NOT id(sourceNode) in $existingIds RETURN COUNT(DISTINCT(sourceNode)) as result`;
   }
 
   /** @param {IEdge} schemaEdge */
@@ -1239,18 +1261,20 @@ export default class SchemaBasedQueryBuilder {
     );
   }
 
-  async loadInEdgeCount(schemaEdge, item) {
+  async loadInEdgeCount(schemaEdge, item, existingItems) {
     return (
       await query(this.createInEdgeCountQuery(schemaEdge), {
         targetId: item.identity,
+        existingIds: existingItems.map((item) => item.identity),
       })
     )[0];
   }
 
-  async loadOutEdgeCount(schemaEdge, item) {
+  async loadOutEdgeCount(schemaEdge, item, existingItems) {
     return (
       await query(this.createOutEdgeCountQuery(schemaEdge), {
         sourceId: item.identity,
+        existingIds: existingItems.map((item) => item.identity),
       })
     )[0];
   }
@@ -1313,10 +1337,11 @@ export default class SchemaBasedQueryBuilder {
   /**
    * @param {IEdge} schemaEdge
    */
-  async loadSourceNodeCount(schemaEdge, item) {
+  async loadSourceNodeCount(schemaEdge, item, existingItems) {
     return (
       await query(this.createSourceNodeCountQuery(schemaEdge), {
         targetId: item.identity,
+        existingIds: existingItems.map((item) => item.identity),
       })
     )[0];
   }
@@ -1324,10 +1349,11 @@ export default class SchemaBasedQueryBuilder {
   /**
    * @param {IEdge} schemaEdge
    */
-  async loadTargetNodeCount(schemaEdge, item) {
+  async loadTargetNodeCount(schemaEdge, item, existingItems) {
     return (
       await query(this.createTargetNodeCountQuery(schemaEdge), {
         sourceId: item.identity,
+        existingIds: existingItems.map((item) => item.identity),
       })
     )[0];
   }

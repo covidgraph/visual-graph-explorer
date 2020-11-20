@@ -156,6 +156,7 @@ export default {
     ContextMenu,
   },
   data: () => ({
+    dragging: false,
     actions: [],
     currentItem: null,
     selectedItems: [],
@@ -276,9 +277,27 @@ export default {
       this.currentItem = item;
       if (this.loader !== null) {
         if (this.selectedItems.length > 1) {
-          return this.loader.findCommonActions(this.selectedItems);
+          const createCypherQueryActions = [
+            {
+              action: () =>
+                alert(this.loader.createCypherMatch(this.selectedItems)),
+              title: "Show Cypher Query",
+            },
+          ];
+          return this.loader
+            .findCommonActions(this.selectedItems)
+            .concat(createCypherQueryActions);
         } else if (this.currentItem !== null) {
-          return this.loader.findActions(this.currentItem);
+          const createCypherQueryActions = [
+            {
+              action: () =>
+                alert(this.loader.createCypherMatch(this.currentItem)),
+              title: "Show Cypher Query",
+            },
+          ];
+          return this.loader
+            .findActions(this.currentItem)
+            .concat(createCypherQueryActions);
         }
       }
       return [];

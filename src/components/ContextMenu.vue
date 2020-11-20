@@ -57,12 +57,26 @@ export default {
         }
       });
 
-      inputMode.addPopulateItemContextMenuListener(
-        (sender, args) =>
-          args.item &&
-          args.item.tag &&
-          this.$emit("populate-context-menu", args.item.tag)
-      );
+      inputMode.addPopulateItemContextMenuListener((sender, args) => {
+        if (args.item) {
+          if (
+            !this.$graphComponent.selection.isSelected(args.item) &&
+            this.$graphComponent.selection.selectedNodes.size > 0
+          ) {
+            // clear selection, first, if the item was not selected
+            this.$graphComponent.selection.selectedNodes.clear();
+          }
+          return (
+            args.item.tag && this.$emit("populate-context-menu", args.item.tag)
+          );
+        } else {
+          return (
+            args.item &&
+            args.item.tag &&
+            this.$emit("populate-context-menu", args.item.tag)
+          );
+        }
+      });
       inputMode.contextMenuInputMode.addCloseMenuListener(() => this.hide());
     },
     hide() {

@@ -826,4 +826,19 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       return null;
     }
   }
+
+  createCypherMatch(item) {
+    if (Array.isArray(item)) {
+      return `MATCH (n) WHERE id(n) in [${item
+        .map((item) => item.identity.toString(10))
+        .join(",")}] RETURN n`;
+    } else {
+      const name = item.labels.length
+        ? item.labels[0].substr(0, 1).toLowerCase()
+        : "n";
+      return `MATCH (${name}:${item.labels.join(
+        ":"
+      )}) WHERE id(${name}) = ${item.identity.toString(10)} RETURN ${name}`;
+    }
+  }
 }
