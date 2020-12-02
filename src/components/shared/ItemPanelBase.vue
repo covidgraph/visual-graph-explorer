@@ -25,14 +25,14 @@
     </v-list>
     <v-layout class="blue lighten-5" v-if="!hideMenu">
       <v-col class="flex-row-reverse d-flex pt-0">
-        <v-card-actions class="wrap-actions">
+        <v-card-actions class="wrap-actions" v-if="!hideMenu">
           <v-menu>
             <template v-slot:activator="{ on: menu }">
               <v-btn outlined rounded color="primary" light v-on="{ ...menu }"
                 >LOAD MORE</v-btn
               >
             </template>
-            <slot name="menu"><span>Hello</span></slot>
+            <slot name="menu"></slot>
           </v-menu>
         </v-card-actions>
       </v-col>

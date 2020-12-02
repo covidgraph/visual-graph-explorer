@@ -25,29 +25,30 @@
         </v-list-item>
       </v-list>
     </template>
-    <template>
-      <PanelItem
-        itemTitle="Category"
-        v-if="value.properties.category"
-        :items="[value.properties.category]"
-      />
-      <PanelItem
-        itemTitle="Description"
-        v-if="value.properties.desc"
-        :items="[value.properties.desc]"
-      />
-    </template>
+    <property-panel
+      :schema="{ Category: 'category', Description: 'desc', Source: 'source' }"
+      :value="properties"
+    >
+    </property-panel>
+    <PanelItem
+      itemTitle="Other Names"
+      :items="properties.otherIdentifiers.map((id) => id.properties.sid)"
+    >
+    </PanelItem>
   </item-panel-base>
 </template>
 
 <script>
 import PanelItem from "./shared/PanelItem";
 import ItemPanelBase from "./shared/ItemPanelBase";
+import PropertyPanel from "@/components/shared/PropertyPanel";
+import EntityList from "@/components/shared/EntityList";
 export default {
   name: "ProteinPanel",
-  components: { PanelItem, ItemPanelBase },
+  components: { PropertyPanel, PanelItem, ItemPanelBase, EntityList },
   props: {
-    value: null,
+    value: Object,
+    properties: Object,
   },
 
   methods: {

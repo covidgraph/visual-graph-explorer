@@ -1,4 +1,6 @@
 import {
+  ComponentArrangementStyles,
+  ComponentLayout,
   DefaultGraph,
   GraphComponent,
   IEdge,
@@ -140,6 +142,12 @@ export class IncrementalGraphLoader {
       starSubstructureStyle: "separated-radial",
       parallelSubstructureStyle: "radial",
       qualityTimeRatio: 0.7,
+    });
+    this.layout.componentLayout = new ComponentLayout({
+      style:
+        ComponentArrangementStyles.MODIFIER_NO_OVERLAP |
+        ComponentArrangementStyles.MODIFIER_AS_IS |
+        ComponentArrangementStyles.NONE,
     });
   }
 
@@ -818,7 +826,7 @@ export class IncrementalGraphLoader {
   }
 
   async loadNodeDetails(schemaNode, item) {
-    if (schemaNode.tag.metadata.detailProperties) {
+    if (schemaNode.tag.metadata && schemaNode.tag.metadata.detailProperties) {
       let details = await this.queryBuilder.loadNodeDetails(
         schemaNode,
         item.identity

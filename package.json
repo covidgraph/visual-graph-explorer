@@ -17,7 +17,8 @@
     "production": [
       "IE 11",
       "last 2 Chrome versions",
-      "last 2 firefox versions"
+      "last 2 firefox versions",
+      "last 2 Safari versions"
     ],
     "development": [
       "last 1 chrome version"
@@ -33,13 +34,13 @@
     "core-js": "^2.6.11",
     "neo4j-driver": "^4.1.1",
     "roboto-fontface": "*",
-    "vue": "^2.6.11",
-    "vuetify": "^2.3.6",
+    "vue": "^2.6.12",
+    "vuetify": "^2.3.19",
     "yfiles": "./yfiles-23.0.0-eval-dev.tgz"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^3.12.1",
-    "@vue/cli-service": "^4.4.6",
+    "@vue/cli-service": "^4.5.9",
     "@yworks/optimizer": "^1.4.2",
     "husky": "^4.2.5",
     "node-sass": "^4.14.1",
@@ -48,7 +49,7 @@
     "sass": "^1.26.10",
     "sass-loader": "^8.0.2",
     "vue-cli-plugin-vuetify": "~2.0.7",
-    "vue-template-compiler": "^2.6.11"
+    "vue-template-compiler": "^2.6.12"
   },
   "license": "MIT"
 }

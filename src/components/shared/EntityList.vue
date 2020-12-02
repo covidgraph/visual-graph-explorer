@@ -9,7 +9,7 @@
       @click:close="loadEntitySymbol(entity.identity)"
     >
       <v-avatar left>
-        <v-icon color="#050d90">mdi-puzzle</v-icon>
+        <v-icon color="#050d90">{{ icon }}</v-icon>
       </v-avatar>
       {{ entity.properties.name }}
     </v-chip>
@@ -25,6 +25,11 @@ export default {
     entities: {
       required: true,
       type: Array,
+    },
+    icon: {
+      default: "mdi-puzzle",
+      type: String,
+      required: false,
     },
   },
   methods: {

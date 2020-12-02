@@ -26,11 +26,22 @@
       </v-list-item>
       <v-list-item-subtitle class="pa-4 pt-0"
         ><b class="pr-1 primary--text pl-1">URL:</b
-        ><a :href="value.properties.lens_url" target="_blank">{{
-          value.properties.lens_url
+        ><a :href="properties.lens_url" target="_blank">{{
+          properties.lens_url
         }}</a></v-list-item-subtitle
       >
     </v-list>
+    <property-panel
+      :schema="{
+        Type: 'type',
+        Jurisdiction: 'jurisdiction',
+        'Publication Date': 'pub_date',
+        'Publication Key': 'pub_key',
+        'Filing Date': 'filing_date',
+        'Filing Key': 'filing_key',
+      }"
+      :value="properties"
+    />
     <v-expansion-panels multiple accordion flat v-model="expanded">
       <PanelItem
         itemTitle="Other titles"
@@ -45,31 +56,32 @@
           )
         "
       />
-      <PanelItem itemTitle="Date" :items="[value.properties.pub_date]" />
-      <PanelItem itemTitle="Patent Owners" :items="owners">
+      <PanelItem itemTitle="Applicants" :items="properties.patentApplicants">
         <template #content>
-          <entity-list :entities="owners" />
+          <entity-list :entities="properties.patentApplicants" />
         </template>
       </PanelItem>
-      <PanelItem
-        itemTitle="Classification CPC"
-        :items="value.properties.classification_cpc"
-      />
-      <PanelItem
-        itemTitle="Classification IPC"
-        :items="patent.classification_ipc"
-      />
-      <PanelItem
-        itemTitle="Classification US"
-        :items="patent.classification_us"
-      />
+      <PanelItem itemTitle="Patent Owners" :items="properties.patentOwners">
+        <template #content>
+          <entity-list :entities="properties.patentOwners" />
+        </template>
+      </PanelItem>
+      <PanelItem itemTitle="Inventors" :items="properties.patentInventors">
+        <template #content>
+          <entity-list :entities="properties.patentInventors" />
+        </template>
+      </PanelItem>
       <PanelItem itemTitle="Abstract" :items="[abstract]" />
-      <v-expansion-panel v-if="geneSymbols.length" class="mr-1" flat>
+      <v-expansion-panel
+        v-if="properties.mentionedGeneSymbols.length"
+        class="mr-1"
+        flat
+      >
         <v-expansion-panel-header class="primary--text pb-0">
           <b>Mentioned Genes</b>
         </v-expansion-panel-header>
         <v-expansion-panel-content class="grey lighten-5">
-          <gene-symbol-list :geneSymbols="geneSymbols" />
+          <gene-symbol-list :geneSymbols="properties.mentionedGeneSymbols" />
         </v-expansion-panel-content>
       </v-expansion-panel>
     </v-expansion-panels>
@@ -77,20 +89,17 @@
 </template>
 
 <script>
-import {
-  loadAbstractsForPatent,
-  loadGenesForPatent,
-  loadTitlesForPatent,
-} from "../util/queries";
+import { loadAbstractsForPatent, loadTitlesForPatent } from "../util/queries";
 import PanelItem from "./shared/PanelItem";
 
 import GeneSymbolList from "./shared/GeneSymbolList";
-import { loadPatentOwnersForPatent } from "@/util/queries";
 import EntityList from "./shared/EntityList";
+import PropertyPanel from "@/components/shared/PropertyPanel";
 
 export default {
   name: "PatentPanel",
   components: {
+    PropertyPanel,
     EntityList,
     PanelItem,
     GeneSymbolList,
@@ -98,9 +107,7 @@ export default {
   data: () => ({
     titles: [],
     patent: {},
-    geneSymbols: [],
     abstract: "",
-    owners: [],
     expanded: [2, 3, 4],
   }),
   props: {
@@ -108,6 +115,7 @@ export default {
       type: Object,
       default: null,
     },
+    properties: Object,
   },
   computed: {
     nonPrimeTitles() {
@@ -122,13 +130,6 @@ export default {
           this.patent = { ...patent.properties };
 
           this.abstract = "Loading...";
-          loadPatentOwnersForPatent(patent)
-            .then((value) => {
-              this.owners = value;
-            })
-            .catch((reason) => {
-              this.owners = ["asdf"];
-            });
 
           loadAbstractsForPatent(patent)
             .then((value) => {
@@ -136,14 +137,6 @@ export default {
             })
             .catch((reason) => {
               this.abstract = "Failed to load " + reason;
-            });
-
-          loadGenesForPatent(patent)
-            .then((genes) => {
-              this.geneSymbols = genes;
-            })
-            .catch((reason) => {
-              this.geneSymbols = [];
             });
           loadTitlesForPatent(patent)
             .then((nodes) => {

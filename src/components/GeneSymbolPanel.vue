@@ -1,63 +1,65 @@
 <template>
-  <v-card flat>
-    <v-list class="lime lighten-5 pt-0 pb-0">
-      <v-list-item three-line>
-        <v-icon x-large class="gene-color--text pb-1">mdi-dna</v-icon>
-        <v-list-item-content flex-sm-column>
-          <v-list-item-title class="primary--text pl-2">
-            <div class="wrapText">
-              <h4>
-                {{ value.properties.sid }}
-              </h4>
-              <span class="caption">
-                {{ value.properties.status }}
-                {{ value.properties.taxid }}
-              </span>
-            </div>
-          </v-list-item-title>
-        </v-list-item-content>
-      </v-list-item>
-    </v-list>
-    <v-layout class="lime lighten-5">
-      <v-col class="flex-row-reverse d-flex pt-0">
-        <v-card-actions class="wrap-actions">
-          <v-menu>
-            <template v-slot:activator="{ on: menu }">
-              <v-btn outlined rounded color="primary" light v-on="{ ...menu }"
-                >LOAD MORE</v-btn
-              >
-            </template>
-            <v-list>
-              <v-list-item @click="loadPapers">
-                <v-list-item-title class="primary--text"
-                  ><b>PAPERS</b></v-list-item-title
-                >
-              </v-list-item>
-              <v-list-item @click="loadPatents">
-                <v-list-item-title class="orange--text"
-                  ><b>PATENTS</b></v-list-item-title
-                >
-              </v-list-item>
-              <v-list-item @click="loadDiseases">
-                <v-list-item-title class="red--text"
-                  ><b>DISEASES</b></v-list-item-title
-                >
-              </v-list-item>
-            </v-list>
-          </v-menu>
-        </v-card-actions>
-      </v-col>
-    </v-layout>
-  </v-card>
+  <item-panel-base
+    :title="properties.sid"
+    icon="mdi-dna"
+    icon-class="gene-color--text pb-1"
+  >
+    <template #title>
+      <v-list-item-title class="primary--text pl-2">
+        <div class="wrapText">
+          <h4>
+            {{ properties.sid }}
+          </h4>
+          <span class="caption">
+            {{ properties.status }}
+            {{ properties.taxid }}
+          </span>
+        </div>
+      </v-list-item-title>
+    </template>
+    <template #menu>
+      <v-list>
+        <v-list-item @click="loadPapers">
+          <v-list-item-title class="primary--text"
+            ><b>PAPERS</b></v-list-item-title
+          >
+        </v-list-item>
+        <v-list-item @click="loadPatents">
+          <v-list-item-title class="orange--text"
+            ><b>PATENTS</b></v-list-item-title
+          >
+        </v-list-item>
+        <v-list-item @click="loadDiseases">
+          <v-list-item-title class="red--text"
+            ><b>DISEASES</b></v-list-item-title
+          >
+        </v-list-item>
+      </v-list>
+    </template>
+    <panel-item item-title="Synonyms" :items="properties.synonyms">
+      <template slot="content">
+        <gene-symbol-list
+          :gene-symbols="properties.synonyms"
+          itemTitle="Synonyms"
+        >
+        </gene-symbol-list>
+      </template>
+    </panel-item>
+  </item-panel-base>
 </template>
 
 <script>
 import { isStagingDb } from "../util/dbconnection";
+import GeneSymbolList from "@/components/shared/GeneSymbolList";
+import ItemPanelBase from "@/components/shared/ItemPanelBase";
+import PanelItem from "@/components/shared/PanelItem";
 
 export default {
   name: "GenePanel",
+  components: { PanelItem, ItemPanelBase, GeneSymbolList },
   props: {
-    value: null,
+    value: Object,
+    properties: Object,
   },
   data: () => ({
     isStaging: isStagingDb(),
@@ -76,7 +78,7 @@ export default {
 };
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 @import "../styles/colors";
 .gene-color--text {
   color: $gene-color !important;

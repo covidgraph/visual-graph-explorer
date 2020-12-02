@@ -1,52 +1,56 @@
 <template>
-  <v-card flat>
-    <v-list class="lime lighten-5 pt-0 pb-0">
-      <v-list-item three-line>
-        <v-icon x-large class="Entity-color--text pb-1">mdi-puzzle</v-icon>
-        <v-list-item-content flex-sm-column>
-          <v-list-item-title class="primary--text pl-2">
-            <div class="wrapText">
-              <h4>
-                {{ value.properties.name }}
-              </h4>
-            </div>
-          </v-list-item-title>
-        </v-list-item-content>
-      </v-list-item>
-    </v-list>
-    <v-layout class="lime lighten-5">
-      <v-col class="flex-row-reverse d-flex pt-0">
-        <v-card-actions class="wrap-actions">
-          <v-menu>
-            <template v-slot:activator="{ on: menu }">
-              <v-btn outlined rounded color="primary" light v-on="{ ...menu }"
-                >LOAD MORE</v-btn
-              >
-            </template>
-            <v-list>
-              <v-list-item @click="loadPatents">
-                <v-list-item-title class="primary--text"
-                  ><b>PATENTS</b></v-list-item-title
-                >
-              </v-list-item>
-            </v-list>
-          </v-menu>
-        </v-card-actions>
-      </v-col>
-    </v-layout>
-  </v-card>
+  <item-panel-base
+    :title="properties.name"
+    icon="mdi-puzzle"
+    icon-class="Protein-color--text pb-1"
+  >
+    <template #menu>
+      <v-list>
+        <v-list-item @click="loadPatents">
+          <v-list-item-title class="primary--text"
+            ><b>PATENTS</b></v-list-item-title
+          >
+        </v-list-item>
+      </v-list>
+    </template>
+    <v-chip-group column>
+      <v-chip
+        label
+        v-for="entity in properties.filedPatents"
+        :key="getId(entity.identity)"
+        close
+        close-icon="mdi-download"
+        @click:close="loadPatent(entity.identity)"
+      >
+        <v-avatar left>
+          <v-icon color="#050d90">fas fa-balance-scale</v-icon>
+        </v-avatar>
+        {{ entity.properties.lens_url }}
+      </v-chip>
+    </v-chip-group>
+  </item-panel-base>
 </template>
 
 <script>
+import ItemPanelBase from "@/components/shared/ItemPanelBase";
+import PanelItem from "@/components/shared/PanelItem";
+import { getId } from "@/util/Neo4jGraphBuilder";
+
 export default {
+  components: { ItemPanelBase, PanelItem },
   name: "EntityPanel",
   props: {
-    value: null,
+    value: Object,
+    properties: Object,
   },
 
   methods: {
+    getId: getId,
     loadPatents() {
       this.eventBus.$emit("load-source-Patent-for-Entity", this.value);
+    },
+    loadPatent(id) {
+      this.eventBus.$emit("load-Patent", id);
     },
   },
 };

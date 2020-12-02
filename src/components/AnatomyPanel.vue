@@ -2,21 +2,26 @@
   <item-panel-base
     :title="properties.name"
     icon="mdi-brain"
-    icon-class="tissue-color--text"
+    icon-class="anatomy-color--text"
+    hide-menu="true"
   >
     <property-panel
-      :schema="{ 'Mesh ID': 'mesh_id', 'Uberon ID': 'uberon_id' }"
+      :schema="{
+        'Mesh Name': 'mesh_name',
+        'Mesh ID': 'mesh_id',
+        'Uberon ID': 'uberon_id',
+        'BTO ID': 'bto_id',
+      }"
       :value="properties"
     >
     </property-panel>
   </item-panel-base>
 </template>
-
 <script>
 import ItemPanelBase from "@/components/shared/ItemPanelBase";
 import PropertyPanel from "@/components/shared/PropertyPanel";
 export default {
-  name: "TissuePanel",
+  name: "AnatomyPanel",
   components: { PropertyPanel, ItemPanelBase },
   props: {
     value: Object,
@@ -27,7 +32,7 @@ export default {
 
 <style lang="scss">
 @import "../styles/colors";
-.tissue-color--text {
+.anatomy-color--text {
   color: $tissue-color !important;
 }
 .wrapText {

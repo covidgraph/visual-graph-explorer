@@ -26,6 +26,7 @@ import coreQuery from "./dbconnection";
 import ClinicalTrialNode from "../graph-styles/ClinicalTrialNode";
 import DiseaseNode from "../graph-styles/DiseaseNode";
 import { getId } from "./Neo4jGraphBuilder";
+import TranscriptNode from "@/graph-styles/TranscriptNode";
 
 export async function query(query, args = {}, name = "result") {
   return (await coreQuery(query, args)).records.map((r) => r.get(name));
@@ -266,6 +267,10 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       pluralName: "genes",
       metadata: {
         name: "Genes",
+        detailProperties: {
+          synonyms:
+            "(sourceNode:GeneSymbol)-[:SYNONYM]-(targetNode:GeneSymbol)",
+        },
         table: {
           headers: [
             { text: "SID", value: "sid", align: "start", sortable: true },
@@ -282,6 +287,17 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       size: new Size(80, 80),
       metadata: {
         name: "Patents",
+        detailProperties: {
+          titles:
+            "(sourceNode:Patent)-[:PATENT_HAS_PATENTTITLE]->(targetNode:PatentTitle)",
+          patentInventors:
+            "(sourceNode:Patent)-[:INVENTOR]->(targetNode:Entity)",
+          patentOwners: "(sourceNode:Patent)-[:OWNER]->(targetNode:Entity)",
+          patentApplicants:
+            "(sourceNode:Patent)-[:APPLICANT]->(targetNode:Entity)",
+          mentionedGeneSymbols:
+            "(sourceNode:Patent)-[:PATENT_HAS_PATENTABSTRACT|PATENT_HAS_PATENTTITLE|PATENT_HAS_PATENTDESCRIPTION|PATENT_HAS_PATENTCLAIM]->()-[:HAS_FRAGMENT]->(:Fragment)-[:MENTIONS]->(targetNode:GeneSymbol)",
+        },
         table: {
           headers: [
             { text: "Title", value: "title", align: "start", sortable: true },
@@ -328,14 +344,19 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       type: "Protein",
       style: new VuejsNodeStyle(ProteinNode),
       size: new Size(150, 150),
-      metadata: createMetaData("Protein", ["sid", "name", "category"], "name"),
+      metadata: {
+        ...createMetaData("Protein", ["sid", "name", "category"], "name"),
+        detailProperties: {
+          otherIdentifiers:
+            "(sourceNode:Protein)-[:MAPS]->(targetNode:Protein)",
+        },
+      },
     });
 
     this.transcriptType = this.addNodeType({
       type: "Transcript",
-      style: new ShapeNodeStyle(),
-      size: new Size(50, 50),
-      labels: (entity) => [entity.properties.sid || "untitled"],
+      style: new VuejsNodeStyle(TranscriptNode),
+      size: new Size(100, 100),
     });
 
     this.anatomyType = this.addNodeType({
@@ -369,17 +390,23 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       size: new Size(120, 120),
       singularName: "entity",
       pluralName: "entities",
-      metadata: createMetaData(
-        "Entity",
-        ["name", "category"],
-        "name",
-        "Entities",
-        createSearchQuery(
-          `CALL db.index.fulltext.queryNodes("EntityFullTextIndex", $query) YIELD node, score WITH node ORDER BY score DESC LIMIT ${queryLimit} RETURN node as result`,
+      metadata: {
+        ...createMetaData(
+          "Entity",
           ["name", "category"],
-          insertAnds
-        )
-      ),
+          "name",
+          "Entities",
+          createSearchQuery(
+            `CALL db.index.fulltext.queryNodes("EntityFullTextIndex", $query) YIELD node, score WITH node ORDER BY score DESC LIMIT ${queryLimit} RETURN node as result`,
+            ["name", "category"],
+            insertAnds
+          )
+        ),
+        detailProperties: {
+          filedPatents:
+            "(sourceNode:Entity)<-[:INVENTOR|OWNER]-(targetNode:Patent)",
+        },
+      },
     });
 
     this.authorType = this.addNodeType({
@@ -421,6 +448,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
         "Clinical Trials"
       ),
     });
+
     this.facilityType = this.addNodeType({
       type: "Facility",
       style: new VuejsNodeStyle(EntityNode),
