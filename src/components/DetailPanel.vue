@@ -1,6 +1,11 @@
 <template>
   <v-card>
-    <component v-if="component" v-bind:is="component" v-bind:value="model" />
+    <component
+      v-if="component"
+      v-bind:is="component"
+      v-bind:value="model"
+      v-bind:properties="properties"
+    />
     <v-card-text v-else>
       Nothing Selected
     </v-card-text>
@@ -23,10 +28,12 @@ export default {
   components,
   data: () => ({
     model: null,
+    properties: null,
   }),
   methods: {
-    show(value) {
+    show(value, properties) {
       this.model = value;
+      this.properties = properties;
     },
   },
   computed: {

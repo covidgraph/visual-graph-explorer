@@ -3,6 +3,7 @@ import {
   GraphComponent,
   IEdge,
   IEdgeStyle,
+  IEnumerable,
   IGraph,
   INode,
   INodeStyle,
@@ -210,16 +211,27 @@ export class IncrementalGraphLoader {
   }
 
   /**
-   * Retrieves the schema object that created the given item.
+   * Retrieves the schema object that created the given graph item.
    * @param item
    * @return {INode|IEdge|null}
    */
   getSchemaObject(item) {
     if (item && item.tag && item.tag.schemaType >= 0)
+      return this.getSchemaObjectForItem(item.tag);
+    else return null;
+  }
+
+  /**
+   * Retrieves the schema object that created the given item.
+   * @param item
+   * @return {INode|IEdge|null}
+   */
+  getSchemaObjectForItem(item) {
+    if (item.schemaType >= 0)
       return this.queryBuilder.schemaGraph.nodes
         .concat(this.queryBuilder.schemaGraph.edges)
         .firstOrDefault(
-          (graphItem) => graphItem.tag.schemaType === item.tag.schemaType
+          (graphItem) => graphItem.tag.schemaType === item.schemaType
         );
     else return null;
   }
@@ -805,6 +817,20 @@ export class IncrementalGraphLoader {
     });
   }
 
+  async loadNodeDetails(schemaNode, item) {
+    if (schemaNode.tag.metadata.detailProperties) {
+      let details = await this.queryBuilder.loadNodeDetails(
+        schemaNode,
+        item.identity
+      );
+      if (details) {
+        return { ...item.properties, ...details };
+      }
+    } else {
+      return item.properties;
+    }
+  }
+
   async loadAndConnectNodeForSchema(schemaNode, id) {
     return await this.loadAndLayout(async () => {
       let item = await this.queryBuilder.loadNodeById(schemaNode, id);
@@ -1102,6 +1128,34 @@ export default class SchemaBasedQueryBuilder {
     )} RETURN distinct(node) as result LIMIT ${limit}`;
   }
 
+  createDetailPropertiesBag(detailProperties) {
+    return `{${Object.entries(detailProperties)
+      .map((entry) => {
+        const name = entry[0];
+        let query;
+        if (typeof entry[1] === "string") {
+          query = entry[1];
+        } else {
+          query = entry[1].tag.matchClause;
+        }
+        return `${name}: [${query}| targetNode]`;
+      })
+      .join(",")}}`;
+  }
+
+  /** @param {INode} schemaNode
+   * @param {string[]} whereClauses
+   */
+  createLoadNodeDetailsQuery(schemaNode, whereClauses) {
+    return `MATCH (node:${this.createNodeMatch(
+      schemaNode
+    )}) WHERE ${whereClauses.join(
+      " AND "
+    )} WITH node as sourceNode RETURN sourceNode, ${this.createDetailPropertiesBag(
+      schemaNode.tag.metadata.detailProperties
+    )} as details LIMIT ${limit}`;
+  }
+
   /** @param {IEdge} schemaEdge */
   createOutEdgeQuery(schemaEdge) {
     return `MATCH (sourceNode:${this.createNodeMatch(
@@ -1379,6 +1433,30 @@ export default class SchemaBasedQueryBuilder {
         id,
       })
     )[0];
+  }
+
+  /**
+   * @param {INode} schemaNode
+   */
+  async loadNodeDetails(schemaNode, id) {
+    const rawDetails = (
+      await mapQuery(
+        this.createLoadNodeDetailsQuery(schemaNode, ["id(node) = $id"]),
+        {
+          id,
+        },
+        ["sourceNode", "details"]
+      )
+    )[0].details;
+    Object.entries(rawDetails).forEach((entry) => {
+      const value = entry[1];
+      if (Array.isArray(value)) {
+        rawDetails[entry[0]] = IEnumerable.from(value)
+          .distinct((arg) => getId(arg.identity))
+          .toArray();
+      }
+    });
+    return rawDetails;
   }
 
   /**

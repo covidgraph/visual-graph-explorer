@@ -273,6 +273,12 @@ export default {
     this.loader.registerEvents(this.eventBus);
   },
   methods: {
+    async getDetails(item) {
+      return await this.loader.loadNodeDetails(
+        this.loader.getSchemaObjectForItem(item),
+        item
+      );
+    },
     getActions: function (item) {
       this.currentItem = item;
       if (this.loader !== null) {

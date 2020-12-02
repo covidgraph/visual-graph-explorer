@@ -298,6 +298,12 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       size: new Size(150, 150),
       metadata: {
         name: "Publications",
+        detailProperties: {
+          authors:
+            "(sourceNode:Paper)-[:PAPER_HAS_AUTHORCOLLECTION]->(:AuthorCollection)-[:AUTHORCOLLECTION_HAS_AUTHOR]->(targetNode:Author)",
+          genes:
+            "(sourceNode:Paper)-[:PAPER_HAS_BODYTEXTCOLLECTION|PAPER_HAS_ABSTRACTCOLLECTION]->()-[:BODYTEXTCOLLECTION_HAS_BODYTEXT|ABSTRACTCOLLECTION_HAS_ABSTRACT]->()-[:HAS_FRAGMENT]->(relation:Fragment)-[:MENTIONS]->(targetNode:GeneSymbol)",
+        },
         table: {
           headers: [
             { text: "Title", value: "title", align: "start", sortable: true },

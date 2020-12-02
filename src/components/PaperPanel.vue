@@ -4,13 +4,11 @@
       <v-tooltip top>
         <template v-slot:activator="{ on }">
           <h4 v-on="on">
-            {{ value.properties.title }}
+            {{ properties.title }}
           </h4>
-          <a :href="value.properties.url" target="_blank">{{
-            value.properties.url
-          }}</a>
+          <a :href="properties.url" target="_blank">{{ properties.url }}</a>
         </template>
-        <span>{{ value.properties.title }}</span>
+        <span>{{ properties.title }}</span>
       </v-tooltip>
     </template>
     <template #menu>
@@ -51,9 +49,7 @@
       <PanelItem
         itemTitle="Published"
         :items="[
-          (value.properties.publish_time || 'n/a') +
-            ` in ` +
-            value.properties.journal,
+          (properties.publish_time || 'n/a') + ` in ` + properties.journal,
         ]"
       />
       <PanelItem
@@ -66,12 +62,16 @@
         itemTitle="Full Text"
         :items="[fullText]"
       />
-      <PanelItem itemTitle="Mentioned Genes" :items="geneSymbols">
+      <PanelItem itemTitle="Mentioned Genes" :items="properties.genes">
         <template #content>
-          <gene-symbol-list :geneSymbols="geneSymbols" />
+          <gene-symbol-list :geneSymbols="properties.genes" />
         </template>
       </PanelItem>
-      <PanelItem itemTitle="Authors" :items="authors" v-slot:default="{ item }">
+      <PanelItem
+        itemTitle="Authors"
+        :items="properties.authors"
+        v-slot:default="{ item }"
+      >
         <v-chip
           link
           close
@@ -94,8 +94,8 @@
       </PanelItem>
       <PanelItem
         itemTitle="License"
-        v-if="value.properties.license"
-        :items="[value.properties.license]"
+        v-if="properties.license"
+        :items="[properties.license]"
       />
     </template>
   </item-panel-base>
@@ -123,11 +123,10 @@ export default {
   data: () => ({
     abstract: "",
     fullText: "",
-    authors: [],
-    geneSymbols: [],
   }),
   props: {
     value: Object,
+    properties: Object,
   },
   computed: {
     staging: function () {
@@ -156,20 +155,6 @@ export default {
             })
             .catch((reason) => {
               this.fullText = "Failed to load " + reason;
-            });
-          loadGenesForPaper(paper)
-            .then((genes) => {
-              this.geneSymbols = genes;
-            })
-            .catch((reason) => {
-              this.geneSymbols = [];
-            });
-          loadAuthorsForPaper(paper)
-            .then((authors) => {
-              this.authors = authors;
-            })
-            .catch((reason) => {
-              this.authors = [];
             });
         } else {
           this.abstract = "n/a";

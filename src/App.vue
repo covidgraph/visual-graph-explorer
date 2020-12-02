@@ -69,7 +69,7 @@
       <v-container fluid fill-height>
         <diagram-component
           ref="graphComponent"
-          @item-selected="$refs.detailsPanel.show($event)"
+          @item-selected="showDetails($event)"
         ></diagram-component>
       </v-container>
     </v-main>
@@ -112,6 +112,10 @@ export default {
   methods: {
     showAboutDialog() {
       this.eventBus.$emit("show-about-dialog");
+    },
+    async showDetails(item) {
+      const details = await this.$refs.graphComponent.getDetails(item);
+      this.$refs.detailsPanel.show(item, details);
     },
   },
 };
