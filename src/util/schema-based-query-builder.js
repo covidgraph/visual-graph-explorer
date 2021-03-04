@@ -138,6 +138,7 @@ export class IncrementalGraphLoader {
     /** @type {Intersection[]} */
     this.intersections = [];
     this.layout = new OrganicLayout({
+      considerNodeSizes: true,
       minimumNodeDistance: 100,
       starSubstructureStyle: "separated-radial",
       parallelSubstructureStyle: "radial",
@@ -808,9 +809,9 @@ export class IncrementalGraphLoader {
         whereClauses,
         params
       );
-      nodes
-        .filter((item) => !this.getLoadedNode(item))
-        .forEach((item) => schemaNode.tag.creator(item));
+      const newItems = nodes.filter((item) => !this.getLoadedNode(item));
+      newItems.forEach((item) => schemaNode.tag.creator(item));
+      await this.loadMissingEdgesForSchemaNodes(schemaNode, newItems);
       return nodes;
     });
   }
