@@ -22,7 +22,7 @@ import ProteinNode from "../graph-styles/ProteinNode";
 import AffiliationNode from "../graph-styles/AffiliationNode";
 import EntityNode from "../graph-styles/EntityNode";
 import TissueNode from "../graph-styles/TissueNode";
-import coreQuery from "./dbconnection";
+import coreQuery, { isStagingDb } from "./dbconnection";
 import ClinicalTrialNode from "../graph-styles/ClinicalTrialNode";
 import DiseaseNode from "../graph-styles/DiseaseNode";
 import { getId } from "./Neo4jGraphBuilder";
@@ -384,6 +384,42 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       ),
     });
 
+    const masymos = isStagingDb();
+
+    if (masymos) {
+      this.masymosModelType = this.addNodeType({
+        type: "MASYMOS_MODEL",
+        style: new ShapeNodeStyle({ fill: "red" }),
+        size: new Size(40, 40),
+        metadata: createMetaData(
+          "Model",
+          ["NAME", "ID", "MASYMOS_DOCUMENT"],
+          "NAME"
+        ),
+      });
+
+      this.masymosSpeciesType = this.addNodeType({
+        type: "MASYMOS_SBML_SPECIES",
+        style: new ShapeNodeStyle({ fill: "green" }),
+        size: new Size(40, 40),
+        metadata: createMetaData("Species", ["NAME"], "species"),
+      });
+
+      this.masymosCompartmentType = this.addNodeType({
+        type: "MASYMOS_COMPARTMENT",
+        style: new ShapeNodeStyle({ fill: "yellow" }),
+        size: new Size(40, 40),
+        metadata: createMetaData("Compartment", ["NAME"], "species"),
+      });
+
+      this.masymosReactionType = this.addNodeType({
+        type: "MASYMOS_REACTION",
+        style: new ShapeNodeStyle({ fill: "blue" }),
+        size: new Size(40, 40),
+        metadata: createMetaData("Reaction", ["NAME"], "NAME"),
+      });
+    }
+
     this.entityType = this.addNodeType({
       type: "Entity",
       style: new VuejsNodeStyle(EntityNode),
@@ -681,6 +717,48 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       relatedVerb: "related",
       relatingVerb: "related",
     });
+
+    if (masymos) {
+      this.geneSymbol_Species = this.addRelationShip({
+        sourceNode: this.geneSymbolType,
+        targetNode: this.masymosSpeciesType,
+        style: edgeStyle,
+        matchClause:
+          "(sourceNode:GeneSymbol)<-[:MAPS]-(relation:Gene)<-[:MASYMOS_RESOURCE_DESCRIBES_GENE]-(:MASYMOS_RESOURCE)<-[:MASYMOS_isEncodedBy]-(:MASYMOS_ANNOTATION)<-[:MASYMOS_HAS_ANNOTATION]-(targetNode:MASYMOS_SBML_SPECIES)",
+        relatedVerb: "related",
+        relatingVerb: "related",
+      });
+
+      this.protein_Species = this.addRelationShip({
+        sourceNode: this.proteinType,
+        targetNode: this.masymosSpeciesType,
+        style: edgeStyle,
+        matchClause:
+          "(sourceNode:Protein)<-[:CODES]-(:Transcript)<-[:CODES]-(relation:Gene)<-[:MASYMOS_RESOURCE_DESCRIBES_GENE]-(:MASYMOS_RESOURCE)<-[:MASYMOS_isEncodedBy]-(:MASYMOS_ANNOTATION)<-[:MASYMOS_HAS_ANNOTATION]-(targetNode:MASYMOS_SBML_SPECIES)",
+        relatedVerb: "related",
+        relatingVerb: "related",
+      });
+
+      this.transcript_Species = this.addRelationShip({
+        sourceNode: this.proteinType,
+        targetNode: this.masymosSpeciesType,
+        style: edgeStyle,
+        matchClause:
+          "(sourceNode:Transcript)<-[:CODES]-(relation:Gene)<-[:MASYMOS_RESOURCE_DESCRIBES_GENE]-(:MASYMOS_RESOURCE)<-[:MASYMOS_isEncodedBy]-(:MASYMOS_ANNOTATION)<-[:MASYMOS_HAS_ANNOTATION]-(targetNode:MASYMOS_SBML_SPECIES)",
+        relatedVerb: "related",
+        relatingVerb: "related",
+      });
+
+      this.paper_Model = this.addRelationShip({
+        sourceNode: this.paperType,
+        targetNode: this.masymosModelType,
+        style: edgeStyle,
+        matchClause:
+          "(sourceNode:PaperID)<-[:MASYMOS_RESOURCE_DESCRIBES_PAPERID]-(:MASYMOS_RESOURCE)<-[:MASYMOS_isDescribedBy]-(:MASYMOS_ANNOTATION)<-[:MASYMOS_HAS_ANNOTATION]-(targetNode:MASYMOS_MODEL)",
+        relatedVerb: "describes",
+        relatingVerb: "describing",
+      });
+    }
 
     this.addIntersections(
       [
