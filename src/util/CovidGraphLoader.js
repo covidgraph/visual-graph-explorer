@@ -388,35 +388,67 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
 
     if (masymos) {
       this.masymosModelType = this.addNodeType({
-        type: "MASYMOS_MODEL",
-        style: new ShapeNodeStyle({ fill: "red" }),
+        type: "MASYMOS_SBML_MODEL",
+        style: new ShapeNodeStyle({ fill: "cyan" }),
         size: new Size(40, 40),
+        singularName: "Masymos model",
+        pluralName: "Masymos models",
         metadata: createMetaData(
-          "Model",
+          "MASYMOS_SBML_MODEL",
           ["NAME", "ID", "MASYMOS_DOCUMENT"],
-          "NAME"
+          "NAME",
+          "Masymos Model"
         ),
+        labels: (item) => [item.properties.NAME],
+        detailProperties: {
+          owningDocuments:
+            "(sourceNode:MASYMOS_SBML_MODEL)<-[:MASYMOS_HAS_MODEL]-(targetNode:MASYMOS_DOCUMENT)",
+        },
       });
 
       this.masymosSpeciesType = this.addNodeType({
         type: "MASYMOS_SBML_SPECIES",
         style: new ShapeNodeStyle({ fill: "green" }),
         size: new Size(40, 40),
-        metadata: createMetaData("Species", ["NAME"], "species"),
+        singularName: "Masymos species",
+        pluralName: "Masymos species",
+        metadata: createMetaData(
+          "MASYMOS_SBML_SPECIES",
+          ["NAME"],
+          "NAME",
+          "Masymos Species"
+        ),
+        labels: (item) => [item.properties.NAME],
       });
 
       this.masymosCompartmentType = this.addNodeType({
-        type: "MASYMOS_COMPARTMENT",
-        style: new ShapeNodeStyle({ fill: "yellow" }),
+        type: "MASYMOS_SBML_COMPARTMENT",
+        style: new ShapeNodeStyle({ fill: "orange" }),
         size: new Size(40, 40),
-        metadata: createMetaData("Compartment", ["NAME"], "species"),
+        singularName: "Masymos compartment",
+        pluralName: "Masymos compartments",
+        metadata: createMetaData(
+          "MASYMOS_SBML_COMPARTMENT",
+          ["NAME"],
+          "NAME",
+          "Masymos Compartment"
+        ),
+        labels: (item) => [item.properties.NAME],
       });
 
       this.masymosReactionType = this.addNodeType({
-        type: "MASYMOS_REACTION",
-        style: new ShapeNodeStyle({ fill: "blue" }),
+        type: "MASYMOS_SBML_REACTION",
+        style: new ShapeNodeStyle({ fill: "red" }),
         size: new Size(40, 40),
-        metadata: createMetaData("Reaction", ["NAME"], "NAME"),
+        singularName: "Masymos reaction",
+        pluralName: "Masymos reactions",
+        metadata: createMetaData(
+          "MASYMOS_SBML_REACTION",
+          ["NAME"],
+          "NAME",
+          "Masymos Reaction"
+        ),
+        labels: (item) => [item.properties.NAME],
       });
     }
 
@@ -580,7 +612,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       targetNode: this.transcriptType,
       style: wroteEdgeStyle,
       matchClause:
-        "(sourceNode:GeneSymbol)<-[:MAPS]->(:Gene)-[:CODES]->(targetNode:Transcript)",
+        "(sourceNode:GeneSymbol)<-[:MAPS]-(:Gene)-[:CODES]->(targetNode:Transcript)",
       relatedVerb: "coded",
       relatingVerb: "coding",
     });
@@ -724,7 +756,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
         targetNode: this.masymosSpeciesType,
         style: edgeStyle,
         matchClause:
-          "(sourceNode:GeneSymbol)<-[:MAPS]-(relation:Gene)<-[:MASYMOS_RESOURCE_DESCRIBES_GENE]-(:MASYMOS_RESOURCE)<-[:MASYMOS_isEncodedBy]-(:MASYMOS_ANNOTATION)<-[:MASYMOS_HAS_ANNOTATION]-(targetNode:MASYMOS_SBML_SPECIES)",
+          "(sourceNode:GeneSymbol)-[:SYNONYM*0..1]-(gs:GeneSymbol)-[:MAPS]-(:Gene)-[:MAPS*0..1]-(relation:Gene)<-[:MASYMOS_RESOURCE_DESCRIBES_GENE]-(:MASYMOS_RESOURCE)<-[:MASYMOS_isEncodedBy]-(:MASYMOS_ANNOTATION)<-[:MASYMOS_HAS_ANNOTATION]-(targetNode:MASYMOS_SBML_SPECIES)",
         relatedVerb: "related",
         relatingVerb: "related",
       });
@@ -734,17 +766,17 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
         targetNode: this.masymosSpeciesType,
         style: edgeStyle,
         matchClause:
-          "(sourceNode:Protein)<-[:CODES]-(:Transcript)<-[:CODES]-(relation:Gene)<-[:MASYMOS_RESOURCE_DESCRIBES_GENE]-(:MASYMOS_RESOURCE)<-[:MASYMOS_isEncodedBy]-(:MASYMOS_ANNOTATION)<-[:MASYMOS_HAS_ANNOTATION]-(targetNode:MASYMOS_SBML_SPECIES)",
+          "(sourceNode:Protein)<-[:MASYMOS_RESOURCE_DESCRIBES_PROTEIN]-(:MASYMOS_RESOURCE)<-[:MASYMOS_isEncodedBy]-(:MASYMOS_ANNOTATION)<-[:MASYMOS_HAS_ANNOTATION]-(targetNode:MASYMOS_SBML_SPECIES)",
         relatedVerb: "related",
         relatingVerb: "related",
       });
 
       this.transcript_Species = this.addRelationShip({
-        sourceNode: this.proteinType,
+        sourceNode: this.transcriptType,
         targetNode: this.masymosSpeciesType,
         style: edgeStyle,
         matchClause:
-          "(sourceNode:Transcript)<-[:CODES]-(relation:Gene)<-[:MASYMOS_RESOURCE_DESCRIBES_GENE]-(:MASYMOS_RESOURCE)<-[:MASYMOS_isEncodedBy]-(:MASYMOS_ANNOTATION)<-[:MASYMOS_HAS_ANNOTATION]-(targetNode:MASYMOS_SBML_SPECIES)",
+          "(sourceNode:Transcript)<-[:MASYMOS_RESOURCE_DESCRIBES_TRANSCRIPT]-(:MASYMOS_RESOURCE)<-[:MASYMOS_isEncodedBy]-(:MASYMOS_ANNOTATION)<-[:MASYMOS_HAS_ANNOTATION]-(targetNode:MASYMOS_SBML_SPECIES)",
         relatedVerb: "related",
         relatingVerb: "related",
       });
@@ -754,9 +786,56 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
         targetNode: this.masymosModelType,
         style: edgeStyle,
         matchClause:
-          "(sourceNode:PaperID)<-[:MASYMOS_RESOURCE_DESCRIBES_PAPERID]-(:MASYMOS_RESOURCE)<-[:MASYMOS_isDescribedBy]-(:MASYMOS_ANNOTATION)<-[:MASYMOS_HAS_ANNOTATION]-(targetNode:MASYMOS_MODEL)",
-        relatedVerb: "describes",
+          "(sourceNode:Paper)-[:PAPER_HAS_REFERENCECOLLECTION]->(:ReferenceCollection)-[:REFERENCECOLLECTION_HAS_REFERENCE]->(relation:Reference)-[REFERENCE_HAS_PAPERID]->(:PaperID)<-[:MASYMOS_RESOURCE_DESCRIBES_PAPERID]-(:MASYMOS_RESOURCE)<-[:MASYMOS_isDescribedBy]-(:MASYMOS_ANNOTATION)<-[:MASYMOS_HAS_ANNOTATION]-(targetNode:MASYMOS_SBML_MODEL)",
+        relatedVerb: "referenced",
+        relatingVerb: "referencing",
+      });
+
+      this.paperReference_Model = this.addRelationShip({
+        sourceNode: this.paperType,
+        targetNode: this.masymosModelType,
+        style: edgeStyle,
+        matchClause:
+          "(sourceNode:Paper)-[:PAPER_HAS_PAPERID]->(:PaperID)<-[:MASYMOS_RESOURCE_DESCRIBES_PAPERID]-(:MASYMOS_RESOURCE)<-[:MASYMOS_isDescribedBy]-(:MASYMOS_ANNOTATION)<-[:MASYMOS_HAS_ANNOTATION]-(targetNode:MASYMOS_SBML_MODEL)",
+        relatedVerb: "described",
         relatingVerb: "describing",
+      });
+
+      this.model_Reaction = this.addRelationShip({
+        sourceNode: this.masymosModelType,
+        targetNode: this.masymosReactionType,
+        style: edgeStyle,
+        matchClause:
+          "(sourceNode:MASYMOS_SBML_MODEL)-[:MASYMOS_HAS_REACTION]-(targetNode:MASYMOS_SBML_REACTION)",
+        relatedVerb: "related",
+        relatingVerb: "related",
+      });
+      this.model_Compartment = this.addRelationShip({
+        sourceNode: this.masymosModelType,
+        targetNode: this.masymosCompartmentType,
+        style: edgeStyle,
+        matchClause:
+          "(sourceNode:MASYMOS_SBML_MODEL)-[:MASYMOS_HAS_COMPARTMENT]-(targetNode:MASYMOS_SBML_COMPARTMENT)",
+        relatedVerb: "related",
+        relatingVerb: "related",
+      });
+      this.model_Species = this.addRelationShip({
+        sourceNode: this.masymosModelType,
+        targetNode: this.masymosSpeciesType,
+        style: edgeStyle,
+        matchClause:
+          "(sourceNode:MASYMOS_SBML_MODEL)-[:MASYMOS_IS_LOCATED_IN]-(targetNode:MASYMOS_SBML_SPECIES)",
+        relatedVerb: "located in",
+        relatingVerb: "containing",
+      });
+      this.species_Reaction = this.addRelationShip({
+        sourceNode: this.masymosSpeciesType,
+        targetNode: this.masymosReactionType,
+        style: edgeStyle,
+        matchClause:
+          "(sourceNode:MASYMOS_SBML_SPECIES)-[:MASYMOS_HAS_REACTANT]-(targetNode:MASYMOS_SBML_REACTION)",
+        relatedVerb: "owned",
+        relatingVerb: "owning",
       });
     }
 
