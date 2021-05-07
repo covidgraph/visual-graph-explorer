@@ -391,13 +391,13 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
         type: "MASYMOS_SBML_MODEL",
         style: new ShapeNodeStyle({ fill: "cyan" }),
         size: new Size(40, 40),
-        singularName: "Masymos model",
-        pluralName: "Masymos models",
+        singularName: "SBML model",
+        pluralName: "SBML models",
         metadata: createMetaData(
           "MASYMOS_SBML_MODEL",
           ["NAME", "ID", "MASYMOS_DOCUMENT"],
           "NAME",
-          "Masymos Model"
+          "SBML Model"
         ),
         labels: (item) => [item.properties.NAME],
         detailProperties: {
@@ -410,13 +410,13 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
         type: "MASYMOS_SBML_SPECIES",
         style: new ShapeNodeStyle({ fill: "green" }),
         size: new Size(40, 40),
-        singularName: "Masymos species",
-        pluralName: "Masymos species",
+        singularName: "SBML species",
+        pluralName: "SBML species",
         metadata: createMetaData(
           "MASYMOS_SBML_SPECIES",
           ["NAME"],
           "NAME",
-          "Masymos Species"
+          "SBML Species"
         ),
         labels: (item) => [item.properties.NAME],
       });
@@ -425,13 +425,13 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
         type: "MASYMOS_SBML_COMPARTMENT",
         style: new ShapeNodeStyle({ fill: "orange" }),
         size: new Size(40, 40),
-        singularName: "Masymos compartment",
-        pluralName: "Masymos compartments",
+        singularName: "SBML compartment",
+        pluralName: "SBML compartments",
         metadata: createMetaData(
           "MASYMOS_SBML_COMPARTMENT",
           ["NAME"],
           "NAME",
-          "Masymos Compartment"
+          "SBML Compartment"
         ),
         labels: (item) => [item.properties.NAME],
       });
@@ -440,13 +440,13 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
         type: "MASYMOS_SBML_REACTION",
         style: new ShapeNodeStyle({ fill: "red" }),
         size: new Size(40, 40),
-        singularName: "Masymos reaction",
-        pluralName: "Masymos reactions",
+        singularName: "SBML reaction",
+        pluralName: "SBML reactions",
         metadata: createMetaData(
           "MASYMOS_SBML_REACTION",
           ["NAME"],
           "NAME",
-          "Masymos Reaction"
+          "SBML Reaction"
         ),
         labels: (item) => [item.properties.NAME],
       });
