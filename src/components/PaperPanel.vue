@@ -102,13 +102,8 @@
 </template>
 
 <script>
-import { GeneName, isStagingDb } from "../util/dbconnection";
-import {
-  loadAbstractsForPaper,
-  loadAuthorsForPaper,
-  loadBodyTextForPaper,
-  loadGenesForPaper,
-} from "../util/queries";
+import { GeneName } from "../util/dbconnection";
+import { loadAbstractsForPaper, loadBodyTextForPaper } from "../util/queries";
 import PanelItem from "./shared/PanelItem";
 import ItemPanelBase from "./shared/ItemPanelBase";
 import GeneList from "./shared/GeneSymbolList";
@@ -127,11 +122,6 @@ export default {
   props: {
     value: Object,
     properties: Object,
-  },
-  computed: {
-    staging: function () {
-      return isStagingDb();
-    },
   },
   watch: {
     value: {

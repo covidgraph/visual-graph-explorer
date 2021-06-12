@@ -22,13 +22,13 @@ import ProteinNode from "../graph-styles/ProteinNode";
 import AffiliationNode from "../graph-styles/AffiliationNode";
 import EntityNode from "../graph-styles/EntityNode";
 import TissueNode from "../graph-styles/TissueNode";
-import coreQuery, { isStagingDb } from "./dbconnection";
+import coreQuery from "./dbconnection";
 import ClinicalTrialNode from "../graph-styles/ClinicalTrialNode";
 import DiseaseNode from "../graph-styles/DiseaseNode";
 import { getId } from "./Neo4jGraphBuilder";
 import TranscriptNode from "@/graph-styles/TranscriptNode";
 
-const geneSymbolName = isStagingDb() ? "Gene" : "GeneSymbol";
+const geneSymbolName = "Gene";
 
 export async function query(query, args = {}, name = "result") {
   return (await coreQuery(query, args)).records.map((r) => r.get(name));
@@ -378,7 +378,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       ),
     });
 
-    const masymos = isStagingDb();
+    const masymos = true;
 
     if (masymos) {
       this.masymosModelType = this.addNodeType({

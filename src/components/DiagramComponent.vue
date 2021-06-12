@@ -76,11 +76,8 @@ import {
   edgeLabelStyle,
   edgeLabelLayoutParameter,
 } from "../util/CovidGraphLoader";
-import { isStagingDb } from "../util/dbconnection";
 
 License.value = licenseData;
-
-let isStaging = isStagingDb();
 
 enableWorkarounds();
 
@@ -160,7 +157,6 @@ export default {
     actions: [],
     currentItem: null,
     selectedItems: [],
-    isStaging: isStaging,
   }),
   mounted() {
     this.$graphComponent = new GraphComponent(this.$refs.GraphComponentElement);

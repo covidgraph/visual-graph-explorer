@@ -46,7 +46,7 @@
 </template>
 
 <script>
-import { GeneName, isStagingDb } from "../util/dbconnection";
+import { GeneName } from "../util/dbconnection";
 import GeneList from "@/components/shared/GeneSymbolList";
 import ItemPanelBase from "@/components/shared/ItemPanelBase";
 import PanelItem from "@/components/shared/PanelItem";
@@ -58,9 +58,6 @@ export default {
     value: Object,
     properties: Object,
   },
-  data: () => ({
-    isStaging: isStagingDb(),
-  }),
   methods: {
     loadPapers() {
       this.eventBus.$emit(`load-source-Paper-for-${GeneName}`, this.value);

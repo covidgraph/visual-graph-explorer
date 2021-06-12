@@ -6,7 +6,7 @@ export function isStagingDb() {
   );
 }
 
-export const GeneName = isStagingDb() ? "Gene" : "GeneSymbol";
+export const GeneName = "Gene";
 
 const { url, pass, user } = isStagingDb()
   ? {
