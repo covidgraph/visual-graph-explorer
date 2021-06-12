@@ -43,6 +43,7 @@ import PanelItem from "./shared/PanelItem";
 import ItemPanelBase from "./shared/ItemPanelBase";
 import PropertyPanel from "@/components/shared/PropertyPanel";
 import EntityList from "@/components/shared/EntityList";
+import { GeneName } from "@/util/dbconnection";
 export default {
   name: "ProteinPanel",
   components: { PropertyPanel, PanelItem, ItemPanelBase, EntityList },
@@ -53,7 +54,7 @@ export default {
 
   methods: {
     loadGenes() {
-      this.eventBus.$emit("load-source-GeneSymbol-for-Protein", this.value);
+      this.eventBus.$emit(`load-source-${GeneName}-for-Protein`, this.value);
     },
   },
 };

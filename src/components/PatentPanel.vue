@@ -81,7 +81,7 @@
           <b>Mentioned Genes</b>
         </v-expansion-panel-header>
         <v-expansion-panel-content class="grey lighten-5">
-          <gene-symbol-list :geneSymbols="properties.mentionedGeneSymbols" />
+          <gene-list genes="properties.mentionedGeneSymbols" />
         </v-expansion-panel-content>
       </v-expansion-panel>
     </v-expansion-panels>
@@ -92,7 +92,7 @@
 import { loadAbstractsForPatent, loadTitlesForPatent } from "../util/queries";
 import PanelItem from "./shared/PanelItem";
 
-import GeneSymbolList from "./shared/GeneSymbolList";
+import GeneList from "./shared/GeneSymbolList";
 import EntityList from "./shared/EntityList";
 import PropertyPanel from "@/components/shared/PropertyPanel";
 
@@ -102,7 +102,7 @@ export default {
     PropertyPanel,
     EntityList,
     PanelItem,
-    GeneSymbolList,
+    GeneList,
   },
   data: () => ({
     titles: [],

@@ -8,7 +8,7 @@
       <v-list-item-title class="primary--text pl-2">
         <div class="wrapText">
           <h4>
-            {{ value.properties.NAME }}
+            {{ value.properties.NAME || value.properties.ID }}
           </h4>
         </div>
       </v-list-item-title>

@@ -28,6 +28,8 @@ import DiseaseNode from "../graph-styles/DiseaseNode";
 import { getId } from "./Neo4jGraphBuilder";
 import TranscriptNode from "@/graph-styles/TranscriptNode";
 
+const geneSymbolName = isStagingDb() ? "Gene" : "GeneSymbol";
+
 export async function query(query, args = {}, name = "result") {
   return (await coreQuery(query, args)).records.map((r) => r.get(name));
 }
@@ -131,11 +133,11 @@ async function queryGenes(queryString) {
       insertAnds
     )(queryString),
     createQuery(
-      `MATCH (g:GeneSymbol)
+      `MATCH (g:${geneSymbolName})
            WHERE toLower(g.sid) 
             STARTS WITH $query
            RETURN g as result LIMIT ${queryLimit}`,
-      ["sid", "status, GeneSymbol"],
+      ["sid", "status", "GeneSymbol"],
       false
     )(queryString),
   ]).then(([match1, match2]) => {
@@ -260,7 +262,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
     super(new SchemaBasedQueryBuilder(), graphComponent);
 
     this.geneSymbolType = this.addNodeType({
-      type: "GeneSymbol",
+      type: geneSymbolName,
       style: new VuejsNodeStyle(GeneNode),
       size: new Size(150, 150),
       singularName: "gene",
@@ -268,8 +270,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       metadata: {
         name: "Genes",
         detailProperties: {
-          synonyms:
-            "(sourceNode:GeneSymbol)-[:SYNONYM]-(targetNode:GeneSymbol)",
+          synonyms: `(sourceNode:${geneSymbolName})-[:SYNONYM]-(targetNode:${geneSymbolName})`,
         },
         table: {
           headers: [
@@ -288,15 +289,11 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       metadata: {
         name: "Patents",
         detailProperties: {
-          titles:
-            "(sourceNode:Patent)-[:PATENT_HAS_PATENTTITLE]->(targetNode:PatentTitle)",
-          patentInventors:
-            "(sourceNode:Patent)-[:INVENTOR]->(targetNode:Entity)",
-          patentOwners: "(sourceNode:Patent)-[:OWNER]->(targetNode:Entity)",
-          patentApplicants:
-            "(sourceNode:Patent)-[:APPLICANT]->(targetNode:Entity)",
-          mentionedGeneSymbols:
-            "(sourceNode:Patent)-[:PATENT_HAS_PATENTABSTRACT|PATENT_HAS_PATENTTITLE|PATENT_HAS_PATENTDESCRIPTION|PATENT_HAS_PATENTCLAIM]->()-[:HAS_FRAGMENT]->(:Fragment)-[:MENTIONS]->(targetNode:GeneSymbol)",
+          titles: `(sourceNode:Patent)-[:PATENT_HAS_PATENTTITLE]->(targetNode:PatentTitle)`,
+          patentInventors: `(sourceNode:Patent)-[:INVENTOR]->(targetNode:Entity)`,
+          patentOwners: `(sourceNode:Patent)-[:OWNER]->(targetNode:Entity)`,
+          patentApplicants: `(sourceNode:Patent)-[:APPLICANT]->(targetNode:Entity)`,
+          mentionedGeneSymbols: `(sourceNode:Patent)-[:PATENT_HAS_PATENTABSTRACT|PATENT_HAS_PATENTTITLE|PATENT_HAS_PATENTDESCRIPTION|PATENT_HAS_PATENTCLAIM]->()-[:HAS_FRAGMENT]->(:Fragment)-[:MENTIONS]->(targetNode:${geneSymbolName})`,
         },
         table: {
           headers: [
@@ -315,10 +312,8 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       metadata: {
         name: "Publications",
         detailProperties: {
-          authors:
-            "(sourceNode:Paper)-[:PAPER_HAS_AUTHORCOLLECTION]->(:AuthorCollection)-[:AUTHORCOLLECTION_HAS_AUTHOR]->(targetNode:Author)",
-          genes:
-            "(sourceNode:Paper)-[:PAPER_HAS_BODYTEXTCOLLECTION|PAPER_HAS_ABSTRACTCOLLECTION]->()-[:BODYTEXTCOLLECTION_HAS_BODYTEXT|ABSTRACTCOLLECTION_HAS_ABSTRACT]->()-[:HAS_FRAGMENT]->(relation:Fragment)-[:MENTIONS]->(targetNode:GeneSymbol)",
+          authors: `(sourceNode:Paper)-[:PAPER_HAS_AUTHORCOLLECTION]->(:AuthorCollection)-[:AUTHORCOLLECTION_HAS_AUTHOR]->(targetNode:Author)`,
+          genes: `(sourceNode:Paper)-[:PAPER_HAS_BODYTEXTCOLLECTION|PAPER_HAS_ABSTRACTCOLLECTION]->()-[:BODYTEXTCOLLECTION_HAS_BODYTEXT|ABSTRACTCOLLECTION_HAS_ABSTRACT]->()-[:HAS_FRAGMENT]->(relation:Fragment)-[:MENTIONS]->(targetNode:${geneSymbolName})`,
         },
         table: {
           headers: [
@@ -347,8 +342,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       metadata: {
         ...createMetaData("Protein", ["sid", "name", "category"], "name"),
         detailProperties: {
-          otherIdentifiers:
-            "(sourceNode:Protein)-[:MAPS]->(targetNode:Protein)",
+          otherIdentifiers: `(sourceNode:Protein)-[:MAPS]->(targetNode:Protein)`,
         },
       },
     });
@@ -401,8 +395,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
         ),
         labels: (item) => [item.properties.NAME],
         detailProperties: {
-          owningDocuments:
-            "(sourceNode:MASYMOS_SBML_MODEL)<-[:MASYMOS_HAS_MODEL]-(targetNode:MASYMOS_DOCUMENT)",
+          owningDocuments: `(sourceNode:MASYMOS_SBML_MODEL)<-[:MASYMOS_HAS_MODEL]-(targetNode:MASYMOS_DOCUMENT)`,
         },
       });
 
@@ -429,11 +422,11 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
         pluralName: "SBML compartments",
         metadata: createMetaData(
           "MASYMOS_SBML_COMPARTMENT",
-          ["NAME"],
+          ["NAME", "ID"],
           "NAME",
           "SBML Compartment"
         ),
-        labels: (item) => [item.properties.NAME],
+        labels: (item) => [item.properties.NAME || item.properties.ID],
       });
 
       this.masymosReactionType = this.addNodeType({
@@ -471,8 +464,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
           )
         ),
         detailProperties: {
-          filedPatents:
-            "(sourceNode:Entity)<-[:INVENTOR|OWNER]-(targetNode:Patent)",
+          filedPatents: `(sourceNode:Entity)<-[:INVENTOR|OWNER]-(targetNode:Patent)`,
         },
       },
     });
@@ -512,7 +504,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       metadata: createMetaData(
         "ClinicalTrial",
         ["NCTId"],
-        "name",
+        "NCTId",
         "Clinical Trials"
       ),
     });
@@ -575,16 +567,14 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       sourceNode: this.paperType,
       targetNode: this.authorType,
       style: wroteEdgeStyle,
-      matchClause:
-        "(sourceNode:Paper)-[:PAPER_HAS_AUTHORCOLLECTION]->(:AuthorCollection)-[:AUTHORCOLLECTION_HAS_AUTHOR]->(targetNode:Author)",
+      matchClause: `(sourceNode:Paper)-[:PAPER_HAS_AUTHORCOLLECTION]->(:AuthorCollection)-[:AUTHORCOLLECTION_HAS_AUTHOR]->(targetNode:Author)`,
     });
 
     this.trial_paper = this.addRelationShip({
       sourceNode: this.clinicalTrialType,
       targetNode: this.paperType,
       style: wroteEdgeStyle,
-      matchClause:
-        "(sourceNode:ClinicalTrial)-[:REFERS_TO]->(c:Citation)-[:HAS_PUBLICATION_ID]->(:PaperID)<-[:PAPER_HAS_PAPERID]-(targetNode:Paper)",
+      matchClause: `(sourceNode:ClinicalTrial)-[:REFERS_TO]->(c:Citation)-[:HAS_PUBLICATION_ID]->(:PaperID)<-[:PAPER_HAS_PAPERID]-(targetNode:Paper)`,
       relatedVerb: "cited in",
       relatingVerb: "citing",
     });
@@ -592,8 +582,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       sourceNode: this.diseaseType,
       targetNode: this.anatomyType,
       style: wroteEdgeStyle,
-      matchClause:
-        "(sourceNode:Disease)-[relation:LOCALIZES_DlA]->(targetNode:Anatomy)",
+      matchClause: `(sourceNode:Disease)-[relation:LOCALIZES_DlA]->(targetNode:Anatomy)`,
       relatedVerb: "localized",
       relatingVerb: "hosting",
       tooltipFunction: (relation) => "" + relation.properties.expected,
@@ -602,8 +591,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       sourceNode: this.diseaseType,
       targetNode: this.geneSymbolType,
       style: wroteEdgeStyle,
-      matchClause:
-        "(sourceNode:Disease)-[:ASSOCIATES_DaG]->(:Gene)-[:MAPS]->(targetNode:GeneSymbol)",
+      matchClause: `(sourceNode:Disease)-[:ASSOCIATES_DaG]->(:Gene)-[:MAPS]->(targetNode:${geneSymbolName})`,
       relatedVerb: "associated",
       relatingVerb: "associated",
     });
@@ -611,8 +599,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       sourceNode: this.geneSymbolType,
       targetNode: this.transcriptType,
       style: wroteEdgeStyle,
-      matchClause:
-        "(sourceNode:GeneSymbol)<-[:MAPS]-(:Gene)-[:CODES]->(targetNode:Transcript)",
+      matchClause: `(sourceNode:${geneSymbolName})<-[:MAPS]-(:Gene)-[:CODES]->(targetNode:Transcript)`,
       relatedVerb: "coded",
       relatingVerb: "coding",
     });
@@ -620,7 +607,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       sourceNode: this.transcriptType,
       targetNode: this.proteinType,
       style: wroteEdgeStyle,
-      matchClause: "(sourceNode:Transcript)-[:CODES]->(targetNode:Protein)",
+      matchClause: `(sourceNode:Transcript)-[:CODES]->(targetNode:Protein)`,
       relatedVerb: "coded",
       relatingVerb: "coding",
     });
@@ -629,8 +616,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       sourceNode: this.clinicalTrialType,
       targetNode: this.facilityType,
       style: wroteEdgeStyle,
-      matchClause:
-        "(sourceNode:ClinicalTrial)-[:CONDUCTED_AT]->(targetNode:Facility)",
+      matchClause: `(sourceNode:ClinicalTrial)-[:CONDUCTED_AT]->(targetNode:Facility)`,
       relatedVerb: "conducting",
       relatingVerb: "conducted",
     });
@@ -639,8 +625,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       sourceNode: this.clinicalTrialType,
       targetNode: this.exclusionCriteriaType,
       style: new PolylineEdgeStyle({ stroke: "2px red", smoothingLength: 500 }),
-      matchClause:
-        "(sourceNode:ClinicalTrial)-[:HAS_EXCLUSION_CRITERIA]->(targetNode:ExclusionCriteria)",
+      matchClause: `(sourceNode:ClinicalTrial)-[:HAS_EXCLUSION_CRITERIA]->(targetNode:ExclusionCriteria)`,
       relatedVerb: "applied",
       relatingVerb: "applying",
     });
@@ -649,8 +634,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       sourceNode: this.clinicalTrialType,
       targetNode: this.inclusionCriteriaType,
       style: new PolylineEdgeStyle({ stroke: "2px green" }),
-      matchClause:
-        "(sourceNode:ClinicalTrial)-[:HAS_INCLUSION_CRITERIA]->(targetNode:InclusionCriteria)",
+      matchClause: `(sourceNode:ClinicalTrial)-[:HAS_INCLUSION_CRITERIA]->(targetNode:InclusionCriteria)`,
       relatedVerb: "applied",
       relatingVerb: "applying",
     });
@@ -659,8 +643,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       sourceNode: this.paperType,
       targetNode: this.affiliationType,
       style: wroteEdgeStyle,
-      matchClause:
-        "(sourceNode:Paper)-[:PAPER_HAS_AUTHORCOLLECTION]->(:AuthorCollection)-[:AUTHORCOLLECTION_HAS_AUTHOR]->(:Author)-[:AUTHOR_HAS_AFFILIATION]->(targetNode:Affiliation)",
+      matchClause: `(sourceNode:Paper)-[:PAPER_HAS_AUTHORCOLLECTION]->(:AuthorCollection)-[:AUTHORCOLLECTION_HAS_AUTHOR]->(:Author)-[:AUTHOR_HAS_AFFILIATION]->(targetNode:Affiliation)`,
       relatedVerb: "authoring",
       relatingVerb: "submitted",
     });
@@ -669,8 +652,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       sourceNode: this.paperType,
       targetNode: this.geneSymbolType,
       style: edgeStyle,
-      matchClause:
-        "(sourceNode:Paper)-[:PAPER_HAS_BODYTEXTCOLLECTION|PAPER_HAS_ABSTRACTCOLLECTION]->()-[:BODYTEXTCOLLECTION_HAS_BODYTEXT|ABSTRACTCOLLECTION_HAS_ABSTRACT]->()-[:HAS_FRAGMENT]->(relation:Fragment)-[:MENTIONS]->(targetNode:GeneSymbol)",
+      matchClause: `(sourceNode:Paper)-[:PAPER_HAS_BODYTEXTCOLLECTION|PAPER_HAS_ABSTRACTCOLLECTION]->()-[:BODYTEXTCOLLECTION_HAS_BODYTEXT|ABSTRACTCOLLECTION_HAS_ABSTRACT]->()-[:HAS_FRAGMENT]->(relation:Fragment)-[:MENTIONS]->(targetNode:${geneSymbolName})`,
       relatedVerb: "mentioned",
       relatingVerb: "mentioning",
       tooltipFunction: (item) => item.properties.text,
@@ -680,8 +662,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       sourceNode: this.patentType,
       targetNode: this.geneSymbolType,
       style: edgeStyle,
-      matchClause:
-        "(sourceNode:Patent)-[:PATENT_HAS_PATENTABSTRACT|PATENT_HAS_PATENTTITLE|PATENT_HAS_PATENTDESCRIPTION|PATENT_HAS_PATENTCLAIM]->()-[:HAS_FRAGMENT]->(relation:Fragment)-[:MENTIONS]->(targetNode:GeneSymbol)",
+      matchClause: `(sourceNode:Patent)-[:PATENT_HAS_PATENTABSTRACT|PATENT_HAS_PATENTTITLE|PATENT_HAS_PATENTDESCRIPTION|PATENT_HAS_PATENTCLAIM]->()-[:HAS_FRAGMENT]->(relation:Fragment)-[:MENTIONS]->(targetNode:${geneSymbolName})`,
       relatedVerb: "mentioned",
       relatingVerb: "mentioning",
       tooltipFunction: (item) => item.properties.text,
@@ -691,8 +672,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       sourceNode: this.paperType,
       targetNode: this.paperType,
       style: edgeStyle,
-      matchClause:
-        "(sourceNode:Paper)-[:PAPER_HAS_REFERENCECOLLECTION]->(:ReferenceCollection)-[:REFERENCECOLLECTION_HAS_REFERENCE]->(:Reference)-[:REFERENCE_HAS_PAPERID]->(:PaperID)<-[:PAPER_HAS_PAPERID]-(targetNode:Paper)",
+      matchClause: `(sourceNode:Paper)-[:PAPER_HAS_REFERENCECOLLECTION]->(:ReferenceCollection)-[:REFERENCECOLLECTION_HAS_REFERENCE]->(:Reference)-[:REFERENCE_HAS_PAPERID]->(:PaperID)<-[:PAPER_HAS_PAPERID]-(targetNode:Paper)`,
       relatedVerb: "referenced",
       relatingVerb: "referencing",
     });
@@ -701,8 +681,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       sourceNode: this.proteinType,
       targetNode: this.geneSymbolType,
       style: edgeStyle,
-      matchClause:
-        "(targetNode:GeneSymbol)<-[:MAPS]-(:Gene)-[:CODES]->(:Transcript)-[:CODES]->(sourceNode:Protein)",
+      matchClause: `(targetNode:${geneSymbolName})<-[:MAPS]-(:Gene)-[:CODES]->(:Transcript)-[:CODES]->(sourceNode:Protein)`,
       relatedVerb: "encoding",
       relatingVerb: "encoded",
     });
@@ -712,8 +691,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       targetNode: this.entityType,
       style: edgeStyle,
       labels: (relation) => relation.type,
-      matchClause:
-        "(sourceNode:Patent)-[relation:INVENTOR|OWNER]->(targetNode:Entity)",
+      matchClause: `(sourceNode:Patent)-[relation:INVENTOR|OWNER]->(targetNode:Entity)`,
       relatedVerb: "owning",
       relatingVerb: "owned",
     });
@@ -723,8 +701,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       targetNode: this.entityType,
       style: edgeStyle,
       labels: (relation) => relation.type,
-      matchClause:
-        "(sourceNode:Patent)-[relation:APPLICANT]->(targetNode:Entity)",
+      matchClause: `(sourceNode:Patent)-[relation:APPLICANT]->(targetNode:Entity)`,
       relatedVerb: "applying",
       relatingVerb: "applied for",
     });
@@ -733,8 +710,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       sourceNode: this.geneSymbolType,
       targetNode: this.gTexDetailedTissueType,
       style: edgeStyle,
-      matchClause:
-        "(sourceNode:GeneSymbol)-[:SYNONYM*0..1]-(gs:GeneSymbol)-[:MAPS]-(:Gene)-[:MAPS*0..1]-(:Gene)-[relation:EXPRESSED]->(targetNode:GtexDetailedTissue) WHERE toFloat(relation.val) > 0.3 WITH sourceNode, relation, targetNode",
+      matchClause: `(sourceNode:${geneSymbolName})-[:SYNONYM*0..1]-(gs:${geneSymbolName})-[:MAPS]-(:Gene)-[:MAPS*0..1]-(:Gene)-[relation:EXPRESSED]->(targetNode:GtexDetailedTissue) WHERE toFloat(relation.val) > 0.3 WITH sourceNode, relation, targetNode`,
       relatedVerb: "expressed",
       relatingVerb: "expressing",
       tooltipFunction: (relation) => relation.properties.val,
@@ -744,8 +720,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       sourceNode: this.geneSymbolType,
       targetNode: this.pathwayType,
       style: edgeStyle,
-      matchClause:
-        "(sourceNode:GeneSymbol)<-[:MAPS]-(:Gene)-[:MEMBER]->(targetNode:Pathway)",
+      matchClause: `(sourceNode:${geneSymbolName})<-[:MAPS]-(:Gene)-[:MEMBER]->(targetNode:Pathway)`,
       relatedVerb: "related",
       relatingVerb: "related",
     });
@@ -755,8 +730,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
         sourceNode: this.geneSymbolType,
         targetNode: this.masymosSpeciesType,
         style: edgeStyle,
-        matchClause:
-          "(sourceNode:GeneSymbol)-[:SYNONYM*0..1]-(gs:GeneSymbol)-[:MAPS]-(:Gene)-[:MAPS*0..1]-(relation:Gene)<-[:MASYMOS_RESOURCE_DESCRIBES_GENE]-(:MASYMOS_RESOURCE)<-[:MASYMOS_isEncodedBy]-(:MASYMOS_ANNOTATION)<-[:MASYMOS_HAS_ANNOTATION]-(targetNode:MASYMOS_SBML_SPECIES)",
+        matchClause: `(sourceNode:${geneSymbolName})-[:SYNONYM*0..1]-(gs:${geneSymbolName})-[:MAPS]-(:Gene)-[:MAPS*0..1]-(relation:Gene)<-[:MASYMOS_RESOURCE_DESCRIBES_GENE]-(:MASYMOS_RESOURCE)<-[:MASYMOS_isEncodedBy]-(:MASYMOS_ANNOTATION)<-[:MASYMOS_HAS_ANNOTATION]-(targetNode:MASYMOS_SBML_SPECIES)`,
         relatedVerb: "related",
         relatingVerb: "related",
       });
@@ -765,8 +739,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
         sourceNode: this.proteinType,
         targetNode: this.masymosSpeciesType,
         style: edgeStyle,
-        matchClause:
-          "(sourceNode:Protein)<-[:MASYMOS_RESOURCE_DESCRIBES_PROTEIN]-(:MASYMOS_RESOURCE)<-[:MASYMOS_isEncodedBy]-(:MASYMOS_ANNOTATION)<-[:MASYMOS_HAS_ANNOTATION]-(targetNode:MASYMOS_SBML_SPECIES)",
+        matchClause: `(sourceNode:Protein)<-[:MASYMOS_RESOURCE_DESCRIBES_PROTEIN]-(:MASYMOS_RESOURCE)<-[:MASYMOS_isEncodedBy]-(:MASYMOS_ANNOTATION)<-[:MASYMOS_HAS_ANNOTATION]-(targetNode:MASYMOS_SBML_SPECIES)`,
         relatedVerb: "related",
         relatingVerb: "related",
       });
@@ -775,8 +748,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
         sourceNode: this.transcriptType,
         targetNode: this.masymosSpeciesType,
         style: edgeStyle,
-        matchClause:
-          "(sourceNode:Transcript)<-[:MASYMOS_RESOURCE_DESCRIBES_TRANSCRIPT]-(:MASYMOS_RESOURCE)<-[:MASYMOS_isEncodedBy]-(:MASYMOS_ANNOTATION)<-[:MASYMOS_HAS_ANNOTATION]-(targetNode:MASYMOS_SBML_SPECIES)",
+        matchClause: `(sourceNode:Transcript)<-[:MASYMOS_RESOURCE_DESCRIBES_TRANSCRIPT]-(:MASYMOS_RESOURCE)<-[:MASYMOS_isEncodedBy]-(:MASYMOS_ANNOTATION)<-[:MASYMOS_HAS_ANNOTATION]-(targetNode:MASYMOS_SBML_SPECIES)`,
         relatedVerb: "related",
         relatingVerb: "related",
       });
@@ -785,8 +757,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
         sourceNode: this.paperType,
         targetNode: this.masymosModelType,
         style: edgeStyle,
-        matchClause:
-          "(sourceNode:Paper)-[:PAPER_HAS_REFERENCECOLLECTION]->(:ReferenceCollection)-[:REFERENCECOLLECTION_HAS_REFERENCE]->(relation:Reference)-[REFERENCE_HAS_PAPERID]->(:PaperID)<-[:MASYMOS_RESOURCE_DESCRIBES_PAPERID]-(:MASYMOS_RESOURCE)<-[:MASYMOS_isDescribedBy]-(:MASYMOS_ANNOTATION)<-[:MASYMOS_HAS_ANNOTATION]-(targetNode:MASYMOS_SBML_MODEL)",
+        matchClause: `(sourceNode:Paper)-[:PAPER_HAS_REFERENCECOLLECTION]->(:ReferenceCollection)-[:REFERENCECOLLECTION_HAS_REFERENCE]->(relation:Reference)-[REFERENCE_HAS_PAPERID]->(:PaperID)<-[:MASYMOS_RESOURCE_DESCRIBES_PAPERID]-(:MASYMOS_RESOURCE)<-[:MASYMOS_isDescribedBy]-(:MASYMOS_ANNOTATION)<-[:MASYMOS_HAS_ANNOTATION]-(targetNode:MASYMOS_SBML_MODEL)`,
         relatedVerb: "referenced",
         relatingVerb: "referencing",
       });
@@ -795,8 +766,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
         sourceNode: this.paperType,
         targetNode: this.masymosModelType,
         style: edgeStyle,
-        matchClause:
-          "(sourceNode:Paper)-[:PAPER_HAS_PAPERID]->(:PaperID)<-[:MASYMOS_RESOURCE_DESCRIBES_PAPERID]-(:MASYMOS_RESOURCE)<-[:MASYMOS_isDescribedBy]-(:MASYMOS_ANNOTATION)<-[:MASYMOS_HAS_ANNOTATION]-(targetNode:MASYMOS_SBML_MODEL)",
+        matchClause: `(sourceNode:Paper)-[:PAPER_HAS_PAPERID]->(:PaperID)<-[:MASYMOS_RESOURCE_DESCRIBES_PAPERID]-(:MASYMOS_RESOURCE)<-[:MASYMOS_isDescribedBy]-(:MASYMOS_ANNOTATION)<-[:MASYMOS_HAS_ANNOTATION]-(targetNode:MASYMOS_SBML_MODEL)`,
         relatedVerb: "described",
         relatingVerb: "describing",
       });
@@ -805,8 +775,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
         sourceNode: this.masymosModelType,
         targetNode: this.masymosReactionType,
         style: edgeStyle,
-        matchClause:
-          "(sourceNode:MASYMOS_SBML_MODEL)-[:MASYMOS_HAS_REACTION]-(targetNode:MASYMOS_SBML_REACTION)",
+        matchClause: `(sourceNode:MASYMOS_SBML_MODEL)-[:MASYMOS_HAS_REACTION]-(targetNode:MASYMOS_SBML_REACTION)`,
         relatedVerb: "related",
         relatingVerb: "related",
       });
@@ -814,8 +783,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
         sourceNode: this.masymosModelType,
         targetNode: this.masymosCompartmentType,
         style: edgeStyle,
-        matchClause:
-          "(sourceNode:MASYMOS_SBML_MODEL)-[:MASYMOS_HAS_COMPARTMENT]-(targetNode:MASYMOS_SBML_COMPARTMENT)",
+        matchClause: `(sourceNode:MASYMOS_SBML_MODEL)-[:MASYMOS_HAS_COMPARTMENT]-(targetNode:MASYMOS_SBML_COMPARTMENT)`,
         relatedVerb: "related",
         relatingVerb: "related",
       });
@@ -823,8 +791,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
         sourceNode: this.masymosModelType,
         targetNode: this.masymosSpeciesType,
         style: edgeStyle,
-        matchClause:
-          "(sourceNode:MASYMOS_SBML_MODEL)-[:MASYMOS_IS_LOCATED_IN]-(targetNode:MASYMOS_SBML_SPECIES)",
+        matchClause: `(sourceNode:MASYMOS_SBML_MODEL)-[:MASYMOS_IS_LOCATED_IN]-(targetNode:MASYMOS_SBML_SPECIES)`,
         relatedVerb: "located in",
         relatingVerb: "containing",
       });
@@ -832,8 +799,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
         sourceNode: this.masymosSpeciesType,
         targetNode: this.masymosReactionType,
         style: edgeStyle,
-        matchClause:
-          "(sourceNode:MASYMOS_SBML_SPECIES)-[:MASYMOS_HAS_REACTANT]-(targetNode:MASYMOS_SBML_REACTION)",
+        matchClause: `(sourceNode:MASYMOS_SBML_SPECIES)-[:MASYMOS_HAS_REACTANT]-(targetNode:MASYMOS_SBML_REACTION)`,
         relatedVerb: "owned",
         relatingVerb: "owning",
       });
@@ -871,7 +837,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       targetNode: this.pathwayType,
       style: edgeStyle,
       labels: () => ["Child"],
-      matchClause: "(sourceNode:Pathway)-[:CHILD]->(targetNode:Pathway)",
+      matchClause: `(sourceNode:Pathway)-[:CHILD]->(targetNode:Pathway)`,
       relatedVerb: "child",
       relatingVerb: "parent",
     });
@@ -880,8 +846,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       sourceNode: this.patentType,
       targetNode: this.patentType,
       style: edgeStyle,
-      matchClause:
-        "(sourceNode:Patent)-[:PATENT_HAS_PATENTCITATIONCOLLECTION]->(:PatentCitationCollection)-[:PATENTCITATIONCOLLECTION_HAS_PATENTLITERATURECITATION]->(:PatentLiteratureCitation)-[:PATENTLITERATURECITATION_HAS_PATENTNUMBER]->(:PatentNumber)<-[:PATENT_HAS_PATENTNUMBER]-(targetNode:Patent)",
+      matchClause: `(sourceNode:Patent)-[:PATENT_HAS_PATENTCITATIONCOLLECTION]->(:PatentCitationCollection)-[:PATENTCITATIONCOLLECTION_HAS_PATENTLITERATURECITATION]->(:PatentLiteratureCitation)-[:PATENTLITERATURECITATION_HAS_PATENTNUMBER]->(:PatentNumber)<-[:PATENT_HAS_PATENTNUMBER]-(targetNode:Patent)`,
       relatedVerb: "referenced",
       relatingVerb: "referencing",
     });
@@ -890,7 +855,7 @@ export class CovidGraphLoader extends IncrementalGraphLoader {
       sourceNode: this.diseaseType,
       targetNode: this.diseaseType,
       style: wroteEdgeStyle,
-      matchClause: "(sourceNode:Disease)-[:IS_A]->(targetNode:Disease)",
+      matchClause: `(sourceNode:Disease)-[:IS_A]->(targetNode:Disease)`,
       relatedVerb: "parent",
       relatingVerb: "child",
     });

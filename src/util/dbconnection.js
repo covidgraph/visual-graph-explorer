@@ -6,6 +6,8 @@ export function isStagingDb() {
   );
 }
 
+export const GeneName = isStagingDb() ? "Gene" : "GeneSymbol";
+
 const { url, pass, user } = isStagingDb()
   ? {
       url: "bolt://db-dev.covidgraph.org:7687",

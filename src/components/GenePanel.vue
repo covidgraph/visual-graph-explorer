@@ -38,25 +38,22 @@
     </template>
     <panel-item item-title="Synonyms" :items="properties.synonyms">
       <template slot="content">
-        <gene-symbol-list
-          :gene-symbols="properties.synonyms"
-          itemTitle="Synonyms"
-        >
-        </gene-symbol-list>
+        <gene-list :genes="properties.synonyms" itemTitle="Synonyms">
+        </gene-list>
       </template>
     </panel-item>
   </item-panel-base>
 </template>
 
 <script>
-import { isStagingDb } from "../util/dbconnection";
-import GeneSymbolList from "@/components/shared/GeneSymbolList";
+import { GeneName, isStagingDb } from "../util/dbconnection";
+import GeneList from "@/components/shared/GeneSymbolList";
 import ItemPanelBase from "@/components/shared/ItemPanelBase";
 import PanelItem from "@/components/shared/PanelItem";
 
 export default {
   name: "GenePanel",
-  components: { PanelItem, ItemPanelBase, GeneSymbolList },
+  components: { PanelItem, ItemPanelBase, GeneList },
   props: {
     value: Object,
     properties: Object,
@@ -66,13 +63,13 @@ export default {
   }),
   methods: {
     loadPapers() {
-      this.eventBus.$emit("load-source-Paper-for-GeneSymbol", this.value);
+      this.eventBus.$emit(`load-source-Paper-for-${GeneName}`, this.value);
     },
     loadPatents() {
-      this.eventBus.$emit("load-source-Patent-for-GeneSymbol", this.value);
+      this.eventBus.$emit(`load-source-Patent-for-${GeneName}`, this.value);
     },
     loadDiseases() {
-      this.eventBus.$emit("load-source-Disease-for-GeneSymbol", this.value);
+      this.eventBus.$emit(`load-source-Disease-for-${GeneName}`, this.value);
     },
   },
 };

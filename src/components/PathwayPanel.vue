@@ -76,6 +76,7 @@
 <script>
 import PanelItem from "./shared/PanelItem";
 import { loadChildPathways } from "../util/queries";
+import { GeneName } from "@/util/dbconnection";
 export default {
   name: "PathwayPanel",
   components: { PanelItem },
@@ -90,7 +91,7 @@ export default {
       this.eventBus.$emit("load-Pathway", child.identity);
     },
     loadGenes() {
-      this.eventBus.$emit("load-source-GeneSymbol-for-Pathway", this.value);
+      this.eventBus.$emit(`load-source-${GeneName}-for-Pathway`, this.value);
     },
   },
   watch: {

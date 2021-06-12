@@ -62,6 +62,7 @@
 
 <script>
 import PanelItem from "./shared/PanelItem";
+import { GeneName } from "@/util/dbconnection";
 
 export default {
   components: {
@@ -77,7 +78,7 @@ export default {
 
   methods: {
     loadGenes() {
-      this.eventBus.$emit("load-target-GeneSymbol-for-Disease", this.value);
+      this.eventBus.$emit(`load-target-${GeneName}-for-Disease`, this.value);
     },
   },
 };

@@ -21,6 +21,10 @@ ctx.keys().forEach((k) => {
   if (key) {
     components[key] = ctx(k).default;
   }
+  // we have genes and (had) genesymbols, but it's the same so use the same panel.
+  if (key === "GenePanel") {
+    components["GeneSymbolPanel"] = components[key];
+  }
 });
 
 export default {

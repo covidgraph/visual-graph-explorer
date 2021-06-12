@@ -2,27 +2,28 @@
   <v-chip-group>
     <v-chip
       label
-      v-for="geneSymbol in geneSymbols"
-      :key="getId(geneSymbol)"
+      v-for="gene in genes"
+      :key="getId(gene)"
       close
       close-icon="mdi-download"
-      @click:close="loadGeneSymbol(geneSymbol.identity)"
+      @click:close="loadGene(gene.identity)"
     >
       <v-avatar left>
         <v-icon color="#BCD104">mdi-dna</v-icon>
       </v-avatar>
-      {{ geneSymbol.properties.sid }}
+      {{ gene.properties.sid }}
     </v-chip>
   </v-chip-group>
 </template>
 
 <script>
 import { getId } from "../../util/Neo4jGraphBuilder";
+import { GeneName } from "@/util/dbconnection";
 
 export default {
-  name: "GeneSymbolList",
+  name: "GeneList",
   props: {
-    geneSymbols: {
+    genes: {
       required: true,
       type: Array,
     },
@@ -31,8 +32,8 @@ export default {
     getId(item) {
       return getId(item.identity);
     },
-    loadGeneSymbol(id) {
-      this.eventBus.$emit("load-GeneSymbol", id);
+    loadGene(id) {
+      this.eventBus.$emit(`load-${GeneName}`, id);
     },
   },
 };

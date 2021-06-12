@@ -64,7 +64,7 @@
       />
       <PanelItem itemTitle="Mentioned Genes" :items="properties.genes">
         <template #content>
-          <gene-symbol-list :geneSymbols="properties.genes" />
+          <gene-list genes="properties.genes" />
         </template>
       </PanelItem>
       <PanelItem
@@ -102,7 +102,7 @@
 </template>
 
 <script>
-import { isStagingDb } from "../util/dbconnection";
+import { GeneName, isStagingDb } from "../util/dbconnection";
 import {
   loadAbstractsForPaper,
   loadAuthorsForPaper,
@@ -111,12 +111,12 @@ import {
 } from "../util/queries";
 import PanelItem from "./shared/PanelItem";
 import ItemPanelBase from "./shared/ItemPanelBase";
-import GeneSymbolList from "./shared/GeneSymbolList";
+import GeneList from "./shared/GeneSymbolList";
 
 export default {
   name: "PaperPanel",
   components: {
-    GeneSymbolList,
+    GeneList,
     PanelItem,
     ItemPanelBase,
   },
@@ -168,7 +168,7 @@ export default {
       this.eventBus.$emit("load-Author", authorId);
     },
     loadGeneSymbol(id) {
-      this.eventBus.$emit("load-GeneSymbol", id);
+      this.eventBus.$emit(`load-${GeneName}`, id);
     },
     loadReferencedPapers() {
       this.eventBus.$emit("load-target-Paper-for-Paper", this.value);
@@ -186,7 +186,7 @@ export default {
       this.eventBus.$emit("load-target-Author-for-Paper", this.value);
     },
     loadGenes() {
-      this.eventBus.$emit("load-target-GeneSymbol-for-Paper", this.value);
+      this.eventBus.$emit(`load-target-${GeneName}-for-Paper`, this.value);
     },
   },
 };
