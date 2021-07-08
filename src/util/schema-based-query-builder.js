@@ -1061,6 +1061,8 @@ export class IncrementalGraphLoader {
       layoutData: new OrganicLayoutData({
         sourceGroupIds: (item) => "s" + item.tag.schemaType,
         targetGroupIds: (item) => "t" + item.tag.schemaType,
+        nodeTypes: (item) =>
+          item.tag && item.tag.labels ? item.tag.labels.join(":") : null,
       }),
     });
   }
