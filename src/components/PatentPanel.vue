@@ -81,7 +81,7 @@
           <b>Mentioned Genes</b>
         </v-expansion-panel-header>
         <v-expansion-panel-content class="grey lighten-5">
-          <gene-list genes="properties.mentionedGeneSymbols" />
+          <gene-list :genes="properties.mentionedGeneSymbols" />
         </v-expansion-panel-content>
       </v-expansion-panel>
     </v-expansion-panels>
