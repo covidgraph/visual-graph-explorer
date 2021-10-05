@@ -22,7 +22,7 @@ to develop this application. You can download a free test version of yFiles in t
 [yWorks Customer Center](https://my.yworks.com/signup?product=YFILES_HTML_EVAL). See [this introductory video on YouTube](https://www.youtube.com/watch?v=yzRAB-oP_uw) that will guide you through these steps.
 
 Checkout this project, then extract the yFiles for HTML package zip to some directory and run the initial steps in that
-package for playing with the demos (execute the `start_demos` script or install the `package.json` in the `demos-ts` or `demos-js` directory). This will automatically create an `npm` package file (`yfiles-24.0.0-eval-dev.tgz` and `yfiles-24.0.0-eval.tgz`) (using `npm pack` in the `lib\es-modules` directory), but of course this last step can also be done, manually.
+package for playing with the demos (execute the `start_demos` script or install the `package.json` in the `demos-ts` or `demos-js` directory). This will automatically create an `npm` package file (`yfiles-24.0.3-eval-dev.tgz` and `yfiles-24.0.3-eval.tgz`) (using `npm pack` in the `lib\es-modules` directory), but of course this last step can also be done, manually.
 
 That `tar.gz` file needs to be placed top-level in the directory of this checkout next to this file so that it can be installed via `npm i` or `yarn` into this project (it is referenced in the [`package.json`, here](https://github.com/covidgraph/visual-graph-explorer/blob/de26bcd14ec547b7caa43b308954a7dea900c9b2/package.json#L40)).
 Before you compile and run the project, also copy the `license.json` file from the yFiles package (find it it `lib\license.json` as `yfiles-license.json` and also drop it into this directory.
@@ -32,7 +32,7 @@ This is what your directory contents should look like:
 ```
 documents
  |-- visual-graph-explorer
-     +-- yfiles-24.0.0-eval-dev.tgz
+     +-- yfiles-24.0.3-eval-dev.tgz
      +-- yfiles-license.json
      +-- README.md
      +-- ...
