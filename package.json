@@ -36,7 +36,7 @@
     "roboto-fontface": "*",
     "vue": "^2.6.12",
     "vuetify": "^2.4.5",
-    "yfiles": "./yfiles-24.0.3-eval-dev.tgz"
+    "yfiles": "./yfiles-24.0.4-eval-dev.tgz"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^3.12.1",
