@@ -21,7 +21,7 @@ You need a copy of the [yFiles for HTML](https://www.yworks.com/products/yfiles-
 to develop this application. You can download a free test version of yFiles in the
 [yWorks Customer Center](https://my.yworks.com/signup?product=YFILES_HTML_EVAL). See [this introductory video on YouTube](https://www.youtube.com/watch?v=yzRAB-oP_uw) that will guide you through these steps.
 
-Checkout this project, then extract the yFiles for HTML package zip to some directory. The library `lib-dev/yfiles-25.0.0+eval-dev.tgz` file needs to be placed top-level in the directory of this checkout next to this file so that it can be installed via `npm i` or `yarn` into this project.
+Checkout this project, then extract the yFiles for HTML package zip to some directory. The library `lib-dev/yfiles-25.0.4+eval-dev.tgz` file needs to be placed top-level in the directory of this checkout next to this file so that it can be installed via `npm i` or `yarn` into this project.
 Before you compile and run the project, also copy the `license.json` file from the yFiles package (find it at `lib\license.json` and also drop it into this directory as `yfiles-license.json`).
 
 This is what your directory contents should look like:
@@ -29,7 +29,7 @@ This is what your directory contents should look like:
 ```
 documents
  |-- visual-graph-explorer
-     +-- yfiles-25.0.0+eval-dev.tgz
+     +-- yfiles-25.0.4+eval-dev.tgz
      +-- yfiles-license.json
      +-- README.md
      +-- ...
